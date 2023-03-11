@@ -69,7 +69,7 @@ ggwithinstats(data = df.tsk_agg,
 
 # Eye tracking data
 
-```{r load_et, warning=F, message=F}
+```{r load_et, warning=F, message=F, eval=F}
 # load the relevant data in long format
 df.eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>%
   setNames(nm = .) %>%
