@@ -1,0 +1,276 @@
+---
+title: "Pilot analysis MMN"
+author: "Irene Sophia Plank"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)           # kable
+library(tidyverse)       # tibble stuff
+library(ggplot2)         # plots
+library(ggstatsplot)     # ggplot with stats
+library(ggpubr)          # background image
+library(png)             # readPNG
+
+fl.path = paste('/home/iplank/Documents/EMOPRED', 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = fl.path)
+
+```
+
+## R Markdown
+
+<style type="text/css">
+.main-container {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Behavioural data
+
+```{r load_data, warning=F, message=F}
+# load the relevant data in long format: only people with separate logs for runs
+df.log1 = list.files(path = fl.path, pattern = "*task-.*\\.tsv$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
+  mutate(
+    Run = sub(".*task-", "", Filename),
+    Run = as.numeric(substr(Run, 1, 1))
+  ) %>% select(-Filename)
+# load the relevant data in long format: only people with one log for both runs
+df.log2 = list.files(path = fl.path, pattern = "*task.tsv$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
+  group_by(Subject, `Event Type`) %>%
+  mutate(
+    Run = case_when(`Event Type` == "Pulse" ~ row_number())
+  ) %>% select(-Filename) %>% 
+  ungroup() %>%
+  fill(Run, .direction = "up") %>%
+  mutate(
+    Run = case_when(Run <= 380 ~ 1, TRUE ~ 2)
+  )
+# bind them together
+df.log = rbind(df.log1, df.log2)
+# debugging: df.log = df.log1 %>% filter(Subject == "KP8UE7DAZ7")
+
+# only rows relevant for answer
+df.logresp = df.log %>% 
+  filter(Code != 255 & ((`Event Type` == "Response" & Code <= 4) | `flp_rel(num)` == 1)) %>%
+  arrange(Subject, Run, Trial) %>%
+  select(Subject, Run, Trial, `Event Type`, Time)
+
+# find relevant responses to each flip
+sub  = c()
+run  = c()
+trl  = c()
+rt   = c()
+sdt  = c()
+
+for (i in 1:nrow(df.logresp)) {
+  # first, check if this is the first row
+  if (i == 1) {
+    # check if it's a picture, otherwise set look for picture
+    if (df.logresp$`Event Type`[i] == "Picture") {
+      onset = df.logresp$Time[i] # ...get the onset and look for response
+      look  = "Response"
+    } else {
+      look  = "Picture"
+    }
+  # if we are not in the first row, check if it's a new run or subject
+  } else if ((df.logresp$Subject[i] != df.logresp$Subject[i-1]) | 
+        (df.logresp$Run[i] != df.logresp$Run[i-1])) {
+    # check if it's a picture, otherwise set look to picture
+    if (df.logresp$`Event Type`[i] == "Picture") {
+      onset = df.logresp$Time[i] # ...get the onset and look for response
+      look  = "Response"
+    } else {
+      look  = "Picture"
+    }
+  # if it's not a new run or subject and it's a picture and we're looking for a picture...
+  } else if (df.logresp$`Event Type`[i] == look & look == "Picture") {
+    onset = df.logresp$Time[i] # ...get the onset and look for response
+    look  = "Response"
+  # if we are looking for a response and it is one...
+  } else if (df.logresp$`Event Type`[i] == look & look == "Response") {
+    sub   = c(sub, df.logresp$Subject[i]) # ...log it all!
+    run   = c(run, df.logresp$Run[i])
+    trl   = c(trl, df.logresp$Trial[i])
+    rt    = c(rt, (df.logresp$Time[i] - onset)/10)
+    sdt   = c(sdt, "hit")
+    look  = "Picture"
+  # if it's a picture and we are looking for a response
+  } else if (df.logresp$`Event Type`[i] == "Picture" & look == "Response") {
+    sub   = c(sub, df.logresp$Subject[i-1])
+    run   = c(run, df.logresp$Run[i-1])
+    trl   = c(trl, df.logresp$Trial[i-1])
+    rt    = c(rt, NA)
+    sdt   = c(sdt, "miss")
+    onset = df.logresp$Time[i]
+  # if it's a response and we are looking for a picture
+  } else if (df.logresp$`Event Type`[i] == "Response" & look == "Picture") {
+    sub   = c(sub, df.logresp$Subject[i-1])
+    run   = c(run, df.logresp$Run[i-1])
+    trl   = c(trl, df.logresp$Trial[i-1])
+    rt    = c(rt, NA)
+    sdt   = c(sdt, "faal")
+  }
+}
+
+rt = round(rt)
+
+df.tsk = data.frame(sub, run, trl, rt, sdt) %>%
+  rename("subID" = "sub") %>%
+  group_by(subID) %>%
+  mutate(
+    subID = as.factor(subID),
+    iqr   = IQR(rt, na.rm = T),
+    cl    = quantile(rt, probs = c(.75), na.rm = T) + 1.5 * iqr,
+    fl    = quantile(rt, probs = c(.25), na.rm = T) - 1.5 * iqr,
+    rtc   = ifelse(rt > cl | rt < fl, NA, rt),
+    sdt   = as.factor(case_when(rt <= 1500 ~ sdt,
+                                rt >  1500 ~ "miss", # answers slower than this are counted as misses
+                                is.na(rt)  ~ sdt))
+    ) %>% select(-iqr, -cl, -fl)
+
+rm(list = c("df.log1","df.log2"))
+
+```
+
+```{r plot_data, warning=F, message=F}
+
+df.tsk_agg = df.tsk %>%
+  group_by(subID, run) %>%
+  summarise(
+    rt_agg = mean(rtc, na.rm = T),
+    miss   = sum(sdt == "miss")/120      # there are 120 flips per run
+  ) 
+
+# filter out from original data frame as well
+df.tsk_sel = df.tsk %>%
+  group_by(subID, run) %>%
+  mutate(
+    miss   = sum(sdt == "miss")/120
+  ) %>%
+  filter(miss <= 1/3) # disregard runs with too many misses
+
+df.tsk_agg %>% filter(miss > 1/3)
+
+ggplot(df.tsk_sel, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_minimal() + theme(legend.position = "none") 
+
+# where they faster in the first run?
+ggwithinstats(data = df.tsk_agg %>% filter(miss <= 1/3), 
+              x    = run, 
+              y    = rt_agg)
+
+# did they miss less in the first run?
+ggwithinstats(data = df.tsk_agg %>% filter(miss <= 1/3), 
+              x    = run, 
+              y    = miss)
+
+```
+
+# Eye tracking data
+
+```{r load_et, warning=F, message=F}
+# load relevant eye tracking data in long format for one run
+df.et_dat = list.files(path = fl.path, pattern = "*\\.dat$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
+  mutate(
+    subID = sub(paste(fl.path,"/",sep = ""), "", Filename),
+    subID = as.factor(sub(".dat", "", subID))
+  ) %>%
+  rename(
+    "frame" = "X1",
+    "x" = "X2",
+    "y" = "X3",
+    "p" = "X4"
+  ) %>%
+  select(-Filename)
+
+# load the events
+df.et_msg = list.files(path = fl.path, pattern = "*\\.msg$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
+  mutate(
+    subID = sub(paste(fl.path,"/",sep = ""), "", Filename),
+    subID = as.factor(sub(".msg", "", subID))
+  ) %>%
+  separate(X2, into = c("frame", "trial", "trlno")) %>%
+  select(-Filename) %>%
+  mutate(
+    frame = as.numeric(frame),
+    trlno = case_when(
+      trlno != "RESULT" ~ trlno
+    )
+  ) %>%
+  filter(trial == "TRIAL" | trial == "TRIALID") %>%
+  mutate(
+    trlno = as.numeric(trlno)
+  ) %>%
+  select(-X1) %>%
+  fill(trlno)  %>%
+  mutate(
+    snew = case_when(trlno == 1 & trial == "TRIALID" ~ 1,
+                     trlno == 1190 & trial == "TRIAL" ~ 2),
+    rown = row_number()
+  ) %>%
+  fill(snew) %>%
+  group_by(subID, snew) %>%
+  mutate(
+    run = cumsum(c(TRUE, diff(rown)>1)), .keep = "unused" 
+  ) %>%
+  ungroup() %>% 
+  select(-snew)
+
+# combine events with time course data
+df.et = merge(df.et_dat, df.et_msg, all = T)
+
+df.et_sel = df.et %>%
+  fill(trial) %>%
+  filter(!is.na(trial) & !is.na(frame) & trial != "TRIAL") %>%
+  fill(trlno) %>%
+  group_by(subID) %>%
+  fill(run) %>%
+  filter(!is.na(run)) %>%
+  mutate(
+    run   = as.factor(run),
+    subr  = as.factor(paste(subID, run, sep = "_")),
+    x = case_when(x >= 0 & x <= 1024 ~ x),
+    y = case_when(y >= 0 & y <= 768 ~ y),
+  ) %>% ungroup() %>%
+  select(subID, run, subr, trlno, frame, x, y, p)
+
+unique(df.et_sel$subr)
+
+```
+
+``` {r heat_subject, echo = T, message = F, fig.width = 8, fig.height = 16, fig.align = "center", warning = F}
+
+# load the background image
+bgimg = readPNG("exampleVMM2.png")
+# create heatmaps for participants
+ggplot(df.et_sel, aes(x = x, y = y)) +
+  background_image(bgimg) +
+  stat_density2d(geom='raster', aes(fill=..count.., alpha=..count..), contour=F) +
+  scale_fill_gradient(low = "green", high = "red") +
+  scale_alpha_continuous(range = c(0,1), guide = "none") +
+  theme_void() + 
+  facet_wrap(. ~ subID, nrow = 7, ncol = 4)
+
+```
+
+``` {r heat, echo = T, message = F, fig.width = 12, fig.height = 8, fig.align = "center", warning = F}
+# create overall heatmap
+ggplot(df.et_sel, aes(x = x, y = y)) +
+  background_image(bgimg) +
+  stat_density2d(geom='raster', aes(fill=..count.., alpha=..count..), contour=F) +
+  scale_fill_gradient(low = "green", high = "red") +
+  scale_alpha_continuous(range = c(0,1), guide = "none") +
+  theme_void()
+
+```

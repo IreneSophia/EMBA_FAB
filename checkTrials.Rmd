@@ -1,0 +1,241 @@
+---
+title: "Check BV and ET for all tasks"
+author: "Irene Sophia Plank"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)           # kable
+library(tidyverse)       # tibble stuff
+
+fl.path = '/home/iplank/Documents/EMOPRED'
+dt.path = paste(fl.path, 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = fl.path)
+
+```
+
+<style type="text/css">
+.main-container {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# FAB task
+```{r fab, warning=F, message=F}
+
+# FAB ---------------------------------------------------------------------
+
+# check whether responses are always the same
+df.fab = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  group_by(subID) %>%
+  summarise(
+    trls = n(),
+    rsps = n_distinct(key)
+  )
+
+# check number of trials for eye tracking
+df.fab_eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+  ) %>% 
+  select(-filename) %>%
+  separate(Comment, c("type", "trial", "left", "right", "target", "congruent"), convert = T) %>%
+  select(subID, type, trial) %>%
+  filter(type == "tar") %>%
+  group_by(subID) %>%
+  summarise(
+    trls_eye = n()
+  )
+
+# merge together
+df.fab = merge(df.fab, df.fab_eye, all = T)
+
+# who is missing either eye tracking or behavioural data?
+df.fab %>% filter(if_any(everything(), is.na))
+
+# who is missing trials or has weird responses?
+df.fab %>% filter(trls != 432 | rsps != 2 | trls_eye != 432 | trls != trls_eye)
+
+# how many full datasets do we have?
+df.fab %>% filter(trls == 432 & rsps > 1 & trls == trls_eye)
+
+```
+# FER task
+```{r fer, warning=F, message=F}
+# FER ---------------------------------------------------------------------
+
+# check whether responses are always the same
+df.fer = list.files(path = dt.path, pattern = "FER-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  group_by(subID) %>%
+  summarise(
+    trls = n(),
+    rsps = n_distinct(opt)
+  )
+
+# check number of trials for eye tracking
+df.fer_eye = list.files(path = dt.path, pattern = "FER-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+  ) %>% 
+  select(-filename) %>% 
+  separate(Comment, c("type", "trial", "morph", "stm")) %>%
+  filter(morph == "1") %>%
+  group_by(subID) %>%
+  summarise(
+    trls_eye = n()
+  )
+
+# merge together
+df.fer = merge(df.fer, df.fer_eye, all = T)
+
+# who is missing either eye tracking or behavioural data?
+df.fer %>% filter(if_any(everything(), is.na))
+
+# who is missing trials or has weird responses?
+df.fer %>% filter(trls != 64 | rsps != 4 | trls_eye != 64 | trls != trls_eye)
+
+# how many full datasets do we have?
+df.fer %>% filter(trls == 64 & rsps == 4 & trls == trls_eye)
+
+```
+# CTR task
+```{r ctr, warning=F, message=F}
+# CTR ---------------------------------------------------------------------
+
+# check whether responses are always the same
+df.ctr = list.files(path = dt.path, pattern = "CTR-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  group_by(subID) %>%
+  summarise(
+    trls = n(),
+    rsps = n_distinct(opt)
+  )
+
+# check number of trials for eye tracking
+df.ctr_eye = list.files(path = dt.path, pattern = "CTR-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+  ) %>% 
+  select(-filename) %>% 
+  separate(Comment, c("type", "trial", "morph", "stm")) %>%
+  filter(morph == "1") %>%
+  group_by(subID) %>%
+  summarise(
+    trls_eye = n()
+  )
+
+# merge together
+df.ctr = merge(df.ctr, df.ctr_eye, all = T)
+
+# who is missing either eye tracking or behavioural data?
+df.ctr %>% filter(if_any(everything(), is.na))
+
+# who is missing trials or has weird responses?
+df.ctr %>% filter(trls != 16 | rsps != 4 | trls_eye != 16 | trls != trls_eye)
+
+# how many full datasets do we have?
+df.ctr %>% filter(trls == 16 & rsps == 4 & trls == trls_eye)
+
+```
+# PAL task
+```{r pal, warning=F, message=F}
+# PAL ---------------------------------------------------------------------
+
+# check whether responses are always the same
+df.pal = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  group_by(subID) %>%
+  summarise(
+    trls = n(),
+    rsps = n_distinct(key)
+  )
+
+# check number of trials for eye tracking
+df.pal_eye = list.files(path = dt.path, pattern = "PAL-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+  ) %>% 
+  select(-filename) %>%
+  separate(Comment, c("type", "trial", "ut", "noise", "iti", "tone", "emo"), 
+           convert = T, extra = "merge", sep = "_") %>%
+  filter(type == "pic") %>%
+  group_by(subID) %>%
+  summarise(
+    trls_eye = n()
+  )
+
+# merge together
+df.pal = merge(df.pal, df.pal_eye, all = T)
+
+# who is missing either eye tracking or behavioural data?
+df.pal %>% filter(if_any(everything(), is.na))
+
+# who is missing trials or has weird responses?
+df.pal %>% filter(trls != 336 | rsps <= 1 | trls_eye != 336 | trls != trls_eye)
+
+# how many full datasets do we have?
+df.pal %>% filter(trls == 336 & rsps > 1 & trls == trls_eye)
+
+```
+# VMM task
+```{r vmm, warning=F, message=F}
+# VMM ---------------------------------------------------------------------
+
+# check number of trials
+df.vmm = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
+  select(-Filename) %>%
+  filter(`type(str)` == "pic") %>%
+  rename("subID" = "Subject") %>%
+  group_by(subID) %>%
+  summarise(
+    trls = n()
+  ) %>%
+  mutate(
+    runs = if_else(trls > 1190,2,1)
+  )
+
+# check number of trials for eye tracking
+df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
+  mutate(
+    subID = sub(paste(dt.path,"/",sep = ""), "", Filename),
+    subID = as.factor(sub(".msg", "", subID))
+  ) %>%
+  separate(X2, into = c("frame", "trial", "trlno")) %>%
+  select(-Filename) %>%
+  filter(trial == "TRIALID") %>%
+  group_by(subID) %>%
+  summarise(
+    trls_eye = n()
+  )
+
+# merge together
+df.vmm = merge(df.vmm, df.vmm_eye, all = T)
+
+# who is missing either eye tracking or behavioural data?
+df.vmm %>% filter(if_any(everything(), is.na))
+
+# who is missing trials or has weird responses?
+df.vmm %>% filter((trls != 1190 & runs == 1) | (trls != 2380 & runs == 2) | trls != trls_eye)
+
+# how many full datasets do we have?
+df.vmm %>% filter(((trls == 1190 & runs == 1) | (trls == 2380 & runs == 2)) & trls == trls_eye & !is.na(trls_eye))
+
+```

@@ -1,0 +1,140 @@
+---
+title: "Pilot analysis FER & CTR"
+author: "Irene Sophia Plank"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)           # kable
+library(tidyverse)       # tibble stuff
+library(ggplot2)         # plots
+library(ggstatsplot)     # ggplot with stats
+
+fl.path = paste('/home/iplank/Documents/EMOPRED', 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = fl.path)
+
+```
+
+## R Markdown
+
+<style type="text/css">
+.main-container {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r load_data, warning=F, message=F}
+# load the relevant data in long format
+df.fer = list.files(path = fl.path, pattern = "FER-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  mutate(acc = emo == opt,
+         emo = as.factor(emo),
+         emo = recode_factor(emo, 
+                "1" = "AF",
+                "2" = "AN",
+                "3" = "HA",
+                "4" = "SA"),
+         opt = as.factor(opt),
+         opt = recode_factor(opt, 
+                "1" = "AF",
+                "2" = "AN",
+                "3" = "HA",
+                "4" = "SA"), 
+         disc = case_when(
+           acc ~ disc
+         )) %>%
+  select(subID, video, emo, disc, acc)
+
+df.ctr = list.files(path = fl.path, pattern = "CTR-BV_*", full.names = T) %>%
+  map_df(~read_csv(., show_col_types = F)) %>% 
+  mutate(acc = animal == opt,
+         animal = as.factor(animal),
+         animal = recode_factor(animal, 
+                "1" = "ape",
+                "2" = "dog",
+                "3" = "cat",
+                "4" = "lion"),
+         opt = as.factor(opt),
+         opt = recode_factor(opt, 
+                "1" = "ape",
+                "2" = "dog",
+                "3" = "cat",
+                "4" = "lion"), 
+         disc = case_when(
+           acc ~ disc
+         )) %>%
+  select(subID, video, animal, disc, acc)
+
+# aggregate date per participant
+df.fer_agg = df.fer %>% 
+  group_by(subID, emo) %>%
+  summarise(
+    disc = mean(disc, na.rm = T),
+    acc = mean(acc)
+  )
+
+df.ctr_agg = df.ctr %>% 
+  group_by(subID, animal) %>%
+  summarise(
+    disc = mean(disc, na.rm = T),
+    acc = mean(acc)
+  )
+
+length(unique(df.fer$subID))
+length(unique(df.ctr$subID))
+
+```
+
+```{r plot_data, warning=F, message=F}
+
+ggplot(data=df.fer_agg, aes(group = emo, y = acc, colour = emo, x = emo)) +
+  geom_boxplot()
+
+ggplot(data=df.fer, aes(group = emo, y = disc, colour = emo, x = emo)) +
+  geom_boxplot()
+
+ggplot(data=df.ctr_agg, aes(group = animal, y = acc, colour = animal, x = animal)) +
+  geom_boxplot()
+
+ggplot(data=df.ctr, aes(group = animal, y = disc, colour = animal, x = animal)) +
+  geom_boxplot()
+
+```
+
+
+# Eye tracking data
+
+```{r load_et, warning=F, message=F, include=F}
+# load the relevant data in long format
+df.eye = list.files(path = fl.path, pattern = "FER-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  filter(!is.na(Comment)) %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+    ) %>% 
+  separate(Comment, c("type", "trial", "morph", "stm")) %>%
+  filter(morph == "1") %>%
+  group_by(subID) %>%
+  summarise(
+    count = n()
+  )
+
+df.eye
+
+
+df.eye = list.files(path = fl.path, pattern = "FER-ET-*", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
+  filter(!is.na(Comment)) %>% 
+  mutate(
+    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
+    ) %>% 
+  separate(Comment, c("type", "trial", "morph", "stm")) %>%
+  filter(!is.na(type))
+
+```
