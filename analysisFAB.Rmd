@@ -11,6 +11,7 @@ library(knitr)           # kable
 library(tidyverse)       # tibble stuff
 library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
+library(ggrain)
 
 fl.path = '/home/iplank/Documents/EMOPRED'
 dt.path = paste(fl.path, 'BVET', sep = "/")

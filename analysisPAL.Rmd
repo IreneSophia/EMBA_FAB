@@ -12,6 +12,12 @@ library(tidyverse)       # tibble stuff
 library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
 library(pastecs)
+library(ggrain)
+library(cowplot)
+library(readr)
+
+source("R_rainclouds.R")
+source("summarySE.R")
 
 fl.path = paste('/home/iplank/Documents/EMOPRED', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
@@ -64,7 +70,8 @@ df.tsk_agg = df.tsk %>%
     rt_agg = mean(rtc, na.rm = T),
     acc    = sum(acc == TRUE),
     rt_all = mean(rt, na.rm = T)
-  ) %>% ungroup()
+  ) %>% ungroup() %>%
+  filter(rt_agg != "NaN")
 
 df.diff = df.tsk_agg %>%
   select(subID, expected, rt_agg) %>%
@@ -85,6 +92,23 @@ ggwithinstats(data = df.tsk_agg,
               x    = expected, 
               y    = rt_agg, 
               ylab = "reaction time", xlab = "")
+
+
+# ggplot(df.tsk_agg, aes(x = expected, y = rt_agg, fill =  expected)) +
+#     geom_rain(rain.side = 'f')
+# 
+# df.tsk_sum <- summarySE(df.tsk_agg, measurevar = "rt_agg", groupvars="expected")
+# 
+# ggplot(df.tsk_agg, aes(x = expected, y = rt_agg, fill = expected)) +
+#   geom_flat_violin(aes(fill = expected), position = position_nudge(x = .1, y = 0), adjust = 1.5, trim = FALSE, alpha = .5, colour = NA)+
+#   geom_point(aes(x = as.numeric(expected)-.15, y = rt_agg, colour = expected),position = position_jitter(width = .05), size = .25, shape = 20)+
+#   geom_boxplot(aes(x = expected, y = rt_agg, fill = expected),outlier.shape = NA, alpha = .5, width = .1, colour = "black") +
+#   geom_line(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected), linetype = 3)+
+#   geom_point(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected), shape = 18) +
+#   geom_errorbar(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected, ymin = rt_agg_mean-sem, ymax = rt_agg_mean+sem), width = .05)+
+#   scale_colour_brewer(palette = "Dark2")+
+#   scale_fill_brewer(palette = "Dark2")+
+#   ggtitle("Figure R11: Repeated Measures - Factorial (Extended)")
 
 ```
 
