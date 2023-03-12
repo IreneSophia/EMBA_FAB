@@ -66,6 +66,9 @@ df.fab %>% filter(trls != 432 | rsps != 2 | trls_eye != 432 | trls != trls_eye)
 # how many full datasets do we have?
 df.fab %>% filter(trls == 432 & rsps > 1 & trls == trls_eye)
 
+# just all of it
+df.fab
+
 ```
 # FER task
 ```{r fer, warning=F, message=F}
@@ -106,6 +109,9 @@ df.fer %>% filter(trls != 64 | rsps != 4 | trls_eye != 64 | trls != trls_eye)
 
 # how many full datasets do we have?
 df.fer %>% filter(trls == 64 & rsps == 4 & trls == trls_eye)
+
+# just all of it
+df.fer
 
 ```
 # CTR task
@@ -148,6 +154,9 @@ df.ctr %>% filter(trls != 16 | rsps != 4 | trls_eye != 16 | trls != trls_eye)
 # how many full datasets do we have?
 df.ctr %>% filter(trls == 16 & rsps == 4 & trls == trls_eye)
 
+# just all of it
+df.ctr
+
 ```
 # PAL task
 ```{r pal, warning=F, message=F}
@@ -159,7 +168,8 @@ df.pal = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
   group_by(subID) %>%
   summarise(
     trls = n(),
-    rsps = n_distinct(key)
+    rsps = n_distinct(key),
+    nrsp = sum(!is.na(key))
   )
 
 # check number of trials for eye tracking
@@ -185,10 +195,13 @@ df.pal = merge(df.pal, df.pal_eye, all = T)
 df.pal %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.pal %>% filter(trls != 336 | rsps <= 1 | trls_eye != 336 | trls != trls_eye)
+df.pal %>% filter(trls != 336 | rsps <= 1 | trls_eye != 336 | trls != trls_eye | nrsp < 336)
 
 # how many full datasets do we have?
 df.pal %>% filter(trls == 336 & rsps > 1 & trls == trls_eye)
+
+# just all of it
+df.pal
 
 ```
 # VMM task
@@ -237,5 +250,8 @@ df.vmm %>% filter((trls != 1190 & runs == 1) | (trls != 2380 & runs == 2) | trls
 
 # how many full datasets do we have?
 df.vmm %>% filter(((trls == 1190 & runs == 1) | (trls == 2380 & runs == 2)) & trls == trls_eye & !is.na(trls_eye))
+
+# just all of it
+df.vmm
 
 ```
