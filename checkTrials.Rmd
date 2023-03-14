@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(knitr)           # kable
 library(tidyverse)       # tibble stuff
+library(kableExtra)      # kbl
 
 fl.path = '/home/iplank/Documents/EMOPRED'
 dt.path = paste(fl.path, 'BVET', sep = "/")
@@ -69,7 +70,7 @@ df.fab %>% filter(if_any(everything(), is.na))
 df.fab %>% filter(trls.fab != 432 | rsps.fab != 2 | trls_eye.fab != 432 | trls.fab != trls_eye.fab)
 
 # how many full datasets do we have?
-df.fab %>% filter(trls.fab == 432 & rsps.fab > 1 & trls.fab == trls_eye.fab)
+nrow(df.fab %>% filter(trls.fab == 432 & rsps.fab > 1 & trls.fab == trls_eye.fab))
 
 ```
 # FER task
@@ -113,7 +114,7 @@ df.fer %>% filter(if_any(everything(), is.na))
 df.fer %>% filter(trls.fer != 64 | rsps.fer != 4 | trls_eye.fer != 64 | trls.fer != trls_eye.fer)
 
 # how many full datasets do we have?
-df.fer %>% filter(trls.fer == 64 & rsps.fer == 4 & trls.fer == trls_eye.fer)
+nrow(df.fer %>% filter(trls.fer == 64 & rsps.fer == 4 & trls.fer == trls_eye.fer))
 
 ```
 # CTR task
@@ -157,7 +158,7 @@ df.ctr %>% filter(if_any(everything(), is.na))
 df.ctr %>% filter(trls.ctr != 16 | rsps.ctr != 4 | trls_eye.ctr != 16 | trls.ctr != trls_eye.ctr)
 
 # how many full datasets do we have?
-df.ctr %>% filter(trls.ctr == 16 & rsps.ctr == 4 & trls.ctr == trls_eye.ctr)
+nrow(df.ctr %>% filter(trls.ctr == 16 & rsps.ctr == 4 & trls.ctr == trls_eye.ctr))
 
 ```
 # PAL task
@@ -203,7 +204,7 @@ df.pal %>% filter(if_any(everything(), is.na))
 df.pal %>% filter(trls.pal != 336 | rsps.pal <= 1 | trls_eye.pal != 336 | trls.pal != trls_eye.pal | nrsp.pal < 336)
 
 # how many full datasets do we have?
-df.pal %>% filter(trls.pal == 336 & rsps.pal > 1 & trls.pal == trls_eye.pal)
+nrow(df.pal %>% filter(trls.pal == 336 & rsps.pal > 1 & trls.pal == trls_eye.pal))
 
 ```
 # VMM task
@@ -251,7 +252,7 @@ df.vmm %>% filter(if_any(everything(), is.na))
 df.vmm %>% filter((trls.vmm != 1190 & runs.vmm == 1) | (trls.vmm != 2380 & runs.vmm == 2) | trls.vmm != trls_eye.vmm)
 
 # how many full datasets do we have?
-df.vmm %>% filter(((trls.vmm == 1190 & runs.vmm == 1) | (trls.vmm == 2380 & runs.vmm == 2)) & trls.vmm == trls_eye.vmm & !is.na(trls_eye.vmm))
+nrow(df.vmm %>% filter(((trls.vmm == 1190 & runs.vmm == 1) | (trls.vmm == 2380 & runs.vmm == 2)) & trls.vmm == trls_eye.vmm & !is.na(trls_eye.vmm)))
 
 ```
 
@@ -263,6 +264,6 @@ df.ls = list(df.fab, df.fer, df.ctr, df.pal, df.vmm)
 df = df.ls %>% reduce(full_join, by = "subID")
 
 # show it
-df
+kbl(df) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 
 ```
