@@ -31,14 +31,16 @@ knitr::opts_knit$set(root.dir = fl.path)
 
 # check whether responses are always the same
 df.fab = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd")) %>% 
+  setNames(nm = .) %>%
+  map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd"), .id = "fln") %>% 
   mutate(
-    key = as.numeric(key)
+    key = as.numeric(key), 
+    fln = substr(fln, nchar(fln)-27, nchar(fln)-18)
   ) %>%
-  group_by(subID) %>%
+  group_by(subID, fln) %>%
   summarise(
-    trls = n(),
-    rsps = n_distinct(key)
+    trls.fab = n(),
+    rsps.fab = n_distinct(key)
   )
 
 # check number of trials for eye tracking
@@ -54,7 +56,7 @@ df.fab_eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>
   filter(type == "tar") %>%
   group_by(subID) %>%
   summarise(
-    trls_eye = n()
+    trls_eye.fab = n()
   )
 
 # merge together
@@ -64,13 +66,10 @@ df.fab = merge(df.fab, df.fab_eye, all = T)
 df.fab %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.fab %>% filter(trls != 432 | rsps != 2 | trls_eye != 432 | trls != trls_eye)
+df.fab %>% filter(trls.fab != 432 | rsps.fab != 2 | trls_eye.fab != 432 | trls.fab != trls_eye.fab)
 
 # how many full datasets do we have?
-df.fab %>% filter(trls == 432 & rsps > 1 & trls == trls_eye)
-
-# just all of it
-df.fab
+df.fab %>% filter(trls.fab == 432 & rsps.fab > 1 & trls.fab == trls_eye.fab)
 
 ```
 # FER task
@@ -85,8 +84,8 @@ df.fer = list.files(path = dt.path, pattern = "FER-BV_*", full.names = T) %>%
   ) %>% 
   group_by(subID) %>%
   summarise(
-    trls = n(),
-    rsps = n_distinct(opt)
+    trls.fer = n(),
+    rsps.fer = n_distinct(opt)
   )
 
 # check number of trials for eye tracking
@@ -101,7 +100,7 @@ df.fer_eye = list.files(path = dt.path, pattern = "FER-ET-*", full.names = T) %>
   filter(morph == "1") %>%
   group_by(subID) %>%
   summarise(
-    trls_eye = n()
+    trls_eye.fer = n()
   )
 
 # merge together
@@ -111,13 +110,10 @@ df.fer = merge(df.fer, df.fer_eye, all = T)
 df.fer %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.fer %>% filter(trls != 64 | rsps != 4 | trls_eye != 64 | trls != trls_eye)
+df.fer %>% filter(trls.fer != 64 | rsps.fer != 4 | trls_eye.fer != 64 | trls.fer != trls_eye.fer)
 
 # how many full datasets do we have?
-df.fer %>% filter(trls == 64 & rsps == 4 & trls == trls_eye)
-
-# just all of it
-df.fer
+df.fer %>% filter(trls.fer == 64 & rsps.fer == 4 & trls.fer == trls_eye.fer)
 
 ```
 # CTR task
@@ -132,8 +128,8 @@ df.ctr = list.files(path = dt.path, pattern = "CTR-BV_*", full.names = T) %>%
   ) %>% 
   group_by(subID) %>%
   summarise(
-    trls = n(),
-    rsps = n_distinct(opt)
+    trls.ctr = n(),
+    rsps.ctr = n_distinct(opt)
   )
 
 # check number of trials for eye tracking
@@ -148,7 +144,7 @@ df.ctr_eye = list.files(path = dt.path, pattern = "CTR-ET-*", full.names = T) %>
   filter(morph == "1") %>%
   group_by(subID) %>%
   summarise(
-    trls_eye = n()
+    trls_eye.ctr = n()
   )
 
 # merge together
@@ -158,13 +154,10 @@ df.ctr = merge(df.ctr, df.ctr_eye, all = T)
 df.ctr %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.ctr %>% filter(trls != 16 | rsps != 4 | trls_eye != 16 | trls != trls_eye)
+df.ctr %>% filter(trls.ctr != 16 | rsps.ctr != 4 | trls_eye.ctr != 16 | trls.ctr != trls_eye.ctr)
 
 # how many full datasets do we have?
-df.ctr %>% filter(trls == 16 & rsps == 4 & trls == trls_eye)
-
-# just all of it
-df.ctr
+df.ctr %>% filter(trls.ctr == 16 & rsps.ctr == 4 & trls.ctr == trls_eye.ctr)
 
 ```
 # PAL task
@@ -179,9 +172,9 @@ df.pal = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
   ) %>% 
   group_by(subID) %>%
   summarise(
-    trls = n(),
-    rsps = n_distinct(key),
-    nrsp = sum(!is.na(key))
+    trls.pal = n(),
+    rsps.pal = n_distinct(key),
+    nrsp.pal = sum(!is.na(key))
   )
 
 # check number of trials for eye tracking
@@ -197,7 +190,7 @@ df.pal_eye = list.files(path = dt.path, pattern = "PAL-ET-*", full.names = T) %>
   filter(type == "pic") %>%
   group_by(subID) %>%
   summarise(
-    trls_eye = n()
+    trls_eye.pal = n()
   )
 
 # merge together
@@ -207,13 +200,10 @@ df.pal = merge(df.pal, df.pal_eye, all = T)
 df.pal %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.pal %>% filter(trls != 336 | rsps <= 1 | trls_eye != 336 | trls != trls_eye | nrsp < 336)
+df.pal %>% filter(trls.pal != 336 | rsps.pal <= 1 | trls_eye.pal != 336 | trls.pal != trls_eye.pal | nrsp.pal < 336)
 
 # how many full datasets do we have?
-df.pal %>% filter(trls == 336 & rsps > 1 & trls == trls_eye)
-
-# just all of it
-df.pal
+df.pal %>% filter(trls.pal == 336 & rsps.pal > 1 & trls.pal == trls_eye.pal)
 
 ```
 # VMM task
@@ -229,10 +219,10 @@ df.vmm = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
   rename("subID" = "Subject") %>%
   group_by(subID) %>%
   summarise(
-    trls = n()
+    trls.vmm = n()
   ) %>%
   mutate(
-    runs = if_else(trls > 1190,2,1)
+    runs.vmm = if_else(trls.vmm > 1190,2,1)
   )
 
 # check number of trials for eye tracking
@@ -248,7 +238,7 @@ df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>
   filter(trial == "TRIALID") %>%
   group_by(subID) %>%
   summarise(
-    trls_eye = n()
+    trls_eye.vmm = n()
   )
 
 # merge together
@@ -258,12 +248,21 @@ df.vmm = merge(df.vmm, df.vmm_eye, all = T)
 df.vmm %>% filter(if_any(everything(), is.na))
 
 # who is missing trials or has weird responses?
-df.vmm %>% filter((trls != 1190 & runs == 1) | (trls != 2380 & runs == 2) | trls != trls_eye)
+df.vmm %>% filter((trls.vmm != 1190 & runs.vmm == 1) | (trls.vmm != 2380 & runs.vmm == 2) | trls.vmm != trls_eye.vmm)
 
 # how many full datasets do we have?
-df.vmm %>% filter(((trls == 1190 & runs == 1) | (trls == 2380 & runs == 2)) & trls == trls_eye & !is.na(trls_eye))
+df.vmm %>% filter(((trls.vmm == 1190 & runs.vmm == 1) | (trls.vmm == 2380 & runs.vmm == 2)) & trls.vmm == trls_eye.vmm & !is.na(trls_eye.vmm))
 
-# just all of it
-df.vmm
+```
+
+# All tasks
+```{r all, warning=F, message=F}
+
+# join all the data
+df.ls = list(df.fab, df.fer, df.ctr, df.pal, df.vmm)
+df = df.ls %>% reduce(full_join, by = "subID")
+
+# show it
+df
 
 ```
