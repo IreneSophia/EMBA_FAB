@@ -30,7 +30,10 @@ knitr::opts_knit$set(root.dir = fl.path)
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
 df.fer = list.files(path = fl.path, pattern = "FER-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  mutate(
+    lastkey = as.numeric(lastkey)
+  ) %>% 
   mutate(acc = emo == opt,
          emo = as.factor(emo),
          emo = recode_factor(emo, 
@@ -50,7 +53,10 @@ df.fer = list.files(path = fl.path, pattern = "FER-BV_*", full.names = T) %>%
   select(subID, video, emo, disc, acc)
 
 df.ctr = list.files(path = fl.path, pattern = "CTR-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  mutate(
+    lastkey = as.numeric(lastkey)
+  ) %>% 
   mutate(acc = animal == opt,
          animal = as.factor(animal),
          animal = recode_factor(animal, 

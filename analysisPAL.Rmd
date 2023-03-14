@@ -39,7 +39,10 @@ knitr::opts_knit$set(root.dir = fl.path)
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
 df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
+  mutate(
+    key = as.numeric(key)
+  ) %>% 
   mutate(emotion = as.factor(emotion),
          choice = case_when(
                 key == 6 & key_pos == "right" ~ "positive",

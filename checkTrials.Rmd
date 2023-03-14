@@ -31,7 +31,10 @@ knitr::opts_knit$set(root.dir = fl.path)
 
 # check whether responses are always the same
 df.fab = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd")) %>% 
+  mutate(
+    key = as.numeric(key)
+  ) %>%
   group_by(subID) %>%
   summarise(
     trls = n(),
@@ -76,7 +79,10 @@ df.fab
 
 # check whether responses are always the same
 df.fer = list.files(path = dt.path, pattern = "FER-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  mutate(
+    lastkey = as.numeric(lastkey)
+  ) %>% 
   group_by(subID) %>%
   summarise(
     trls = n(),
@@ -120,7 +126,10 @@ df.fer
 
 # check whether responses are always the same
 df.ctr = list.files(path = dt.path, pattern = "CTR-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  mutate(
+    lastkey = as.numeric(lastkey)
+  ) %>% 
   group_by(subID) %>%
   summarise(
     trls = n(),
@@ -164,7 +173,10 @@ df.ctr
 
 # check whether responses are always the same
 df.pal = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F)) %>% 
+  map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
+  mutate(
+    key = as.numeric(key)
+  ) %>% 
   group_by(subID) %>%
   summarise(
     trls = n(),
