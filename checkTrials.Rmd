@@ -36,13 +36,15 @@ df.fab = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd"), .id = "fln") %>% 
   mutate(
     key = as.numeric(key), 
-    fln = substr(fln, nchar(fln)-27, nchar(fln)-18)
+    subID = substr(fln, nchar(fln)-27, nchar(fln)-18),
+    subID = recode(subID, "NRLOGZLVV4" = "FNRLOGZLVV")
   ) %>%
   group_by(subID, fln) %>%
   summarise(
     trls.fab = n(),
     rsps.fab = n_distinct(key)
-  )
+  ) %>%
+  select(-fln)
 
 # check number of trials for eye tracking
 df.fab_eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>%
@@ -79,9 +81,11 @@ nrow(df.fab %>% filter(trls.fab == 432 & rsps.fab > 1 & trls.fab == trls_eye.fab
 
 # check whether responses are always the same
 df.fer = list.files(path = dt.path, pattern = "FER-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  setNames(nm = .) %>%
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc"), .id = "fln") %>% 
   mutate(
-    lastkey = as.numeric(lastkey)
+    lastkey = as.numeric(lastkey),
+    subID = substr(fln, nchar(fln)-27, nchar(fln)-18)
   ) %>% 
   group_by(subID) %>%
   summarise(
@@ -123,9 +127,11 @@ nrow(df.fer %>% filter(trls.fer == 64 & rsps.fer == 4 & trls.fer == trls_eye.fer
 
 # check whether responses are always the same
 df.ctr = list.files(path = dt.path, pattern = "CTR-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
+  setNames(nm = .) %>%
+  map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc"), .id = "fln") %>% 
   mutate(
-    lastkey = as.numeric(lastkey)
+    lastkey = as.numeric(lastkey),
+    subID = substr(fln, nchar(fln)-27, nchar(fln)-18)
   ) %>% 
   group_by(subID) %>%
   summarise(
@@ -167,9 +173,11 @@ nrow(df.ctr %>% filter(trls.ctr == 16 & rsps.ctr == 4 & trls.ctr == trls_eye.ctr
 
 # check whether responses are always the same
 df.pal = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
+  setNames(nm = .) %>%
+  map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd"), .id = "fln") %>% 
   mutate(
-    key = as.numeric(key)
+    key = as.numeric(key),
+    subID = substr(fln, nchar(fln)-27, nchar(fln)-18)
   ) %>% 
   group_by(subID) %>%
   summarise(
@@ -232,7 +240,7 @@ df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>
   map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     subID = sub(paste(dt.path,"/",sep = ""), "", Filename),
-    subID = as.factor(sub(".msg", "", subID))
+    subID = substr(subID,1,10)
   ) %>%
   separate(X2, into = c("frame", "trial", "trlno")) %>%
   select(-Filename) %>%
@@ -241,6 +249,38 @@ df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>
   summarise(
     trls_eye.vmm = n()
   )
+
+# get design number
+df.vmm_des = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
+  select(-Filename) %>%
+  filter(`type(str)` == "pic") %>%
+  rename("subID" = "Subject", "run" = "run(num)") %>%
+  select(subID, run) %>% distinct() %>%
+  group_by(subID) %>%
+  summarise(
+    ord = paste(run, collapse = "_")
+  )
+
+df.des = list.files(path = paste(dt.path,"Designs",sep = "/"), pattern = "*.txt$", full.names = T) %>%
+  setNames(nm = .) %>%
+  map_df(~read_delim(., show_col_types = F, delim = "\t", col_names = F), .id = "Filename") %>%
+  mutate(
+    des = gsub("\\D+", "", Filename),
+    des = substr(des, 1, nchar(des)-1)
+  ) %>%
+  select(des, X10) %>% distinct() %>% 
+  group_by(des) %>%
+  summarise(
+    ord = paste(X10, collapse = "_")
+  ) %>% 
+  group_by(ord) %>%
+  summarise(
+    des = paste(des, collapse = "_")
+  )
+  
+df.des = merge(df.vmm_des, df.des, all.x = T)
 
 # merge together
 df.vmm = merge(df.vmm, df.vmm_eye, all = T)
