@@ -231,8 +231,12 @@ df.vmm = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
     trls.vmm = n()
   ) %>%
   mutate(
-    runs.vmm = if_else(trls.vmm > 1190,2,1)
-  )
+    runs.vmm = if_else(trls.vmm > 1190,2,1),
+    subID = case_when(subID == "MXIVJZQSI" ~ "MXIVJYZQSI", 
+                      subID == "NZEHEUA0OZ" ~ "NZEJEIA0OZ",
+                      TRUE ~ subID)
+  ) %>%
+  filter(subID != "9LMQ41HBG8")
 
 # check number of trials for eye tracking
 df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>%
