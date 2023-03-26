@@ -304,8 +304,15 @@ nrow(df.vmm %>% filter(((trls.vmm == 1190 & runs.vmm == 1) | (trls.vmm == 2380 &
 ```{r all, warning=F, message=F}
 
 # join all the data
-df.ls = list(df.fab, df.fer, df.ctr, df.pal, df.vmm)
-df = df.ls %>% reduce(full_join, by = "subID")
+df.ls = list(df.fab, df.fer, df.ctr, df.pal)
+df = df.ls %>% reduce(full_join, by = "subID") %>%
+  mutate(
+    subID = case_when(subID == "MT3KYV0QQR" ~ "MT3KYVOQQR",
+                      TRUE ~ subID)
+  )
+  
+
+df = merge(df, df.vmm)
 
 # show it
 kbl(df) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
