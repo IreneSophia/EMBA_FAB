@@ -15,5 +15,9 @@ for (fl in fls) {
   idx = which(log == "Event Type	Code	Type	Response	RT	RT Uncertainty	Time	Uncertainty	Duration	Uncertainty	ReqTime	ReqDur") - 3
   rows = c(4,5:idx)
   log_rel = log[rows]
-  write_lines(log_rel, file = paste(substr(fl,1,(nchar(fl)-4)), "tsv", sep = "."))
+  if (substr(fl,(nchar(fl)-23),(nchar(fl)-4)) != "I5CQ5BKIIU-vMMN-task") { # this participant had to switch to two run setting due to drift
+    write_lines(log_rel, file = paste(substr(fl,1,(nchar(fl)-4)), "tsv", sep = "."))
+  } else {
+    write_lines(log_rel, file = paste(substr(fl,1,(nchar(fl)-4)), "-1.tsv", sep = ""))
+  }
 }
