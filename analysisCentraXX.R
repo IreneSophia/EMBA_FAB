@@ -13,6 +13,9 @@ df = read_delim("PSY_EMOPRED_231303.csv", show_col_types = F, locale = locale(en
   rename("questionnaire" = "name2", 
          "item" = "code", 
          "ID" = "internalStudyMemberID") %>%
+  mutate(
+    value = str_replace(value, ",", ";")
+  ) %>%
   group_by(ID)
 
 ## preprocess each questionnaire separately:
