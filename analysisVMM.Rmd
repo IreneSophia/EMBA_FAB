@@ -70,6 +70,8 @@ trl  = c()
 rt   = c()
 sdt  = c()
 
+## TRIAL COUNTS ARE WRONG! NEED TO BE ADDED!
+
 for (i in 1:nrow(df.logresp)) {
   # first, check if this is the first row
   if (i == 1) {
@@ -182,7 +184,11 @@ df.et_dat = list.files(path = fl.path, pattern = "*\\.dat$", full.names = T) %>%
   map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     subID = sub(paste(fl.path,"/",sep = ""), "", Filename),
-    subID = as.factor(sub(".dat", "", subID))
+    subID = sub(".dat", "", subID), 
+    subID = as.factor(case_when(
+      substr(subID,2,2) == "_" ~ substring(subID,3,nchar(subID)),
+      TRUE ~ substr(subID,1,10)
+    ))
   ) %>%
   rename(
     "frame" = "X1",
@@ -198,7 +204,7 @@ df.et_msg = list.files(path = fl.path, pattern = "*\\.msg$", full.names = T) %>%
   map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     subID = sub(paste(fl.path,"/",sep = ""), "", Filename),
-    subID = as.factor(sub(".msg", "", subID))
+    subID = sub(".msg", "", subID)
   ) %>%
   separate(X2, into = c("frame", "trial", "trlno")) %>%
   select(-Filename) %>%
@@ -210,7 +216,11 @@ df.et_msg = list.files(path = fl.path, pattern = "*\\.msg$", full.names = T) %>%
   ) %>%
   filter(trial == "TRIAL" | trial == "TRIALID") %>%
   mutate(
-    trlno = as.numeric(trlno)
+    trlno = as.numeric(trlno),
+    trlno = case_when(
+      substr(subID,1,2) == "2_" | substr(subID,nchar(subID)-1,nchar(subID)) == "-2" | substr(subID,nchar(subID)-1,nchar(subID)) == "_2" ~ trlno + 1190,
+      TRUE ~ trlno
+      )
   ) %>%
   select(-X1) %>%
   fill(trlno)  %>%
@@ -225,6 +235,12 @@ df.et_msg = list.files(path = fl.path, pattern = "*\\.msg$", full.names = T) %>%
     run = cumsum(c(TRUE, diff(rown)>1)), .keep = "unused" 
   ) %>%
   ungroup() %>% 
+  mutate(
+    subID = as.factor(case_when(
+                    substr(subID,1,2) == "2_" ~ substr(subID,3,nchar(subID)),
+                    TRUE ~ substr(subID,1,10)
+    ))
+  ) %>%
   select(-snew)
 
 # combine events with time course data
