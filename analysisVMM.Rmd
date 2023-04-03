@@ -55,7 +55,6 @@ df.log2 = list.files(path = fl.path, pattern = "*task.tsv$", full.names = T) %>%
   )
 # bind them together
 df.log = rbind(df.log1, df.log2)
-# debugging: df.log = df.log1 %>% filter(Subject == "KP8UE7DAZ7")
 
 # only rows relevant for answer
 df.logresp = df.log %>% 
