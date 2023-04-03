@@ -312,7 +312,7 @@ df = df.ls %>% reduce(full_join, by = "subID") %>%
   )
   
 
-df = merge(df, df.vmm)
+df = merge(df, df.vmm, all.x = T)
 
 # show it
 kbl(df) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
