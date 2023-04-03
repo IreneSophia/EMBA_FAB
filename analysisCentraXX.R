@@ -12,11 +12,11 @@ df = read_delim("PSY_EMOPRED_231303.csv", show_col_types = F, locale = locale(en
   filter(internalStudyMemberID != "NEVIA_test" & !is.na(name2)) %>%
   rename("questionnaire" = "name2", 
          "item" = "code", 
-         "ID" = "internalStudyMemberID") %>%
+         "intID" = "internalStudyMemberID") %>%
   mutate(
     value = str_replace(value, ",", ";")
   ) %>%
-  group_by(ID)
+  group_by(intID)
 
 ## preprocess each questionnaire separately:
 
@@ -32,15 +32,15 @@ df.asrs = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
     section = recode(section, 
                      `Teil A` = "A",
                      `Teil B` = "B", 
-                     `Teil C` = "C")
-  ) %>% select(questionnaire, ID, section, numericValue) %>%
-  group_by(ID, section) %>% 
+                     `Teil C` = "B")
+  ) %>% select(questionnaire, intID, section, numericValue) %>%
+  group_by(intID, section) %>% 
   summarise(
     ASRS_total = sum(numericValue),
     ASRS_extreme = sum(numericValue >= 3)
   ) %>% pivot_wider(names_from = section, values_from = c(ASRS_total, ASRS_extreme)) %>%
   mutate(
-    ASRS_total = mean(c(ASRS_total_A, ASRS_total_B, ASRS_total_C))
+    ASRS_total = sum(c(ASRS_total_A, ASRS_total_B))
   )
 
 # PSY_NEVIA_BDI 
@@ -54,15 +54,15 @@ df.bdi = df %>% filter(questionnaire == "PSY_NEVIA_BDI")  %>%
       !grepl(", ", numericValue, fixed = T) ~ numericValue
       ),
     numericValue = as.numeric(numericValue)) %>%
-  select(questionnaire, ID, numericValue) %>%
-  group_by(ID) %>%
+  select(questionnaire, intID, numericValue) %>%
+  group_by(intID) %>%
   summarise(
     BDI_total = sum(numericValue)
   )
 
 # PSY_NEVIA_CFT
 df.cft = df %>% filter(questionnaire == "PSY_NEVIA_CFT") %>% 
-  group_by(ID) %>%
+  group_by(intID) %>%
   select(-c(questionnaire, section, numericValue)) %>%
   rename("raw" = `value`) %>%
   mutate(
@@ -116,7 +116,7 @@ df.demo = df %>% filter(questionnaire == "PSY_NEVIA_DEMO") %>%
                   `PSY_PIPS_Demo_Metall/metal` = "metal",
                   `PSY_NEVIA_emotiontraining` = "emoTrain",
                   `PSY_NEVIA_fallsja_4` = "emotrainDetails"),
-    item = gsub("^PSY_NEVIA_DEMO_.*", "trans", item),
+    item = gsub("^PSY_NEVIA_DEMO_.*", "cis", item),
     value = gsub("^(Keine|Nein|keine).*", "0", value),
     value = gsub("^Ja", "1", value)
   )
@@ -124,12 +124,12 @@ df.demo = df %>% filter(questionnaire == "PSY_NEVIA_DEMO") %>%
 df.demo[!is.na(df.demo$numericValue),]$value = as.character(df.demo[!is.na(df.demo$numericValue),]$numericValue)
 
 df.demo = df.demo %>%
-  group_by(ID) %>% select(ID, item, value) %>%
+  group_by(intID) %>% select(intID, item, value) %>%
   pivot_wider(names_from = item, values_from = value)
 
 # PSY_NEVIA_MWT
 df.mwt = df %>% filter(questionnaire == "PSY_NEVIA_MWT") %>%
-  group_by(ID) %>% select(ID, numericValue) %>%
+  group_by(intID) %>% select(intID, numericValue) %>%
   mutate(
     numericValue = as.numeric(numericValue)
   ) %>%
@@ -148,21 +148,21 @@ df.raads = df %>% filter(questionnaire == "PSY_NEVIA_RAADS") %>%
            `Nicht wahr` = 0),
     section = gsub("^Abschnitt ", "", section),
     item = gsub("^PSY_NEVIA_RAADS_", "", item)
-  ) %>% group_by(ID) %>% 
-  select(ID, item, section, numericValue)
+  ) %>% group_by(intID) %>% 
+  select(intID, item, section, numericValue)
 
 # some need to be turned around: 1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77
 idx = c(1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77)
 df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - 3)
 
-df.raads = df.raads %>% group_by(ID) %>%
+df.raads = df.raads %>% group_by(intID) %>%
   summarise(
     RAADS_total = sum(numericValue)
   )
 
 # merge all together
 ls.df = list(df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads)
-df.sub = ls.df %>% reduce(full_join, by = "ID") %>% 
+df.sub = ls.df %>% reduce(full_join, by = "intID") %>% 
   mutate(
     age = as.numeric(age)
   )
@@ -181,5 +181,8 @@ for (i in 1:nrow(df.sub)) {
     df.sub$MWT_iq[i] = mwt[(df.sub$MWT_total[i] == mwt$raw),]$iq
   }
 }
+
+df.sub = merge(df.sub, read_csv("PID_intID_230313.csv", show_col_types = F), all.y = T) %>%
+  relocate(PID)
 
 write_csv(df.sub, file = "df_centraXX.csv")
