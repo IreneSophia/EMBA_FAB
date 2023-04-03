@@ -244,7 +244,9 @@ df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>
   map_df(~read_delim(., show_col_types = F, col_names = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     subID = sub(paste(dt.path,"/",sep = ""), "", Filename),
-    subID = substr(subID,1,10)
+    subID = as.factor(case_when(
+                    substr(subID,2,2) == "_" ~ substr(subID,3,12),
+                    TRUE ~ substr(subID,1,10)))
   ) %>%
   separate(X2, into = c("frame", "trial", "trlno")) %>%
   select(-Filename) %>%
