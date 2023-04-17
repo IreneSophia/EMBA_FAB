@@ -1,0 +1,54 @@
+---
+title: "Check BV and ET for all tasks"
+author: "Irene Sophia Plank"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)           # kable
+library(tidyverse)       # tibble stuff
+library(kableExtra)      # kbl
+library(ggplot2)
+library(BayesFactor)
+
+fl.path = "/home/iplank/Documents/EMBA/CentraXX"
+dt.path = paste(fl.path, 'CentraXX', sep = "/")
+knitr::opts_knit$set(root.dir = fl.path)
+
+```
+
+<style type="text/css">
+.main-container {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# FAB task
+```{r fab, warning=F, message=F}
+
+# Clear global environment
+rm(list=ls())
+setwd("/home/iplank/Documents/EMOPRED/CentraXX")
+
+# load preprocessed data
+df.sub = read_csv(file = "df_centraXX.csv", show_col_types = F) %>%
+  mutate(
+    group = as.factor(case_when(
+      ASD == 1 ~ "ASD",
+      ADHD == 1 ~ "ADHD",
+      TRUE ~ "CTR"
+    ))
+  ) %>%
+  relocate(PID, group)
+
+summary(df.sub)
+
+# check age differences
+anovaBF(age ~ group, data = df.sub)
+ggplot(df.sub, aes(x = group, y = age, fill = group)) +
+  geom_boxplot() + theme_bw()
+```

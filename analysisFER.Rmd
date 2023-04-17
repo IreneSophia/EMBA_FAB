@@ -12,7 +12,7 @@ library(tidyverse)       # tibble stuff
 library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
 
-fl.path = paste('/home/iplank/Documents/EMOPRED', 'BVET', sep = "/")
+fl.path = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
 ```

@@ -3,7 +3,7 @@ library(tidyverse)
 
 # Clear global environment
 rm(list=ls())
-setwd("/home/iplank/Documents/EMOPRED/CentraXX")
+setwd("/home/iplank/Documents/EMBA/CentraXX")
 
 # load raw data
 # columns of Interest: internalStudyMemberID, name2, code, value, section, (valueIndex), numericValue

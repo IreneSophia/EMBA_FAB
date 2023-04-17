@@ -11,7 +11,7 @@ library(knitr)           # kable
 library(tidyverse)       # tibble stuff
 library(kableExtra)      # kbl
 
-fl.path = '/home/iplank/Documents/EMOPRED'
+fl.path = '/home/iplank/Documents/EMBA'
 dt.path = paste(fl.path, 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 

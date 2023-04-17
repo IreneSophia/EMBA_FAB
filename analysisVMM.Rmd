@@ -14,7 +14,7 @@ library(ggstatsplot)     # ggplot with stats
 library(ggpubr)          # background image
 library(png)             # readPNG
 
-fl.path = paste('/home/iplank/Documents/EMOPRED', 'BVET', sep = "/")
+fl.path = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
 ```
