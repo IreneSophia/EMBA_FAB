@@ -1,7 +1,7 @@
 ---
-title: "Check BV and ET for all tasks"
+title: "EMBA: demographics and questionnaires"
 author: "Irene Sophia Plank"
-date: "2023-01-31"
+date: "2023-04-17"
 output: html_document
 ---
 
@@ -12,8 +12,9 @@ library(tidyverse)       # tibble stuff
 library(kableExtra)      # kbl
 library(ggplot2)
 library(BayesFactor)
+library(ggmosaic)
 
-fl.path = "/home/iplank/Documents/EMBA/CentraXX"
+fl.path = "/home/iplank/Documents/EMBA"
 dt.path = paste(fl.path, 'CentraXX', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
@@ -27,28 +28,36 @@ knitr::opts_knit$set(root.dir = fl.path)
 }
 </style>
 
-# FAB task
-```{r fab, warning=F, message=F}
-
-# Clear global environment
-rm(list=ls())
-setwd("/home/iplank/Documents/EMOPRED/CentraXX")
-
+```{r demo, warning=F, message=F}
 # load preprocessed data
-df.sub = read_csv(file = "df_centraXX.csv", show_col_types = F) %>%
+df.sub = read_csv(file = paste(dt.path, "df_centraXX.csv", sep = "/"), show_col_types = F) %>%
   mutate(
     group = as.factor(case_when(
       ASD == 1 ~ "ASD",
       ADHD == 1 ~ "ADHD",
       TRUE ~ "CTR"
-    ))
+    )),
+    gender_desc = gender,
+    gender = as.factor(case_when(
+      grepl("männlich|male|m", gender_desc, ignore.case = TRUE) ~ "mal",
+      grepl("weiblich|female|w|f", gender_desc, ignore.case = TRUE) ~"fem",
+      TRUE ~ "dan")
+    )
   ) %>%
-  relocate(PID, group)
+  relocate(PID, group, gender)
 
-summary(df.sub)
+kbl(summary(df.sub %>% select(
+  group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq
+))) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 
 # check age differences
 anovaBF(age ~ group, data = df.sub)
 ggplot(df.sub, aes(x = group, y = age, fill = group)) +
-  geom_boxplot() + theme_bw()
+  geom_boxplot() + theme_minimal()
+
+# check gender
+tb.gen = xtabs(~ gender + group, data = df.sub)
+contingencyTableBF(tb.gen, sampleType = "indepMulti", fixedMargin = "cols")
+df.sub %>% count(gender, group) %>% ggplot() + geom_mosaic(aes(x = product(group), fill = gender))
+
 ```
