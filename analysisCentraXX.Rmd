@@ -66,4 +66,7 @@ tb.gen = xtabs(~ gender + group, data = df.sub)
 contingencyTableBF(tb.gen, sampleType = "indepMulti", fixedMargin = "cols")
 df.sub %>% count(gender, group) %>% ggplot() + geom_mosaic(aes(x = product(group), fill = gender))
 
+# save csv with PIDs where we need the iq values from other studies
+write_csv(df.sub %>% filter(is.na(iq)) %>% select(PID), file = paste(dt.path, "PID_iq.csv", sep = "/"))
+
 ```
