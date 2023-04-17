@@ -7,16 +7,16 @@ setwd("/home/iplank/Documents/EMOPRED/CentraXX")
 
 # load raw data
 # columns of Interest: internalStudyMemberID, name2, code, value, section, (valueIndex), numericValue
-df = read_delim("PSY_EMOPRED_231303.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1")) %>%
+df = read_delim("PSY_EMOPRED_231204.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1")) %>%
   select(internalStudyMemberID, name2, code, value, section, numericValue) %>%
   filter(internalStudyMemberID != "NEVIA_test" & !is.na(name2)) %>%
   rename("questionnaire" = "name2", 
          "item" = "code", 
-         "intID" = "internalStudyMemberID") %>%
+         "PID" = "internalStudyMemberID") %>%
   mutate(
     value = str_replace(value, ",", ";")
   ) %>%
-  group_by(intID)
+  group_by(PID)
 
 ## preprocess each questionnaire separately:
 
@@ -33,8 +33,8 @@ df.asrs = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
                      `Teil A` = "A",
                      `Teil B` = "B", 
                      `Teil C` = "B")
-  ) %>% select(questionnaire, intID, section, numericValue) %>%
-  group_by(intID, section) %>% 
+  ) %>% select(questionnaire, PID, section, numericValue) %>%
+  group_by(PID, section) %>% 
   summarise(
     ASRS_total = sum(numericValue),
     ASRS_extreme = sum(numericValue >= 3)
@@ -54,15 +54,15 @@ df.bdi = df %>% filter(questionnaire == "PSY_NEVIA_BDI")  %>%
       !grepl(", ", numericValue, fixed = T) ~ numericValue
       ),
     numericValue = as.numeric(numericValue)) %>%
-  select(questionnaire, intID, numericValue) %>%
-  group_by(intID) %>%
+  select(questionnaire, PID, numericValue) %>%
+  group_by(PID) %>%
   summarise(
-    BDI_total = sum(numericValue)
+    BDI_total = sum(numericValue, na.rm = T)
   )
 
 # PSY_NEVIA_CFT
 df.cft = df %>% filter(questionnaire == "PSY_NEVIA_CFT") %>% 
-  group_by(intID) %>%
+  group_by(PID) %>%
   select(-c(questionnaire, section, numericValue)) %>%
   rename("raw" = `value`) %>%
   mutate(
@@ -124,12 +124,12 @@ df.demo = df %>% filter(questionnaire == "PSY_NEVIA_DEMO") %>%
 df.demo[!is.na(df.demo$numericValue),]$value = as.character(df.demo[!is.na(df.demo$numericValue),]$numericValue)
 
 df.demo = df.demo %>%
-  group_by(intID) %>% select(intID, item, value) %>%
+  group_by(PID) %>% select(PID, item, value) %>%
   pivot_wider(names_from = item, values_from = value)
 
 # PSY_NEVIA_MWT
 df.mwt = df %>% filter(questionnaire == "PSY_NEVIA_MWT") %>%
-  group_by(intID) %>% select(intID, numericValue) %>%
+  group_by(PID) %>% select(PID, numericValue) %>%
   mutate(
     numericValue = as.numeric(numericValue)
   ) %>%
@@ -148,21 +148,21 @@ df.raads = df %>% filter(questionnaire == "PSY_NEVIA_RAADS") %>%
            `Nicht wahr` = 0),
     section = gsub("^Abschnitt ", "", section),
     item = gsub("^PSY_NEVIA_RAADS_", "", item)
-  ) %>% group_by(intID) %>% 
-  select(intID, item, section, numericValue)
+  ) %>% group_by(PID) %>% 
+  select(PID, item, section, numericValue)
 
 # some need to be turned around: 1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77
 idx = c(1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77)
 df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - 3)
 
-df.raads = df.raads %>% group_by(intID) %>%
+df.raads = df.raads %>% group_by(PID) %>%
   summarise(
     RAADS_total = sum(numericValue)
   )
 
 # merge all together
 ls.df = list(df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads)
-df.sub = ls.df %>% reduce(full_join, by = "intID") %>% 
+df.sub = ls.df %>% reduce(full_join, by = "PID") %>% 
   mutate(
     age = as.numeric(age)
   )
@@ -182,7 +182,9 @@ for (i in 1:nrow(df.sub)) {
   }
 }
 
-df.sub = merge(df.sub, read_csv("PID_intID_230313.csv", show_col_types = F), all.y = T) %>%
-  relocate(PID)
+df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") # filter out pilots
+
+# df.sub = merge(df.sub, read_csv("PID_intID_230313.csv", show_col_types = F), all.y = T) %>%
+#  relocate(PID)
 
 write_csv(df.sub, file = "df_centraXX.csv")
