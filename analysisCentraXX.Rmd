@@ -42,17 +42,23 @@ df.sub = read_csv(file = paste(dt.path, "df_centraXX.csv", sep = "/"), show_col_
       grepl("männlich|male|m", gender_desc, ignore.case = TRUE) ~ "mal",
       grepl("weiblich|female|w|f", gender_desc, ignore.case = TRUE) ~"fem",
       TRUE ~ "dan")
-    )
+    ) ,
+    iq = (MWT_iq + CFT_iq)/2
   ) %>%
   relocate(PID, group, gender)
 
 kbl(summary(df.sub %>% select(
-  group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq
+  group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq, iq
 ))) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 
 # check age differences
 anovaBF(age ~ group, data = df.sub)
 ggplot(df.sub, aes(x = group, y = age, fill = group)) +
+  geom_boxplot() + theme_minimal()
+
+# check iq differences
+anovaBF(iq ~ group, data = df.sub %>% filter(!is.na(iq)))
+ggplot(df.sub, aes(x = group, y = iq, fill = group)) +
   geom_boxplot() + theme_minimal()
 
 # check gender
