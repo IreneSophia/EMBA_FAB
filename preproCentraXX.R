@@ -175,8 +175,8 @@ df.sub$CFT_iq = NA
 df.sub$MWT_iq = NA
 for (i in 1:nrow(df.sub)) {
   if (df.sub$PID[i] == "MXCWWEMF1U") {
-    df.sub$CFT_iq = NA
-    df.sub$MWT_iq = NA
+    df.sub$CFT_iq[i] = NA
+    df.sub$MWT_iq[i] = NA
   }
   else {
     if (df.sub$CFT_total[i] >= 9 & !is.na(df.sub$CFT_total[i]) & !is.na(df.sub$age[i]) & df.sub$age[i] >= 16 & df.sub$age[i] <= 60) {
