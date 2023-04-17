@@ -174,17 +174,20 @@ cft = read_delim("CFT-norms.csv", show_col_types = F, delim = ";")
 df.sub$CFT_iq = NA
 df.sub$MWT_iq = NA
 for (i in 1:nrow(df.sub)) {
-  if (df.sub$CFT_total[i] >= 9 & !is.na(df.sub$CFT_total[i]) & !is.na(df.sub$age[i]) & df.sub$age[i] >= 16 & df.sub$age[i] <= 60) {
-    df.sub$CFT_iq[i] = cft[(df.sub$age[i] >= cft$lower & df.sub$age[i] <= cft$upper & df.sub$CFT_total[i] == cft$raw),]$iq
+  if (df.sub$PID[i] == "MXCWWEMF1U") {
+    df.sub$CFT_iq = NA
+    df.sub$MWT_iq = NA
   }
-  if (!is.na(df.sub$MWT_total[i])) {
-    df.sub$MWT_iq[i] = mwt[(df.sub$MWT_total[i] == mwt$raw),]$iq
+  else {
+    if (df.sub$CFT_total[i] >= 9 & !is.na(df.sub$CFT_total[i]) & !is.na(df.sub$age[i]) & df.sub$age[i] >= 16 & df.sub$age[i] <= 60) {
+      df.sub$CFT_iq[i] = cft[(df.sub$age[i] >= cft$lower & df.sub$age[i] <= cft$upper & df.sub$CFT_total[i] == cft$raw),]$iq
+    }
+    if (!is.na(df.sub$MWT_total[i])) {
+      df.sub$MWT_iq[i] = mwt[(df.sub$MWT_total[i] == mwt$raw),]$iq
+    }
   }
 }
 
 df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") # filter out pilots
-
-# df.sub = merge(df.sub, read_csv("PID_intID_230313.csv", show_col_types = F), all.y = T) %>%
-#  relocate(PID)
 
 write_csv(df.sub, file = "df_centraXX.csv")
