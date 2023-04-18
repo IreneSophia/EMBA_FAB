@@ -28,9 +28,9 @@ knitr::opts_knit$set(root.dir = fl.path)
 }
 </style>
 
-```{r demo, warning=F, message=F}
+```{r load, warning=F, message=F}
 # load preprocessed data
-df.sub = read_csv(file = paste(dt.path, "df_centraXX.csv", sep = "/"), show_col_types = F) %>%
+df.sub = read_csv(file = paste(dt.path, "EMBA_centraXX.csv", sep = "/"), show_col_types = F) %>%
   mutate(
     group = as.factor(case_when(
       ASD == 1 ~ "ASD",
@@ -42,15 +42,30 @@ df.sub = read_csv(file = paste(dt.path, "df_centraXX.csv", sep = "/"), show_col_
       grepl("männlich|male|m", gender_desc, ignore.case = TRUE) ~ "mal",
       grepl("weiblich|female|w|f", gender_desc, ignore.case = TRUE) ~"fem",
       TRUE ~ "dan")
-    ) ,
-    iq = (MWT_iq + CFT_iq)/2
+    )
   ) %>%
   relocate(PID, group, gender)
+
+# save csv with PIDs where we need the iq values from other studies
+write_csv(df.sub %>% filter(is.na(MWT_iq)) %>% select(PID), file = paste(dt.path, "PID_iq_missing.csv", sep = "/"))
+
+# load csv with PIDs and IQs from other studies
+df.iqs = read_csv(file = paste(dt.path, "PID_iq.csv", sep = "/"), show_col_types = F) %>%
+  select(PID, MWT_iq, CFT_iq) %>% drop_na()
+
+# update our df.sub with these values
+df.sub = rows_update(df.sub, df.iqs) %>%
+  mutate(
+    iq = (MWT_iq + CFT_iq)/2
+  )
 
 kbl(summary(df.sub %>% select(
   group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq, iq
 ))) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 
+```
+
+```{r group, warning=F, message=F}
 # check age differences
 anovaBF(age ~ group, data = df.sub)
 ggplot(df.sub, aes(x = group, y = age, fill = group)) +
@@ -65,8 +80,5 @@ ggplot(df.sub, aes(x = group, y = iq, fill = group)) +
 tb.gen = xtabs(~ gender + group, data = df.sub)
 contingencyTableBF(tb.gen, sampleType = "indepMulti", fixedMargin = "cols")
 df.sub %>% count(gender, group) %>% ggplot() + geom_mosaic(aes(x = product(group), fill = gender))
-
-# save csv with PIDs where we need the iq values from other studies
-write_csv(df.sub %>% filter(is.na(iq)) %>% select(PID), file = paste(dt.path, "PID_iq.csv", sep = "/"))
 
 ```
