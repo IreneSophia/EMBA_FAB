@@ -7,7 +7,7 @@ setwd("/home/iplank/Documents/EMBA/CentraXX")
 
 # load raw data
 # columns of Interest: internalStudyMemberID, name2, code, value, section, (valueIndex), numericValue
-df = read_delim("PSY_EMOPRED_231204.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1")) %>%
+df = read_delim("PSY_EMOPRED_232504.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1"), delim = ";") %>%
   select(internalStudyMemberID, name2, code, value, section, numericValue) %>%
   filter(internalStudyMemberID != "NEVIA_test" & !is.na(name2)) %>%
   rename("questionnaire" = "name2", 
