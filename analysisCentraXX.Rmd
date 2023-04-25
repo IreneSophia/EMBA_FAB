@@ -59,6 +59,9 @@ df.sub = rows_update(df.sub, df.iqs) %>%
     iq = (MWT_iq + CFT_iq)/2
   )
 
+# check if someone has to be excluded
+df.sub %>% filter(iq <= 70)
+
 kbl(summary(df.sub %>% select(
   group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq, iq
 ))) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
