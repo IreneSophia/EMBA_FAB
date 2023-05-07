@@ -310,6 +310,7 @@ df.ls = list(df.fab, df.fer, df.ctr, df.pal)
 df = df.ls %>% reduce(full_join, by = "subID") %>%
   mutate(
     subID = case_when(subID == "MT3KYV0QQR" ~ "MT3KYVOQQR",
+                      subID == "V0QST6VC93" ~ "VOQST6VC93",
                       TRUE ~ subID)
   )
   
