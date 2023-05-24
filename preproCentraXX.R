@@ -153,15 +153,34 @@ df.raads = df %>% filter(questionnaire == "PSY_NEVIA_RAADS") %>%
 
 # some need to be turned around: 1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77
 idx = c(1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77)
-df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - 3)
+df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - max(df.raads$numericValue) + min(df.raads$numericValue))
 
 df.raads = df.raads %>% group_by(PID) %>%
   summarise(
     RAADS_total = sum(numericValue)
   )
 
+# PSY_NEVIA_TAS
+# <= 51 non-alexithymia, 52 to 60 possible, >=61 alexithymia
+# subscales: difficulty describing feelings, difficulty identifying feelings, externally-oriented thinking
+df.tas = df %>% filter(questionnaire == "PSY_NEVIA_TAS") %>%
+  mutate(
+    item = gsub("^PSY_BOKI_TAS_", "", item), 
+    numericValue = as.numeric(numericValue)
+  ) %>% group_by(PID) %>% 
+  select(PID, item, numericValue)
+
+# some need to be turned around
+idx = c(4, 5, 10, 18, 19)
+df.tas[df.tas$item %in% idx,]$numericValue = abs(df.tas[df.tas$item %in% idx,]$numericValue - (max(df.tas$numericValue) + min(df.tas$numericValue)))
+
+df.tas = df.tas %>% group_by(PID) %>%
+  summarise(
+    TAS_total = sum(numericValue)
+  )
+
 # merge all together
-ls.df = list(df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads)
+ls.df = list(df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads, df.tas)
 df.sub = ls.df %>% reduce(full_join, by = "PID") %>% 
   mutate(
     age = as.numeric(age)
