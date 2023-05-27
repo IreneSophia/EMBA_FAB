@@ -209,4 +209,5 @@ for (i in 1:nrow(df.sub)) {
 
 df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") # filter out pilots
 
+write_delim(df.sub, file = "EMBA_centraXX.txt", delim = ";")
 write_csv(df.sub, file = "EMBA_centraXX.csv")
