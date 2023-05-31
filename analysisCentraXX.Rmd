@@ -46,19 +46,6 @@ df.sub = read_csv(file = paste(dt.path, "EMBA_centraXX.csv", sep = "/"), show_co
   ) %>%
   relocate(PID, group, gender)
 
-# save csv with PIDs where we need the iq values from other studies
-write_csv(df.sub %>% filter(is.na(MWT_iq)) %>% select(PID), file = paste(dt.path, "PID_iq_missing.csv", sep = "/"))
-
-# load csv with PIDs and IQs from other studies
-df.iqs = read_csv(file = paste(dt.path, "PID_iq.csv", sep = "/"), show_col_types = F) %>%
-  select(PID, MWT_iq, CFT_iq) %>% drop_na()
-
-# update our df.sub with these values
-df.sub = rows_update(df.sub, df.iqs) %>%
-  mutate(
-    iq = (MWT_iq + CFT_iq)/2
-  )
-
 # check if someone has to be excluded
 df.sub %>% filter(iq <= 70)
 

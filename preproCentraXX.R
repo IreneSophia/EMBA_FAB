@@ -7,7 +7,7 @@ setwd("/home/iplank/Documents/EMBA/CentraXX")
 
 # load raw data
 # columns of Interest: internalStudyMemberID, name2, code, value, section, (valueIndex), numericValue
-df = read_delim("PSY_EMOPRED_232504.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1"), delim = ";") %>%
+df = read_delim("PSY_EMOPRED_233005.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1"), delim = ";") %>%
   select(internalStudyMemberID, name2, code, value, section, numericValue) %>%
   filter(internalStudyMemberID != "NEVIA_test" & !is.na(name2)) %>%
   rename("questionnaire" = "name2", 
@@ -207,7 +207,27 @@ for (i in 1:nrow(df.sub)) {
   }
 }
 
-df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") # filter out pilots
+# filter out pilots and some participants
+df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") %>%                  # filter out pilots
+  filter(PID != "NQI66OG66NY") %>%                                              # filter out one participant who did not show
+  filter(PID != "HVFJ4HX78W") %>%                                               # filter out one participant due to suicidality
+  mutate(
+    PID = substr(PID,1,10)
+  )
 
+# load csv with PIDs and IQs from other studies
+df.iqs = read_delim(file = paste("PID_iq.csv", sep = "/"), show_col_types = F) %>%
+  select(PID, MWT_iq, CFT_iq) %>% drop_na()
+
+# update our df.sub with these values
+df.sub = rows_update(df.sub, df.iqs) %>%
+  mutate(
+    iq = (MWT_iq + CFT_iq)/2
+  )
+
+# save csv with PIDs where we need the iq values from other studies
+write_csv(df.sub %>% filter(is.na(MWT_iq)) %>% select(PID), file = "PID_iq_missing.csv")
+
+# save values with two different separators
 write_delim(df.sub, file = "EMBA_centraXX.txt", delim = ";")
 write_csv(df.sub, file = "EMBA_centraXX.csv")
