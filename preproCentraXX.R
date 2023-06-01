@@ -36,7 +36,7 @@ df.asrs = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
   ) %>% select(questionnaire, PID, section, numericValue) %>%
   group_by(PID, section) %>% 
   summarise(
-    ASRS_total = sum(numericValue),
+    ASRS_total = sum(numericValue, na.rm = T),
     ASRS_extreme = sum(numericValue >= 3)
   ) %>% pivot_wider(names_from = section, values_from = c(ASRS_total, ASRS_extreme)) %>%
   mutate(
@@ -153,11 +153,11 @@ df.raads = df %>% filter(questionnaire == "PSY_NEVIA_RAADS") %>%
 
 # some need to be turned around: 1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77
 idx = c(1, 6, 11, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77)
-df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - max(df.raads$numericValue) + min(df.raads$numericValue))
+df.raads[df.raads$item %in% idx,]$numericValue = abs(df.raads[df.raads$item %in% idx,]$numericValue - max(df.raads$numericValue, na.rm = T) + min(df.raads$numericValue, na.rm = T))
 
 df.raads = df.raads %>% group_by(PID) %>%
   summarise(
-    RAADS_total = sum(numericValue)
+    RAADS_total = sum(numericValue, na.rm = T)
   )
 
 # PSY_NEVIA_TAS
@@ -172,11 +172,11 @@ df.tas = df %>% filter(questionnaire == "PSY_NEVIA_TAS") %>%
 
 # some need to be turned around
 idx = c(4, 5, 10, 18, 19)
-df.tas[df.tas$item %in% idx,]$numericValue = abs(df.tas[df.tas$item %in% idx,]$numericValue - (max(df.tas$numericValue) + min(df.tas$numericValue)))
+df.tas[df.tas$item %in% idx,]$numericValue = abs(df.tas[df.tas$item %in% idx,]$numericValue - (max(df.tas$numericValue, na.rm = T) + min(df.tas$numericValue, na.rm = T)))
 
 df.tas = df.tas %>% group_by(PID) %>%
   summarise(
-    TAS_total = sum(numericValue)
+    TAS_total = sum(numericValue, na.rm = T)
   )
 
 # merge all together
