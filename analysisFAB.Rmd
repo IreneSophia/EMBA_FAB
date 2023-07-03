@@ -13,7 +13,7 @@ library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
 library(ggrain)
 
-fl.path = '/home/iplank/Documents/EMBA'
+fl.path = '/home/emba/Documents/EMBA'
 dt.path = paste(fl.path, 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
@@ -35,23 +35,39 @@ knitr::opts_knit$set(root.dir = fl.path)
 # load the relevant data in long format
 df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd")) %>% 
-  mutate(
-    key = as.numeric(key)
-  ) %>% 
-  mutate(target = as.factor(target),
-         target = recode_factor(target, 
+  mutate(subID = recode(subID, "FNRLOGZLVV4" = "FNRLOGZLVV"),
+         target = as.factor(target),
+         target = recode(target, 
                 "1" = "left",
                 "2" = "right"),
-         choice = recode_factor(key, 
+         choice = recode(key,
                 "4" = "left",
-                "6" = "right"),
+                "LeftArrow" = "left", 
+                "1" = "left", 
+                "RightArrow" = "right", 
+                "6" = "right", 
+                "+" = "right"),
          acc = target == choice,
          cue = as.factor(congruent),
          cue = recode_factor(cue,
                 "1" = "face",
                 "0" = "object"),
          stm = paste(left, right, target, sep = "_")) %>%
-  select(subID, stm, rt, acc, cue)
+  select(subID, stm, rt, acc, cue) %>%
+  filter(nchar(subID) == 10) %>% 
+  # replace very short and very long RTs with NAs
+  group_by(subID) %>%
+  mutate(rt_up = quantile(rt, 0.75) + 1.5 * IQR(rt),
+         rt    = case_when(rt > 200 & rt < rt_up ~ rt),
+         use   = case_when(!is.na(rt) & acc ~ TRUE,
+                           TRUE ~ FALSE)
+         ) 
+
+df.tsk_acc = df.tsk %>%
+  group_by(subID) %>%
+  summarise(
+    acc = mean(use)
+  )
 
 ```
 
