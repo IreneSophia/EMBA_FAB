@@ -2,7 +2,7 @@
 library(tidyverse)
 
 # figure out which files need to be converted
-fl.path = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")            # file path
+fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")            # file path
 fls.log = list.files(path = fl.path, pattern = "*\\.log$", full.names = F)      # get all log files
 fls.log = substr(fls.log, 1, nchar(fls.log)-4)                                  # get rid of file extension
 fls.tsv = list.files(path = fl.path, pattern = "*\\.tsv$", full.names = F)      # get all converted files

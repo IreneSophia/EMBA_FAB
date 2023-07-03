@@ -14,7 +14,7 @@ library(ggstatsplot)     # ggplot with stats
 library(ggpubr)          # background image
 library(png)             # readPNG
 
-fl.path = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")
+fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
 ```
@@ -38,8 +38,10 @@ df.log1 = list.files(path = fl.path, pattern = "*task-.*\\.tsv$", full.names = T
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     Run = sub(".*task-", "", Filename),
-    Run = as.numeric(substr(Run, 1, 1))
-  ) %>% select(-Filename)
+    Run = as.numeric(substr(Run, 1, 1)),
+    Subject = recode(Subject, "MXIVJZQSI" = "MXIVJYZQSI")
+  ) %>% filter(nchar(Subject) == 10) %>%
+  select(-Filename) 
 # load the relevant data in long format: only people with one log for both runs
 df.log2 = list.files(path = fl.path, pattern = "*task.tsv$", full.names = T) %>%
   setNames(nm = .) %>%
