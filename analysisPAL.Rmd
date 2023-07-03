@@ -19,7 +19,7 @@ library(readr)
 source("R_rainclouds.R")
 source("summarySE.R")
 
-fl.path = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")
+fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
 ```
@@ -61,7 +61,24 @@ df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
                 "0" = "unexpected",
                 "1" = "expected"),
          rtc = case_when(acc == T ~ rt)) %>%
-  select(subID, ut, noise, rt, rtc, acc, expected)
+  filter(nchar(subID) == 10) %>% 
+  # replace very short and very long RTs with NAs
+  group_by(subID) %>%
+  mutate(rt_up = quantile(rtc, 0.75, na.rm = T) + 1.5 * IQR(rtc, na.rm = T),
+         rtc   = case_when(rtc > 200 & rtc < rt_up ~ rtc),
+         use   = case_when(!is.na(rtc) & acc ~ TRUE,
+                           TRUE ~ FALSE)
+         ) %>%
+  select(subID, ut, noise, rt, rtc, acc, use, expected) 
+
+# does anyone have to be excluded? 
+df.tsk %>%
+  group_by(subID) %>%
+  summarise(
+    acc = mean(use)
+  ) %>% 
+  filter(acc < 2/3) %>% 
+  select(subID)
 
 ```
 
