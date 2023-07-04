@@ -34,8 +34,10 @@ knitr::opts_knit$set(root.dir = fl.path)
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
 df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
-  map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd")) %>% 
-  mutate(subID = recode(subID, "FNRLOGZLVV4" = "FNRLOGZLVV"),
+  setNames(nm = .) %>%
+  map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd"), .id = "fln") %>% 
+  mutate(subID = substr(fln, nchar(fln)-27, nchar(fln)-18),
+         subID = recode(subID, "NRLOGZLVV4" = "FNRLOGZLVV"),
          target = as.factor(target),
          target = recode(target, 
                 "1" = "left",
