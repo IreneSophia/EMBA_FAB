@@ -74,12 +74,12 @@ df.tsk_acc %>% filter(acc < 1/3) %>% select(-acc)
 
 ```
 
-```{r plot_data, warning=F, message=F}
+```{r plot_data, warning = F, message = F}
 
 df.tsk_agg = df.tsk %>% filter(acc == TRUE) %>%
   group_by(subID, cue) %>%
   summarise(
-    rt_agg = mean(rt)
+    rt_agg = mean(rt, na.rm = T)
   )
 
 nrow(df.tsk_agg)/2
@@ -92,7 +92,7 @@ ggwithinstats(data = df.tsk_agg,
 
 # Eye tracking data
 
-```{r load_et, warning=F, message=F, eval=F}
+```{r load_et, warning = F, message = F, eval = F}
 # load the relevant data in long format
 df.eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>%
   setNames(nm = .) %>%

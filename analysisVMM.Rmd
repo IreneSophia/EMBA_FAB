@@ -160,7 +160,7 @@ df.tsk_sel = df.tsk %>%
   ) %>%
   filter(miss <= 1/3) # disregard runs with too many misses
 
-df.tsk_agg %>% filter(miss > 1/3)
+df.tsk_agg %>% filter(miss > 1/3) %>% select(subID)
 
 ggplot(df.tsk_sel, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_minimal() + theme(legend.position = "none") 
 
@@ -178,7 +178,7 @@ ggwithinstats(data = df.tsk_agg %>% filter(miss <= 1/3),
 
 # Eye tracking data
 
-```{r load_et, warning=F, message=F, eval = F}
+```{r load_et, warning = F, message = F, eval = F}
 # load relevant eye tracking data in long format for one run
 df.et_dat = list.files(path = fl.path, pattern = "*\\.dat$", full.names = T) %>%
   setNames(nm = .) %>%

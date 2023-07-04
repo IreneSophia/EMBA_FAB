@@ -103,7 +103,7 @@ df.ctr %>%
 
 ```
 
-```{r plot_data, warning=F, message=F}
+```{r plot_data, warning = F, message = F}
 
 ggplot(data=df.fer_agg, aes(group = emo, y = acc, colour = emo, x = emo)) +
   geom_boxplot()
@@ -122,7 +122,7 @@ ggplot(data=df.ctr, aes(group = animal, y = disc, colour = animal, x = animal)) 
 
 # Eye tracking data
 
-```{r load_et, warning=F, message=F, include=F}
+```{r load_et, warning = F, message = F, include = F, eval = F}
 # load the relevant data in long format
 df.eye = list.files(path = fl.path, pattern = "FER-ET-*", full.names = T) %>%
   setNames(nm = .) %>%
