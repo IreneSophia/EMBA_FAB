@@ -256,37 +256,37 @@ df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>
     trls_eye.vmm = n()
   )
 
-# get design number
-df.vmm_des = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
-  select(-Filename) %>%
-  filter(`type(str)` == "pic") %>%
-  rename("subID" = "Subject", "run" = "run(num)") %>%
-  select(subID, run) %>% distinct() %>%
-  group_by(subID) %>%
-  summarise(
-    ord = paste(run, collapse = "_")
-  )
-
-df.des = list.files(path = paste(dt.path,"Designs",sep = "/"), pattern = "*.txt$", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_delim(., show_col_types = F, delim = "\t", col_names = F), .id = "Filename") %>%
-  mutate(
-    des = gsub("\\D+", "", Filename),
-    des = substr(des, 1, nchar(des)-1)
-  ) %>%
-  select(des, X10) %>% distinct() %>% 
-  group_by(des) %>%
-  summarise(
-    ord = paste(X10, collapse = "_")
-  ) %>% 
-  group_by(ord) %>%
-  summarise(
-    des = paste(des, collapse = "_")
-  )
-  
-df.des = merge(df.vmm_des, df.des, all.x = T)
+# # get design number
+# df.vmm_des = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
+#   setNames(nm = .) %>%
+#   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
+#   select(-Filename) %>%
+#   filter(`type(str)` == "pic") %>%
+#   rename("subID" = "Subject", "run" = "run(num)") %>%
+#   select(subID, run) %>% distinct() %>%
+#   group_by(subID) %>%
+#   summarise(
+#     ord = paste(run, collapse = "_")
+#   )
+# 
+# df.des = list.files(path = paste(dt.path,"Designs",sep = "/"), pattern = "*.txt$", full.names = T) %>%
+#   setNames(nm = .) %>%
+#   map_df(~read_delim(., show_col_types = F, delim = "\t", col_names = F), .id = "Filename") %>%
+#   mutate(
+#     des = gsub("\\D+", "", Filename),
+#     des = substr(des, 1, nchar(des)-1)
+#   ) %>%
+#   select(des, X10) %>% distinct() %>% 
+#   group_by(des) %>%
+#   summarise(
+#     ord = paste(X10, collapse = "_")
+#   ) %>% 
+#   group_by(ord) %>%
+#   summarise(
+#     des = paste(des, collapse = "_")
+#   )
+#   
+# df.des = merge(df.vmm_des, df.des, all.x = T)
 
 # merge together
 df.vmm = merge(df.vmm, df.vmm_eye, all = T)
