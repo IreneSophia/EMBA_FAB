@@ -14,7 +14,7 @@ library(ggplot2)
 library(BayesFactor)
 library(ggmosaic)
 
-fl.path = "/home/iplank/Documents/EMBA"
+fl.path = "/home/emba/Documents/EMBA"
 dt.path = paste(fl.path, 'CentraXX', sep = "/")
 knitr::opts_knit$set(root.dir = fl.path)
 
@@ -44,11 +44,16 @@ df.sub = read_csv(file = paste(dt.path, "EMBA_centraXX.csv", sep = "/"), show_co
       TRUE ~ "dan")
     )
   ) %>%
-  relocate(PID, group, gender)
+  relocate(PID, group, gender) %>%
+  rename("subID" = "PID")
 
 # check if someone has to be excluded
 df.sub %>% filter(iq <= 70)
 
+# save group and subID
+write_csv(df.sub %>% select(subID, group), file = paste(dt.path, "EMBA_group.csv", sep = "/"))
+
+# print summary of participants
 kbl(summary(df.sub %>% select(
   group, gender, age, cis, edu, BDI_total, ASRS_total, RAADS_total, CFT_iq, MWT_iq, iq
 ))) %>% kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
