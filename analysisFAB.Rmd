@@ -54,16 +54,17 @@ df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
          cue = recode_factor(cue,
                 "1" = "face",
                 "0" = "object"),
-         stm = paste(left, right, target, sep = "_")) %>%
-  select(subID, stm, rt, acc, cue) %>%
+         stm = if_else(left < right, paste(left, right, sep = "_"), paste(right, left, sep = "_"))) %>%
+  select(subID, stm, rt, acc, cue, target) %>%
   filter(nchar(subID) == 10) %>% 
   # replace very short and very long RTs with NAs
   group_by(subID) %>%
   mutate(rt_up = quantile(rt, 0.75) + 1.5 * IQR(rt),
          rt    = case_when(rt > 200 & rt < rt_up ~ rt),
          use   = case_when(!is.na(rt) & acc ~ TRUE,
-                           TRUE ~ FALSE)
-         ) 
+                           TRUE ~ FALSE),
+         rt_cor = if_else(acc, rt, NA)
+         ) %>% select(-rt_up)
 
 df.tsk_acc = df.tsk %>%
   group_by(subID) %>%
@@ -73,6 +74,9 @@ df.tsk_acc = df.tsk %>%
 
 # does anyone have to be excluded?
 df.tsk_acc %>% filter(acc < 1/3) %>% select(-acc)
+
+# exclude this participant
+df.tsk = df.tsk %>% filter(subID != "I5CQ5BKIIU")
 
 ```
 
