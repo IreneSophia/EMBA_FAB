@@ -4,4 +4,4 @@ Mutual social interactions require people to be aware of the affective state of 
 
 This repository is a work in progress. The script are continuously augmented.
 
-The preregistrations for this project are on [OSF]{https://osf.io/znrht} and currently embargoed as the data collection is still ongoing. The preregistrations will be made public when manuscripts are submitted. 
+The preregistrations for this project are on [OSF](https://osf.io/znrht) and currently embargoed as the data collection is still ongoing. The preregistrations will be made public when manuscripts are submitted. 
