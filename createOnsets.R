@@ -2,10 +2,10 @@
 library(tidyverse)
 
 # figure out which files need to be converted
-pt.fls = paste('/home/iplank/Documents/EMBA', 'BVET', sep = "/")               # file path
+fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")               # file path
 
 # load in all continuous run data
-df.log1 = list.files(path = pt.fls, pattern = ".*task.tsv$", full.names = T) %>%
+df.log1 = list.files(path = fl.path, pattern = ".*task.tsv$", full.names = T) %>%
   setNames(nm = .) %>%
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
   rename("subID" = "Subject") %>%
@@ -18,11 +18,6 @@ df.log1 = list.files(path = pt.fls, pattern = ".*task.tsv$", full.names = T) %>%
   ) %>%
   fill(Run) %>%
   filter(Code == "255") %>%                                       # only keep pulses
-  mutate(
-    subID = case_when(subID == "MXIVJZQSI" ~ "MXIVJYZQSI", 
-                      subID == "NZEHEUA0OZ" ~ "NZEJEIA0OZ",
-                      TRUE ~ subID)
-  ) %>%
   select(subID, Run, Trial, `Event Type`, Code, Time) %>% 
   group_by(subID, Run) %>%                                        # create durations for the pulses
   mutate(
@@ -45,15 +40,12 @@ df.log1 = df.log1 %>%
   filter(Duration < 25000 & Duration > 0)
 
 # do the same for separate runs
-df.log2 = list.files(path = pt.fls, pattern = ".*-vMMN-task-.*.tsv$", full.names = T) %>%
+df.log2 = list.files(path = fl.path, pattern = ".*-vMMN-task-.*.tsv$", full.names = T) %>%
   setNames(nm = .) %>%
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>% 
   filter(Code == "255") %>%
   rename("subID" = "Subject") %>%
   mutate(
-    subID = case_when(subID == "MXIVJZQSI" ~ "MXIVJYZQSI", 
-                      subID == "NZEHEUA0OZ" ~ "NZEJEIA0OZ",
-                      TRUE ~ subID),
     Run   = as.numeric(gsub(".*task-", "", gsub("*\\.tsv", "", Filename)))
   ) %>%
   select(subID, Trial, Run, `Event Type`, Code, Time) %>% 
@@ -78,10 +70,11 @@ df.log2[idx.start,]$Duration = 24500
 df.log2 = df.log2 %>% filter(Duration != 0, Duration < 25000)
 
 # combine both data frames to one and exclude 32 channel participants
-exclude = c("T4MEQ9ZCYN", "RWAHJJ8EYU", "T0MTB7O39O", "KP8UE7DAZ7", "MXIVJYZQSI", "6WB8QM8U95", "NCUQ5GM4PG")
+pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+exc   = pilot$subID
 df.vmm = rbind(df.log1, df.log2) %>%
   arrange(subID, Run, Time) %>%
-  filter(!(subID %in% exclude))
+  filter(!(subID %in% exc))
 
 df.agg = df.vmm %>%
   group_by(subID, Run) %>%
@@ -89,7 +82,6 @@ df.agg = df.vmm %>%
     trls.vmm = n(),
     first    = min(Time)
   ) %>%
-  filter(subID != "9LMQ41HBG8") %>%
   pivot_wider(names_from = Run, values_from = c(trls.vmm, first), names_prefix = "run_")
 
 df.first = df.vmm

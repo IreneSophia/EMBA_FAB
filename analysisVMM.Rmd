@@ -175,7 +175,7 @@ length(unique(df.tsk$subID))
 
 # Eye tracking data
 
-```{r load_et, warning = F, message = F, eval = F}
+```{r load_et, warning = F, message = F, eval = T}
 # load relevant eye tracking data in long format for one run
 df.et_dat = list.files(path = fl.path, pattern = "*\\.dat$", full.names = T) %>%
   setNames(nm = .) %>%
@@ -261,16 +261,45 @@ df.et_sel = df.et %>%
 
 ```
 
-``` {r heat_subject, echo = T, message = F, fig.width = 8, fig.height = 16, fig.align = "center", warning = F, eval = F}
+```{r et_analysis, warning = F, message = F, eval = T}
+
+# calculate for each participant percentage fixated on middle versus periphery > still missing!
+
+
+```
+
+``` {r heat_map, echo = T, message = F, fig.width = 8, fig.height = 16, fig.align = "center", warning = F, eval = T}
 
 # load the background image
-#bgimg = readPNG("exampleVMM2.png")
-# create heatmaps for participants
-ggplot(df.et_sel, aes(x = x, y = y)) +
-  #background_image(bgimg) +
-  stat_density2d(geom = 'raster', aes(fill = ..count.., alpha = ..count..), contour = F) +
-  scale_fill_gradient(low = "green", high = "red") +
-  scale_alpha_continuous(range = c(0,1), guide = "none") +
-  theme_void()
+bgimg = readPNG("exampleVMM2.png")
+
+# loop through participants and save heatmap
+for (sub in unique(df.et_sel$subID)) {
+  
+  p = ggplot(df.et_sel %>% filter(subID == sub), aes(x = x, y = y)) +
+    background_image(bgimg) +
+    stat_density2d(geom = 'raster', aes(fill = after_stat(count), alpha = after_stat(count)), contour = F) +
+    scale_fill_gradient(low = "green", high = "red") +
+    scale_alpha_continuous(range = c(0,1), guide = "none") +
+    theme_void() +
+    theme(legend.position = "none")
+  
+  ggsave(paste0("pics/", sub, ".png"), width = 1024, height = 768, units = "px")
+  
+}
+
+# # create binned plot > not working yet!
+# ggplot(df.et_sel, aes(x = x, y = y)) +
+#   background_image(bgimg) +
+#   stat_bin2d() +
+#   theme_void()
+
+# # create heatmap > not working yet
+# ggplot(df.et_sel, aes(x = x, y = y)) +
+#   #background_image(bgimg) +
+#   stat_density2d(geom = 'raster', aes(fill = ..count.., alpha = ..count..), contour = F) +
+#   scale_fill_gradient(low = "green", high = "red") +
+#   scale_alpha_continuous(range = c(0,max(df.et_agg$count)), guide = "none") +
+#   theme_void()
 
 ```
