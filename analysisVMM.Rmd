@@ -1,7 +1,7 @@
 ---
-title: "Pilot analysis MMN"
+title: "Analysis VMM: Behavioural and Eye Tracking Data"
 author: "Irene Sophia Plank"
-date: "2023-01-31"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -38,8 +38,7 @@ df.log1 = list.files(path = fl.path, pattern = "*task-.*\\.tsv$", full.names = T
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
   mutate(
     Run = sub(".*task-", "", Filename),
-    Run = as.numeric(substr(Run, 1, 1)),
-    Subject = recode(Subject, "MXIVJZQSI" = "MXIVJYZQSI")
+    Run = as.numeric(substr(Run, 1, 1))
   ) %>% filter(nchar(Subject) == 10) %>%
   select(-Filename) 
 # load the relevant data in long format: only people with one log for both runs
@@ -145,6 +144,7 @@ rm(list = c("df.log1","df.log2"))
 
 ```{r plot_data, warning=F, message=F}
 
+# aggregate the data to see average reaction times and accuracies per run
 df.tsk_agg = df.tsk %>%
   group_by(subID, run) %>%
   summarise(
@@ -152,27 +152,24 @@ df.tsk_agg = df.tsk %>%
     miss   = sum(sdt == "miss")/120      # there are 120 flips per run
   ) 
 
-# filter out from original data frame as well
-df.tsk_sel = df.tsk %>%
-  group_by(subID, run) %>%
-  mutate(
-    miss   = sum(sdt == "miss")/120
-  ) %>%
-  filter(miss <= 1/3) # disregard runs with too many misses
+# how many people need to be excluded for missing too many changes in a run?
+exc = df.tsk_agg %>% filter(miss > 1/3) %>% select(subID)
+exc = unique(as.character(exc$subID))
+print(length(exc))
 
-df.tsk_agg %>% filter(miss > 1/3) %>% select(subID)
+# load list of pilot participant to add them to the list to be excluded
+pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+exc   = c(exc, pilot$subID)
 
-ggplot(df.tsk_sel, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_minimal() + theme(legend.position = "none") 
+# filter out from original data frame
+df.tsk = df.tsk %>%
+  filter(!(subID %in% exc)) # disregard runs with too many misses
 
-# where they faster in the first run?
-ggwithinstats(data = df.tsk_agg %>% filter(miss <= 1/3), 
-              x    = run, 
-              y    = rt_agg)
+# plot the reaction time distributions
+ggplot(df.tsk, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_minimal() + theme(legend.position = "none") 
 
-# did they miss less in the first run?
-ggwithinstats(data = df.tsk_agg %>% filter(miss <= 1/3), 
-              x    = run, 
-              y    = miss)
+# print the number of participants
+length(unique(df.tsk$subID))
 
 ```
 
@@ -256,36 +253,22 @@ df.et_sel = df.et %>%
   filter(!is.na(run)) %>%
   mutate(
     run   = as.factor(run),
-    subr  = as.factor(paste(subID, run, sep = "_")),
     x = case_when(x >= 0 & x <= 1024 ~ x),
     y = case_when(y >= 0 & y <= 768 ~ y),
   ) %>% ungroup() %>%
-  select(subID, run, subr, trlno, frame, x, y, p)
-
-unique(df.et_sel$subr)
+  select(subID, run, trlno, frame, x, y) %>%
+  drop_na()
 
 ```
 
 ``` {r heat_subject, echo = T, message = F, fig.width = 8, fig.height = 16, fig.align = "center", warning = F, eval = F}
 
 # load the background image
-bgimg = readPNG("exampleVMM2.png")
+#bgimg = readPNG("exampleVMM2.png")
 # create heatmaps for participants
 ggplot(df.et_sel, aes(x = x, y = y)) +
-  background_image(bgimg) +
-  stat_density2d(geom='raster', aes(fill=..count.., alpha=..count..), contour=F) +
-  scale_fill_gradient(low = "green", high = "red") +
-  scale_alpha_continuous(range = c(0,1), guide = "none") +
-  theme_void() + 
-  facet_wrap(. ~ subID, nrow = 7, ncol = 4)
-
-```
-
-``` {r heat, echo = T, message = F, fig.width = 12, fig.height = 8, fig.align = "center", warning = F, eval = F}
-# create overall heatmap
-ggplot(df.et_sel, aes(x = x, y = y)) +
-  background_image(bgimg) +
-  stat_density2d(geom='raster', aes(fill=..count.., alpha=..count..), contour=F) +
+  #background_image(bgimg) +
+  stat_density2d(geom = 'raster', aes(fill = ..count.., alpha = ..count..), contour = F) +
   scale_fill_gradient(low = "green", high = "red") +
   scale_alpha_continuous(range = c(0,1), guide = "none") +
   theme_void()

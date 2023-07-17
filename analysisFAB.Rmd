@@ -1,7 +1,7 @@
 ---
 title: "Analysis FAB: Behavioural Data"
 author: "Irene Sophia Plank"
-date: "2023-07-17"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -75,6 +75,7 @@ print(length(exc)) # print how many have to be excluded
 
 # load pilot participants and add to the list
 pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
+exc   = c(exc, pilot$subID)
 
 # exclude this participant
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
