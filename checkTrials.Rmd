@@ -5,7 +5,7 @@ date: "2023-01-31"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(knitr)           # kable
 library(tidyverse)       # tibble stuff
@@ -26,7 +26,7 @@ knitr::opts_knit$set(root.dir = fl.path)
 </style>
 
 # FAB task
-```{r fab, warning=F, message=F}
+```{r fab, warning = F, message = F}
 
 # FAB ---------------------------------------------------------------------
 
@@ -36,8 +36,7 @@ df.fab = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd"), .id = "fln") %>% 
   mutate(
     key = as.numeric(key), 
-    subID = substr(fln, nchar(fln)-27, nchar(fln)-18),
-    subID = recode(subID, "NRLOGZLVV4" = "FNRLOGZLVV")
+    subID = substr(fln, nchar(fln)-27, nchar(fln)-18)
   ) %>%
   group_by(subID, fln) %>%
   summarise(
@@ -76,7 +75,7 @@ nrow(df.fab %>% filter(trls.fab == 432 & rsps.fab > 1 & trls.fab == trls_eye.fab
 
 ```
 # FER task
-```{r fer, warning=F, message=F}
+```{r fer, warning = F, message = F}
 # FER ---------------------------------------------------------------------
 
 # check whether responses are always the same
@@ -122,7 +121,7 @@ nrow(df.fer %>% filter(trls.fer == 64 & rsps.fer == 4 & trls.fer == trls_eye.fer
 
 ```
 # CTR task
-```{r ctr, warning=F, message=F}
+```{r ctr, warning = F, message = F}
 # CTR ---------------------------------------------------------------------
 
 # check whether responses are always the same
@@ -168,7 +167,7 @@ nrow(df.ctr %>% filter(trls.ctr == 16 & rsps.ctr == 4 & trls.ctr == trls_eye.ctr
 
 ```
 # PAL task
-```{r pal, warning=F, message=F}
+```{r pal, warning = F, message = F}
 # PAL ---------------------------------------------------------------------
 
 # check whether responses are always the same
@@ -216,7 +215,7 @@ nrow(df.pal %>% filter(trls.pal == 336 & rsps.pal > 1 & trls.pal == trls_eye.pal
 
 ```
 # VMM task
-```{r vmm, warning=F, message=F}
+```{r vmm, warning = F, message = F}
 # VMM ---------------------------------------------------------------------
 
 # check number of trials
@@ -231,12 +230,8 @@ df.vmm = list.files(path = dt.path, pattern = "*.tsv$", full.names = T) %>%
     trls.vmm = n()
   ) %>%
   mutate(
-    runs.vmm = if_else(trls.vmm > 1190,2,1),
-    subID = case_when(subID == "MXIVJZQSI" ~ "MXIVJYZQSI", 
-                      subID == "NZEHEUA0OZ" ~ "NZEJEIA0OZ",
-                      TRUE ~ subID)
-  ) %>%
-  filter(subID != "9LMQ41HBG8")
+    runs.vmm = if_else(trls.vmm > 1190,2,1)
+  )
 
 # check number of trials for eye tracking
 df.vmm_eye = list.files(path = dt.path, pattern = "*\\.msg$", full.names = T) %>%
@@ -303,16 +298,11 @@ nrow(df.vmm %>% filter(((trls.vmm == 1190 & runs.vmm == 1) | (trls.vmm == 2380 &
 ```
 
 # All tasks
-```{r all, warning=F, message=F}
+```{r all, warning = F, message = F}
 
 # join all the data
 df.ls = list(df.fab, df.fer, df.ctr, df.pal)
-df = df.ls %>% reduce(full_join, by = "subID") %>%
-  mutate(
-    subID = case_when(subID == "MT3KYV0QQR" ~ "MT3KYVOQQR",
-                      subID == "V0QST6VC93" ~ "VOQST6VC93",
-                      TRUE ~ subID)
-  )
+df = df.ls %>% reduce(full_join, by = "subID") 
   
 
 df = merge(df, df.vmm, all.x = T)
