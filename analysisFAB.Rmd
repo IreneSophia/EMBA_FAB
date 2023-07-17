@@ -1,7 +1,7 @@
 ---
-title: "Pilot analysis FAB"
+title: "Analysis FAB: Behavioural Data"
 author: "Irene Sophia Plank"
-date: "2023-01-31"
+date: "2023-07-17"
 output: html_document
 ---
 
@@ -11,7 +11,7 @@ library(knitr)           # kable
 library(tidyverse)       # tibble stuff
 library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
-library(ggrain)
+library(ggrain)          # rainplots
 
 fl.path = '/home/emba/Documents/EMBA'
 dt.path = paste(fl.path, 'BVET', sep = "/")
@@ -29,15 +29,12 @@ knitr::opts_knit$set(root.dir = fl.path)
 }
 </style>
 
-# Behavioural data
-
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
 df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
   setNames(nm = .) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cddddddddcd"), .id = "fln") %>% 
   mutate(subID = substr(fln, nchar(fln)-27, nchar(fln)-18),
-         subID = recode(subID, "NRLOGZLVV4" = "FNRLOGZLVV"),
          target = as.factor(target),
          target = recode(target, 
                 "1" = "left",
@@ -73,10 +70,14 @@ df.tsk_acc = df.tsk %>%
   )
 
 # does anyone have to be excluded?
-df.tsk_acc %>% filter(acc < 1/3) %>% select(-acc)
+exc = as.character(df.tsk_acc %>% filter(acc < 2/3) %>% select(subID))
+print(length(exc)) # print how many have to be excluded
+
+# load pilot participants and add to the list
+pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 
 # exclude this participant
-df.tsk = df.tsk %>% filter(subID != "I5CQ5BKIIU")
+df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
 ```
 
@@ -93,128 +94,5 @@ nrow(df.tsk_agg)/2
 ggwithinstats(data = df.tsk_agg, 
               x    = cue, 
               y    = rt_agg)
-
-```
-
-# Eye tracking data
-
-```{r load_et, warning = F, message = F, eval = F}
-# load the relevant data in long format
-df.eye = list.files(path = dt.path, pattern = "FAB-ET-*", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
-  mutate(
-    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
-    ) %>% 
-  select(-filename) %>%
-  separate(Comment, c("type", "trial", "left", "right", "target", "congruent"), convert = T) %>%
-  relocate(subID, type, trial, left, right, target, congruent) 
-
-# adding NA rows to have equal rows per subject
-maxgp = max(table(df.eye$subID)) + 500
-df.eye = df.eye %>%
-  group_by(subID) %>%
-  summarise(
-    across(
-      everything(),
-      ~c(.x, rep(NA, maxgp-n()))
-    )
-  )
-
-# add a trial sample count for trial-based analysis
-df.eye$t = NA
-idx = which(df.eye$type == "cue")
-srs = 500       # sample rate per second
-max = 1000      # how many ms in total
-ms  = 1000/srs
-t = seq(0,max-1,ms)
-for (i in idx) {
-  df.eye$t[i:(i+length(t)-1)] = t
-}
-
-# convert to pixels with pixelsize = 32
-sqd = 205                    # square distance
-width = 344                  # mm
-width_px = 2560
-height_px = 1600
-xCenter = round(width_px/2)
-yCenter = round(height_px/2)
-ppmm = width / width_px
-#height = 215 # mm
-#ppmmy = height / height_px
-#df$ScreenY_px = yCenter + (df$RightScreenY + df$LeftScreenY)/(ppmm*2)
-
-# figure out blinks and set relevant columns to NA when there is a blink
-df.eye_sel = df.eye %>%
-  filter(!is.na(t)) %>%
-  mutate(
-    # find blinks
-    blink = case_when(
-      LeftScreenX == 0 & LeftScreenY == 0 & RightScreenX == 0 & RightScreenY == 0 & 
-        LeftPupilMajorAxis == 0 & LeftPupilMinorAxis == 0 & RightPupilMajorAxis == 0 & RightPupilMinorAxis == 0 ~ 1,
-      T ~ 0
-    ),
-    # set important values to NAs when blinks occur
-    LeftScreenX  = case_when(blink == 0 ~ LeftScreenX),
-    RightScreenX = case_when(blink == 0 ~ RightScreenX)
-  ) %>%
-  group_by(subID) %>%
-  fill(type, trial, type, left, right, target, congruent)
-
-# change polarity so that plus is either face or target
-df.eye_pol = df.eye_sel %>%
-  rowwise() %>%
-  mutate(
-    ScreenX = mean(c(LeftScreenX, RightScreenX), na.rm = T)
-  ) %>%
-  ungroup() %>%
-  mutate(
-    ScreenXpx = xCenter + ScreenX/ppmm,
-    ScreenFace = case_when(
-      right <= 6 ~ ScreenX,           # if face was side, plus is already face
-      right >= 7 ~ (ScreenX * (-1))   # if face was left, reverse polarity
-    ),   
-    ScreenTarget = case_when(
-      target == 2 ~ ScreenX,          # if target was right, plus is already target
-      target == 1 ~ (ScreenX * (-1))  # if target was left, reverse polarity
-    ),
-    ScreenFacePx   = xCenter + ScreenFace/ppmm,
-    ScreenTargetPx = xCenter + ScreenTarget/ppmm,
-    cue = as.factor(congruent),
-    cue = recode_factor(cue, 
-                        "0" = "object", 
-                        "1" = "face")
-  )
-
-# aggregate trials per condition and subject
-df.eye_agg = df.eye_pol %>%
-  group_by(subID, cue, t) %>%
-  summarise(
-    ScreenFacePx   = mean(ScreenFacePx, na.rm = T),
-    ScreenTargetPx = mean(ScreenTargetPx, na.rm = T)
-  )
-
-df.eye_agg = merge(df.eye_agg, df.tsk_agg)
-
-# plot this for each participant separately
-ggplot(data = df.eye_agg, aes(x = t, y = ScreenFacePx, colour = cue)) +
-  geom_line() +
-  geom_vline(xintercept = 200) +
-  #geom_vline(aes(xintercept = mean(rt_agg+200))) +
-  geom_hline(aes(yintercept = xCenter)) +
-  geom_hline(aes(yintercept = xCenter + sqd)) +
-  geom_hline(aes(yintercept = xCenter - sqd)) +
-  facet_wrap(. ~ subID, nrow = 6, ncol = 3) +
-  theme_bw() 
-
-# plot this for each participant separately
-ggplot(data = df.eye_agg, aes(x = t, y = ScreenTargetPx, colour = cue)) +
-  geom_line() +
-  geom_vline(xintercept = 200) +
-  #geom_vline(aes(xintercept = mean(rt_agg+200))) +
-  geom_hline(aes(yintercept = xCenter)) +
-  geom_hline(aes(yintercept = xCenter + sqd)) +
-  facet_wrap(. ~ subID, nrow = 6, ncol = 3) +
-  theme_bw() 
 
 ```
