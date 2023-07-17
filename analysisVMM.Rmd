@@ -277,7 +277,7 @@ bgimg = readPNG("exampleVMM2.png")
 # loop through participants and save heatmap
 for (sub in unique(df.et_sel$subID)) {
   
-  p = ggplot(df.et_sel %>% filter(subID == sub), aes(x = x, y = y)) +
+  p = ggplot(df.et %>% filter(subID == sub), aes(x = x, y = y)) +
     background_image(bgimg) +
     stat_density2d(geom = 'raster', aes(fill = after_stat(count), alpha = after_stat(count)), contour = F) +
     scale_fill_gradient(low = "green", high = "red") +
@@ -285,7 +285,7 @@ for (sub in unique(df.et_sel$subID)) {
     theme_void() +
     theme(legend.position = "none")
   
-  ggsave(paste0("heatmaps/", sub, ".png"), width = 1024, height = 768, units = "px")
+  ggsave(paste0("pics/", sub, ".png"), width = 1024, height = 768, units = "px")
   
 }
 
