@@ -1,7 +1,7 @@
 ---
-title: "Pilot analysis FER & CTR"
+title: "Analysis FER & CTR: Behavioural Data"
 author: "Irene Sophia Plank"
-date: "2023-01-31"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -116,39 +116,5 @@ ggplot(data=df.ctr_agg, aes(group = animal, y = acc, colour = animal, x = animal
 
 ggplot(data=df.ctr, aes(group = animal, y = disc, colour = animal, x = animal)) +
   geom_boxplot()
-
-```
-
-
-# Eye tracking data
-
-```{r load_et, warning = F, message = F, include = F, eval = F}
-# load the relevant data in long format
-df.eye = list.files(path = fl.path, pattern = "FER-ET-*", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
-  filter(!is.na(Comment)) %>% 
-  mutate(
-    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
-    ) %>% 
-  separate(Comment, c("type", "trial", "morph", "stm")) %>%
-  filter(morph == "1") %>%
-  group_by(subID) %>%
-  summarise(
-    count = n()
-  )
-
-df.eye
-
-
-df.eye = list.files(path = fl.path, pattern = "FER-ET-*", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
-  filter(!is.na(Comment)) %>% 
-  mutate(
-    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
-    ) %>% 
-  separate(Comment, c("type", "trial", "morph", "stm")) %>%
-  filter(!is.na(type))
 
 ```

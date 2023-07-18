@@ -11,9 +11,9 @@
 
 <meta name="author" content="Irene Sophia Plank" />
 
-<meta name="date" content="2023-07-17" />
+<meta name="date" content="2023-07-18" />
 
-<title>Analysis VMM: Behavioural and Eye Tracking Data</title>
+<title>Analysis VMM: Behavioural Data</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -350,10 +350,9 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Analysis VMM: Behavioural and Eye Tracking
-Data</h1>
+<h1 class="title toc-ignore">Analysis VMM: Behavioural Data</h1>
 <h4 class="author">Irene Sophia Plank</h4>
-<h4 class="date">2023-07-17</h4>
+<h4 class="date">2023-07-18</h4>
 
 </div>
 
@@ -504,123 +503,6 @@ ggplot(df.tsk, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_mini
 <pre class="r"><code># print the number of participants
 length(unique(df.tsk$subID))</code></pre>
 <pre><code>## [1] 65</code></pre>
-</div>
-<div id="eye-tracking-data" class="section level1">
-<h1>Eye tracking data</h1>
-<pre class="r"><code># load relevant eye tracking data in long format for one run
-df.et_dat = list.files(path = fl.path, pattern = &quot;*\\.dat$&quot;, full.names = T) %&gt;%
-  setNames(nm = .) %&gt;%
-  map_df(~read_delim(., show_col_types = F, col_names = F, delim = &quot;\t&quot;), .id = &quot;Filename&quot;) %&gt;%
-  mutate(
-    subID = sub(paste(fl.path,&quot;/&quot;,sep = &quot;&quot;), &quot;&quot;, Filename),
-    subID = sub(&quot;.dat&quot;, &quot;&quot;, subID), 
-    subID = as.factor(case_when(
-      substr(subID,2,2) == &quot;_&quot; ~ substring(subID,3,nchar(subID)),
-      TRUE ~ substr(subID,1,10)
-    ))
-  ) %&gt;%
-  rename(
-    &quot;frame&quot; = &quot;X1&quot;,
-    &quot;x&quot; = &quot;X2&quot;,
-    &quot;y&quot; = &quot;X3&quot;,
-    &quot;p&quot; = &quot;X4&quot;
-  ) %&gt;%
-  select(-Filename)
-
-# load the events
-df.et_msg = list.files(path = fl.path, pattern = &quot;*\\.msg$&quot;, full.names = T) %&gt;%
-  setNames(nm = .) %&gt;%
-  map_df(~read_delim(., show_col_types = F, col_names = F, delim = &quot;\t&quot;), .id = &quot;Filename&quot;) %&gt;%
-  mutate(
-    subID = sub(paste(fl.path,&quot;/&quot;,sep = &quot;&quot;), &quot;&quot;, Filename),
-    subID = sub(&quot;.msg&quot;, &quot;&quot;, subID)
-  ) %&gt;%
-  separate(X2, into = c(&quot;frame&quot;, &quot;trial&quot;, &quot;trlno&quot;)) %&gt;%
-  select(-Filename) %&gt;%
-  mutate(
-    frame = as.numeric(frame),
-    trlno = case_when(
-      trlno != &quot;RESULT&quot; ~ trlno
-    )
-  ) %&gt;%
-  filter(trial == &quot;TRIAL&quot; | trial == &quot;TRIALID&quot;) %&gt;%
-  mutate(
-    trlno = as.numeric(trlno),
-    trlno = case_when(
-      substr(subID,1,2) == &quot;2_&quot; | substr(subID,nchar(subID)-1,nchar(subID)) == &quot;-2&quot; | substr(subID,nchar(subID)-1,nchar(subID)) == &quot;_2&quot; ~ trlno + 1190,
-      TRUE ~ trlno
-      )
-  ) %&gt;%
-  select(-X1) %&gt;%
-  fill(trlno)  %&gt;%
-  mutate(
-    snew = case_when(trlno == 1 &amp; trial == &quot;TRIALID&quot; ~ 1,
-                     trlno == 1190 &amp; trial == &quot;TRIAL&quot; ~ 2),
-    rown = row_number()
-  ) %&gt;%
-  fill(snew) %&gt;%
-  group_by(subID, snew) %&gt;%
-  mutate(
-    run = cumsum(c(TRUE, diff(rown)&gt;1)), .keep = &quot;unused&quot; 
-  ) %&gt;%
-  ungroup() %&gt;% 
-  mutate(
-    subID = as.factor(case_when(
-                    substr(subID,1,2) == &quot;2_&quot; ~ substr(subID,3,nchar(subID)),
-                    TRUE ~ substr(subID,1,10)
-    ))
-  ) %&gt;%
-  select(-snew)
-
-# combine events with time course data
-df.et = merge(df.et_dat, df.et_msg, all = T)
-
-df.et_sel = df.et %&gt;%
-  fill(trial) %&gt;%
-  filter(!is.na(trial) &amp; !is.na(frame) &amp; trial != &quot;TRIAL&quot;) %&gt;%
-  fill(trlno) %&gt;%
-  group_by(subID) %&gt;%
-  fill(run) %&gt;%
-  filter(!is.na(run)) %&gt;%
-  mutate(
-    run   = as.factor(run),
-    x = case_when(x &gt;= 0 &amp; x &lt;= 1024 ~ x),
-    y = case_when(y &gt;= 0 &amp; y &lt;= 768 ~ y),
-  ) %&gt;% ungroup() %&gt;%
-  select(subID, run, trlno, frame, x, y) %&gt;%
-  drop_na()</code></pre>
-<pre class="r"><code># calculate for each participant percentage fixated on middle versus periphery &gt; still missing!</code></pre>
-<pre class="r"><code># load the background image
-bgimg = readPNG(&quot;exampleVMM2.png&quot;)
-
-# loop through participants and save heatmap
-for (sub in unique(df.et_sel$subID)) {
-  
-  p = ggplot(df.et_sel %&gt;% filter(subID == sub), aes(x = x, y = y)) +
-    background_image(bgimg) +
-    stat_density2d(geom = &#39;raster&#39;, aes(fill = after_stat(count), alpha = after_stat(count)), contour = F) +
-    scale_fill_gradient(low = &quot;green&quot;, high = &quot;red&quot;) +
-    scale_alpha_continuous(range = c(0,1), guide = &quot;none&quot;) +
-    theme_void() +
-    theme(legend.position = &quot;none&quot;)
-  
-  ggsave(paste0(&quot;pics/&quot;, sub, &quot;.png&quot;), width = 1024, height = 768, units = &quot;px&quot;)
-  
-}
-
-# # create binned plot &gt; not working yet!
-# ggplot(df.et_sel, aes(x = x, y = y)) +
-#   background_image(bgimg) +
-#   stat_bin2d() +
-#   theme_void()
-
-# # create heatmap &gt; not working yet
-# ggplot(df.et_sel, aes(x = x, y = y)) +
-#   #background_image(bgimg) +
-#   stat_density2d(geom = &#39;raster&#39;, aes(fill = ..count.., alpha = ..count..), contour = F) +
-#   scale_fill_gradient(low = &quot;green&quot;, high = &quot;red&quot;) +
-#   scale_alpha_continuous(range = c(0,max(df.et_agg$count)), guide = &quot;none&quot;) +
-#   theme_void()</code></pre>
 </div>
 
 

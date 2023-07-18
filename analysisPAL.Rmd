@@ -1,7 +1,7 @@
 ---
-title: "Pilot analysis PAL"
+title: "Analysis PAL: Behavioural Data"
 author: "Irene Sophia Plank"
-date: "2023-01-31"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -129,99 +129,5 @@ ggwithinstats(data = df.tsk_agg,
 #   scale_colour_brewer(palette = "Dark2")+
 #   scale_fill_brewer(palette = "Dark2")+
 #   ggtitle("Figure R11: Repeated Measures - Factorial (Extended)")
-
-```
-
-# Eye tracking data
-
-```{r load_et, warning = F, message = F, include = F, eval = F}
-
-# load the relevant data in long format
-df.eye = list.files(path = fl.path, pattern = "PAL-ET-*", full.names = T) %>%
-  setNames(nm = .) %>%
-  map_df(~read_csv(.x, show_col_types = F, col_types = cols(Comment = "c")), .id = "filename") %>% 
-  mutate(
-    subID = substr(filename, nchar(filename)-27, nchar(filename)-18)
-    ) %>% 
-  select(-filename) %>%
-  separate(Comment, c("type", "trial", "ut", "noise", "iti", "tone", "emo"), 
-           convert = T, extra = "merge", sep = "_") %>%
-  relocate(subID, type, trial, ut, noise, iti, tone, emo)
-
-# adding NA rows to have equal rows per subject
-maxgp = max(table(df.eye$subID)) + 500
-df.eye = df.eye %>%
-  group_by(subID) %>%
-  summarise(
-    across(
-      everything(),
-      ~c(.x, rep(NA, maxgp-n()))
-    )
-  )
-
-# add a trial sample count for trial-based analysis
-df.eye$t = NA
-idx = which(df.eye$type == "pic")
-srs = 500      # sample rate per second
-max = 1500      # how many ms in total
-t = seq(0,max-1,2)
-for (i in idx) {
-  df.eye$t[i:(i+length(t)-1)] = t
-}
-
-# figure out blinks and set relevant columns to NA when there is a blink
-df.eye_sel = df.eye %>%
-  filter(!is.na(t)) %>%
-  mutate(
-    # find blinks
-    blink = case_when(
-      LeftScreenX == 0 & LeftScreenY == 0 & RightScreenX == 0 & RightScreenY == 0 & 
-        LeftPupilMajorAxis == 0 & LeftPupilMinorAxis == 0 & RightPupilMajorAxis == 0 & RightPupilMinorAxis == 0 ~ 1,
-      T ~ 0
-    ),
-    # set important values to NAs when blinks occur
-    LeftPupilMinorAxis  = case_when(blink == 0 ~ LeftPupilMinorAxis),
-    LeftPupilMajorAxis = case_when(blink == 0 ~ LeftPupilMajorAxis),
-    RightPupilMinorAxis  = case_when(blink == 0 ~ RightPupilMinorAxis),
-    RightPupilMajorAxis = case_when(blink == 0 ~ RightPupilMajorAxis),
-    # calculate pupil size for both eyes separately
-    LeftPupil = LeftPupilMajorAxis * LeftPupilMinorAxis * pi,
-    RightPupil = RightPupilMajorAxis * RightPupilMinorAxis * pi,
-    # recode some stuff
-    noise = recode_factor(as.factor(noise),
-            "2" = "high",
-            "3" = "low",
-            "4" = "none"),
-    expected = recode_factor(as.factor(ut),
-            "0" = "unexpected",
-            "1" = "expected")
-  ) %>%
-  group_by(subID) %>%
-  fill(type, trial, expected, noise, emo) %>%
-  # calculate row wise mean based on both pupils
-  rowwise() %>%
-  mutate(
-    PupilSize = mean(c(LeftPupil, RightPupil), na.rm = T)
-  ) %>%
-  select(type, trial, expected, noise, emo, t, PupilSize)
-
-# BASELINE CORRECTION IS MISSING
-
-# aggregate trials per condition and subject
-df.eye_agg = df.eye_sel %>%
-  group_by(subID, expected, t) %>%
-  summarise(
-    PupilSize  = mean(PupilSize, na.rm = T)
-  )
-
-df.eye_agg = merge(df.eye_agg, df.tsk_agg)
-
-# plot this for each participant separately
-ggplot(data = df.eye_agg, aes(x = t, y = PupilSize, colour = expected)) +
-  geom_line() +
-  #geom_vline(xintercept = 200) +
-  #geom_vline(aes(xintercept = mean(rt_agg+200))) +
-  facet_wrap(. ~ subID, nrow = 5, ncol = 3) +
-  theme_bw() 
 
 ```
