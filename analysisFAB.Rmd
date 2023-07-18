@@ -79,7 +79,7 @@ print(length(exc)) # print how many have to be excluded
 pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
-# exclude this participant
+# exclude these participants
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
 ```

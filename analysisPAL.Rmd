@@ -80,14 +80,6 @@ df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
          ) %>%
   select(subID, ut, noise, rt, rtc, acc, use, expected) 
 
-# does anyone have to be excluded? 
-exc = df.tsk %>%
-  group_by(subID) %>%
-  summarise(
-    acc = mean(use)
-  ) %>% 
-  filter(acc < 2/3)
-
 # does anyone have to be excluded?
 exc = df.tsk %>% group_by(subID) %>% summarise(acc = mean(use)) %>% filter(acc < 2/3)
 exc = as.character(exc$subID)
@@ -97,7 +89,7 @@ print(length(exc)) # print how many have to be excluded
 pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
-# exclude this participant
+# exclude these participants
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
 # how many are still left
