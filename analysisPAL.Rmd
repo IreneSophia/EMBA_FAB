@@ -41,7 +41,16 @@ knitr::opts_knit$set(root.dir = fl.path)
 df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
   mutate(
-    key = as.numeric(key)
+    # sometimes participants used the upper row instead of the middle
+    # or moved right with their ring finger to plus instead of 6
+    key = as.numeric(
+      case_when(
+        key == "+" ~ "6",
+        key == "9" ~ "6",
+        key == "7" ~ "4", 
+        TRUE ~ key
+      )
+    )
   ) %>% 
   mutate(emotion = as.factor(emotion),
          choice = case_when(
@@ -72,13 +81,27 @@ df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
   select(subID, ut, noise, rt, rtc, acc, use, expected) 
 
 # does anyone have to be excluded? 
-df.tsk %>%
+exc = df.tsk %>%
   group_by(subID) %>%
   summarise(
     acc = mean(use)
   ) %>% 
-  filter(acc < 2/3) %>% 
-  select(subID)
+  filter(acc < 2/3)
+
+# does anyone have to be excluded?
+exc = df.tsk %>% group_by(subID) %>% summarise(acc = mean(use)) %>% filter(acc < 2/3)
+exc = as.character(exc$subID)
+print(length(exc)) # print how many have to be excluded
+
+# load pilot participants and add to the list
+pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+exc   = c(exc, pilot$subID)
+
+# exclude this participant
+df.tsk = df.tsk %>% filter(!(subID %in% exc))
+
+# how many are still left
+length(unique(df.tsk$subID))
 
 ```
 
@@ -93,41 +116,9 @@ df.tsk_agg = df.tsk %>%
   ) %>% ungroup() %>%
   filter(rt_agg != "NaN")
 
-df.diff = df.tsk_agg %>%
-  select(subID, expected, rt_agg) %>%
-  pivot_wider(names_from = "expected", values_from = rt_agg) %>%
-  group_by(subID) %>%
-  mutate(
-    rt_diff = unexpected - expected
-  )
-  
-write_csv(stat.desc(df.diff) %>% add_rownames(var = "stats"), "PAL_difference.csv")
-
-write_csv(stat.desc(df.tsk_agg %>% filter(expected == "expected") %>% select(acc, rt_agg, rt_all)) %>% add_rownames(var = "stats"), "PAL_expected.csv")
-write_csv(stat.desc(df.tsk_agg %>% filter(expected == "unexpected") %>% select(acc, rt_agg, rt_all)) %>% add_rownames(var = "stats"), "PAL_unexpected.csv")
-
-nrow(df.tsk_agg)/2
-
 ggwithinstats(data = df.tsk_agg,
               x    = expected, 
               y    = rt_agg, 
               ylab = "reaction time", xlab = "")
-
-
-# ggplot(df.tsk_agg, aes(x = expected, y = rt_agg, fill =  expected)) +
-#     geom_rain(rain.side = 'f')
-# 
-# df.tsk_sum <- summarySE(df.tsk_agg, measurevar = "rt_agg", groupvars="expected")
-# 
-# ggplot(df.tsk_agg, aes(x = expected, y = rt_agg, fill = expected)) +
-#   geom_flat_violin(aes(fill = expected), position = position_nudge(x = .1, y = 0), adjust = 1.5, trim = FALSE, alpha = .5, colour = NA)+
-#   geom_point(aes(x = as.numeric(expected)-.15, y = rt_agg, colour = expected),position = position_jitter(width = .05), size = .25, shape = 20)+
-#   geom_boxplot(aes(x = expected, y = rt_agg, fill = expected),outlier.shape = NA, alpha = .5, width = .1, colour = "black") +
-#   geom_line(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected), linetype = 3)+
-#   geom_point(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected), shape = 18) +
-#   geom_errorbar(data = df.tsk_sum, aes(x = as.numeric(expected)+.1, y = rt_agg_mean, group = expected, colour = expected, ymin = rt_agg_mean-sem, ymax = rt_agg_mean+sem), width = .05)+
-#   scale_colour_brewer(palette = "Dark2")+
-#   scale_fill_brewer(palette = "Dark2")+
-#   ggtitle("Figure R11: Repeated Measures - Factorial (Extended)")
 
 ```
