@@ -39,6 +39,7 @@ df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
          target = recode(target, 
                 "1" = "left",
                 "2" = "right"),
+         # sometimes participants used wrong row or caps was on
          choice = recode(key,
                 "4" = "left",
                 "LeftArrow" = "left", 
@@ -70,7 +71,8 @@ df.tsk_acc = df.tsk %>%
   )
 
 # does anyone have to be excluded?
-exc = as.character(df.tsk_acc %>% filter(acc < 2/3) %>% select(subID))
+exc = df.tsk_acc %>% filter(acc < 2/3)
+exc = as.character(exc$subID)
 print(length(exc)) # print how many have to be excluded
 
 # load pilot participants and add to the list
