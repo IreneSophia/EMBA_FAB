@@ -92,6 +92,9 @@ exc   = c(exc, pilot$subID)
 # exclude these participants
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
+# save data frame
+saveRDS(df.tsk, "df_PAL.RDS")
+
 # how many are still left
 length(unique(df.tsk$subID))
 

@@ -82,6 +82,9 @@ exc   = c(exc, pilot$subID)
 # exclude these participants
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
+# save data frame
+saveRDS(df.tsk, "df_FAB.RDS")
+
 ```
 
 ```{r plot_data, warning = F, message = F}
