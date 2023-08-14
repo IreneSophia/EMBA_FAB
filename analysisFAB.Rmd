@@ -83,7 +83,7 @@ exc   = c(exc, pilot$subID)
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
 
 # save data frame
-saveRDS(df.tsk, "df_FAB.RDS")
+saveRDS(df.tsk, paste0(dt.path, "/df_FAB.RDS"))
 
 ```
 
