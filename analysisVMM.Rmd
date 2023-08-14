@@ -70,8 +70,6 @@ trl  = c()
 rt   = c()
 sdt  = c()
 
-## TRIAL COUNTS ARE WRONG! NEED TO BE ADDED!
-
 for (i in 1:nrow(df.logresp)) {
   # first, check if this is the first row
   if (i == 1) {
