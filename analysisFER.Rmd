@@ -12,8 +12,8 @@ library(tidyverse)       # tibble stuff
 library(ggplot2)         # plots
 library(ggstatsplot)     # ggplot with stats
 
-fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
-knitr::opts_knit$set(root.dir = fl.path)
+dt.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = dt.path)
 
 ```
 
@@ -29,7 +29,7 @@ knitr::opts_knit$set(root.dir = fl.path)
 
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
-df.fer = list.files(path = fl.path, pattern = "FER-BV_*", full.names = T) %>%
+df.fer = list.files(path = dt.path, pattern = "FER-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
   mutate(
     lastkey = as.numeric(lastkey)
@@ -52,7 +52,7 @@ df.fer = list.files(path = fl.path, pattern = "FER-BV_*", full.names = T) %>%
          )) %>%
   select(subID, video, emo, disc, acc)
 
-df.ctr = list.files(path = fl.path, pattern = "CTR-BV_*", full.names = T) %>%
+df.ctr = list.files(path = dt.path, pattern = "CTR-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "cdcdddc")) %>% 
   mutate(
     lastkey = as.numeric(lastkey)
@@ -97,7 +97,7 @@ exc = c(as.character(exc1$subID), as.character(exc2$subID))
 print(length(exc)) # print how many have to be excluded
 
 # load pilot participants and add to the list
-pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
 # exclude these participants
