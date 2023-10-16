@@ -14,8 +14,8 @@ library(ggstatsplot)     # ggplot with stats
 library(ggpubr)          # background image
 library(png)             # readPNG
 
-fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
-knitr::opts_knit$set(root.dir = fl.path)
+dt.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = dt.path)
 
 ```
 
@@ -33,7 +33,7 @@ knitr::opts_knit$set(root.dir = fl.path)
 
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format: only people with separate logs for runs
-df.log1 = list.files(path = fl.path, pattern = "*task-.*\\.tsv$", full.names = T) %>%
+df.log1 = list.files(path = dt.path, pattern = "*task-.*\\.tsv$", full.names = T) %>%
   setNames(nm = .) %>%
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
   mutate(
@@ -42,7 +42,7 @@ df.log1 = list.files(path = fl.path, pattern = "*task-.*\\.tsv$", full.names = T
   ) %>% filter(nchar(Subject) == 10) %>%
   select(-Filename) 
 # load the relevant data in long format: only people with one log for both runs
-df.log2 = list.files(path = fl.path, pattern = "*task.tsv$", full.names = T) %>%
+df.log2 = list.files(path = dt.path, pattern = "*task.tsv$", full.names = T) %>%
   setNames(nm = .) %>%
   map_df(~read_delim(., show_col_types = F, delim = "\t"), .id = "Filename") %>%
   group_by(Subject, `Event Type`) %>%
@@ -156,12 +156,15 @@ exc = unique(as.character(exc$subID))
 print(length(exc))
 
 # load list of pilot participant to add them to the list to be excluded
-pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
 # filter out from original data frame
 df.tsk = df.tsk %>%
   filter(!(subID %in% exc)) # disregard runs with too many misses
+
+# save the data frame
+saveRDS(df.tsk, paste0(dt.path, "/df_VMM.RDS"))
 
 # plot the reaction time distributions
 ggplot(df.tsk, aes(x = rtc, fill = subID)) + geom_density(alpha=.3) + theme_minimal() + theme(legend.position = "none") 
