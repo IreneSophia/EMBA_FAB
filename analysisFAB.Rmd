@@ -55,14 +55,15 @@ df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
          stm = if_else(left < right, paste(left, right, sep = "_"), paste(right, left, sep = "_"))) %>%
   select(subID, stm, rt, acc, cue, target) %>%
   filter(nchar(subID) == 10) %>% 
-  # replace very short and very long RTs with NAs
+  # outlier detection with IQR method
   group_by(subID) %>%
-  mutate(rt_up = quantile(rt, 0.75) + 1.5 * IQR(rt),
-         rt    = case_when(rt > 200 & rt < rt_up ~ rt),
-         use   = case_when(!is.na(rt) & acc ~ TRUE,
-                           TRUE ~ FALSE),
-         rt_cor = if_else(acc, rt, NA)
-         ) %>% select(-rt_up)
+  mutate(rt.up = quantile(rt, 0.75) + 1.5 * IQR(rt),
+         rt.lo = quantile(rt, 0.25) - 1.5 * IQR(rt),
+         rt    = case_when(rt > rt.lo & rt < rt.up ~ rt),
+         use   = case_when(!is.na(rt) & acc & rt > rt.lo & rt < rt.up ~ T,
+                           T ~ F),
+         rt.cor = if_else(acc, rt, NA)
+         )
 
 df.tsk_acc = df.tsk %>%
   group_by(subID) %>%
@@ -75,12 +76,15 @@ exc = df.tsk_acc %>% filter(acc < 2/3)
 exc = as.character(exc$subID)
 print(length(exc)) # print how many have to be excluded
 
-# load pilot participants and add to the list
+# load pilot participants and add to the list. This also includes one participant who had to be excluded due receiving an additional diagnosis, therefore, being diagnosed with both ADHD and ASD
 pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
 # exclude these participants
 df.tsk = df.tsk %>% filter(!(subID %in% exc))
+
+# sample size
+nrow(df.tsk) / 432
 
 # save data frame
 saveRDS(df.tsk, paste0(dt.path, "/df_FAB.RDS"))
@@ -92,13 +96,13 @@ saveRDS(df.tsk, paste0(dt.path, "/df_FAB.RDS"))
 df.tsk_agg = df.tsk %>% filter(acc == TRUE) %>%
   group_by(subID, cue) %>%
   summarise(
-    rt_agg = mean(rt, na.rm = T)
+    rt.agg = mean(rt, na.rm = T)
   )
 
 nrow(df.tsk_agg)/2
 
 ggwithinstats(data = df.tsk_agg, 
               x    = cue, 
-              y    = rt_agg)
+              y    = rt.agg)
 
 ```
