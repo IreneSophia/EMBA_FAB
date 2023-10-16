@@ -48,7 +48,7 @@ df.sub = read_csv(file = paste(dt.path, "EMBA_centraXX.csv", sep = "/"), show_co
   rename("subID" = "PID")
 
 # check if someone has to be excluded
-df.sub %>% filter(iq <= 70)
+nrow(df.sub %>% filter(iq <= 70))
 
 # save group and subID
 write_csv(df.sub %>% select(subID, group), file = paste(dt.path, "EMBA_group.csv", sep = "/"))
