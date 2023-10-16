@@ -19,8 +19,8 @@ library(readr)
 source("R_rainclouds.R")
 source("summarySE.R")
 
-fl.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
-knitr::opts_knit$set(root.dir = fl.path)
+dt.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
+knitr::opts_knit$set(root.dir = dt.path)
 
 ```
 
@@ -38,7 +38,7 @@ knitr::opts_knit$set(root.dir = fl.path)
 
 ```{r load_data, warning=F, message=F}
 # load the relevant data in long format
-df.tsk = list.files(path = fl.path, pattern = "PAL-BV_*", full.names = T) %>%
+df.tsk = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
   mutate(
     # sometimes participants used the upper row instead of the middle
@@ -86,7 +86,7 @@ exc = as.character(exc$subID)
 print(length(exc)) # print how many have to be excluded
 
 # load pilot participants and add to the list
-pilot = read_csv(paste0(fl.path, "/pilot-subIDs.csv"))
+pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"))
 exc   = c(exc, pilot$subID)
 
 # exclude these participants
