@@ -7,16 +7,25 @@ setwd("/home/emba/Documents/EMBA/CentraXX")
 
 # load raw data
 # columns of Interest: internalStudyMemberID, name2, code, value, section, (valueIndex), numericValue
-df = read_delim("PSY_EMOPRED_233005.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1"), delim = ";") %>%
-  select(internalStudyMemberID, name2, code, value, section, numericValue) %>%
+df = read_csv("EMOPRED_20230816.csv", show_col_types = F, locale = locale(encoding = "ISO-8859-1")) %>%
+  select(internalStudyMemberID, date, name2, code, value, section, numericValue) %>%
   filter(internalStudyMemberID != "NEVIA_test" & !is.na(name2)) %>%
   rename("questionnaire" = "name2", 
          "item" = "code", 
          "PID" = "internalStudyMemberID") %>%
   mutate(
-    value = str_replace(value, ",", ";")
-  ) %>%
+    value = str_replace(value, ",", ";"),
+    PID   = substr(PID, 1, 10)
+  ) %>% 
+  filter(substr(PID,1,7) != "EMOPRED") %>%                                      # filter out pilots
   group_by(PID)
+
+## date of testing
+df.date = df %>%
+  group_by(PID) %>%
+  summarise(
+    date = min(date, na.rm = T)
+  )
 
 ## preprocess each questionnaire separately:
 
@@ -180,7 +189,7 @@ df.tas = df.tas %>% group_by(PID) %>%
   )
 
 # merge all together
-ls.df = list(df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads, df.tas)
+ls.df = list(df.date, df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads, df.tas)
 df.sub = ls.df %>% reduce(full_join, by = "PID") %>% 
   mutate(
     age = as.numeric(age)
@@ -202,7 +211,7 @@ for (i in 1:nrow(df.sub)) {
 }
 
 # filter out pilots and some participants
-df.sub = df.sub %>% filter(substr(PID,1,9) != "EMOPRED_P") %>%                  # filter out pilots
+df.sub = df.sub %>%
   filter(!is.na(ASRS_total)) %>%                                                # filter out participants who did not complete study
   mutate(
     PID = substr(PID,1,10)
@@ -218,8 +227,12 @@ df.sub = rows_update(df.sub, df.iqs) %>%
     iq = (MWT_iq + CFT_iq)/2
   )
 
-# save csv with PIDs where we need the iq values from other studies
-write_csv(df.sub %>% filter(is.na(MWT_iq)) %>% select(PID), file = "PID_iq_missing.csv")
+# check if there are still IQ values missing
+if (nrow(df.sub %>% filter(is.na(MWT_iq))) > 0) {
+  warning('There are still IQ values missing!')
+  # save csv with PIDs where we need the iq values from other studies
+  write_csv(df.sub %>% filter(is.na(MWT_iq)) %>% select(PID), file = "PID_iq_missing.csv")
+}
 
 # save values with two different separators
 write_delim(df.sub, file = "EMBA_centraXX.txt", delim = ";")
