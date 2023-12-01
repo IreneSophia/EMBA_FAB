@@ -12,6 +12,11 @@ function FAB_preproET(filename, dir_path)
 
 %% read in data and calculate values
 
+% get subject ID from the filename
+subID = convertStringsToChars(extractBefore(filename,"_"));
+fprintf('\nNow processing subject %s.\n', extractAfter(subID,'-'));
+
+% set options for reading in the data
 opts = delimitedTextImportOptions("NumVariables", 11);
 opts.DataLines = [2, Inf];
 opts.Delimiter = ",";
@@ -138,6 +143,10 @@ for k = 1:numel(fn)
         classificationData.saccade.(fn{k}) = classificationData.saccade.(fn{k}).';
     end
 end
+% sometimes offsetVelocityThreshold is too long, then remove excess entries
+n_sac = size(classificationData.saccade.on);
+classificationData.saccade.offsetVelocityThreshold = ...
+    classificationData.saccade.offsetVelocityThreshold(1:n_sac);
 classificationData.saccade.peakVelocityThreshold = repmat( ...
     classificationData.saccade.peakVelocityThreshold, ...
     size(classificationData.saccade.peakVelocity,1), ...
@@ -181,9 +190,6 @@ newNames = append("off_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
 
 %% save data to disk
-
-% get subject ID from the filename
-subID = convertStringsToChars(extractBefore(filename,"_"));
 
 % save data structure and classification parameters to .mat file
 save([dir_path filesep subID '_prepro.mat'], 'classificationData', 'ETparams');
