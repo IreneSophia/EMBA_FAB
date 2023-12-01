@@ -47,7 +47,12 @@ if size(idx,1) ~= not
 end
 
 % add another row at the end
-idx(not+1,:) = [idx(end,3)+500 NaN NaN];
+if height(tbl)-idx(end,3) < 500
+    last = height(tbl)-idx(end,3);
+else
+    last = 500;
+end
+idx(not+1,:) = [idx(end,3)+last NaN NaN];
 
 % create empty columns to be filled with information
 tbl.trialType = strings(height(tbl),1);
