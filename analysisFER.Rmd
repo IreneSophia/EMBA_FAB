@@ -118,13 +118,13 @@ length(unique(df.fer$subID))
 ggplot(data=df.fer_agg, aes(group = emo, y = acc, colour = emo, x = emo)) +
   geom_boxplot()
 
-ggplot(data=df.fer, aes(group = emo, y = disc, colour = emo, x = emo)) +
-  geom_boxplot()
+ggplot(data=df.fer, aes(x = disc, fill = emo)) +
+  geom_density(alpha = 0.5, colour = "darkgrey")
 
 ggplot(data=df.ctr_agg, aes(group = animal, y = acc, colour = animal, x = animal)) +
   geom_boxplot()
 
-ggplot(data=df.ctr, aes(group = animal, y = disc, colour = animal, x = animal)) +
-  geom_boxplot()
+ggplot(data=df.ctr, aes(x = disc, fill = animal)) +
+  geom_density(alpha = 0.5, colour = "darkgrey")
 
 ```
