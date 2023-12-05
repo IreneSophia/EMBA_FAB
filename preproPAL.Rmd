@@ -40,6 +40,7 @@ knitr::opts_knit$set(root.dir = dt.path)
 # load the relevant data in long format
 df.tsk = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
   map_df(~read_csv(., show_col_types = F, col_types = "ccddddccddcd")) %>% 
+  filter(is.na(key)|(key != "tstart" & key != "tend")) %>%
   mutate(
     # sometimes participants used the upper row instead of the middle
     # or moved right with their ring finger to plus instead of 6
