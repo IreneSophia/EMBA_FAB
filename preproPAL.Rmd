@@ -79,7 +79,7 @@ df.tsk = list.files(path = dt.path, pattern = "PAL-BV_*", full.names = T) %>%
          use   = case_when(!is.na(rtc) & acc ~ TRUE,
                            TRUE ~ FALSE)
          ) %>%
-  select(subID, ut, noise, rt, rtc, acc, use, expected) 
+  select(subID, ut, noise, rt, rtc, acc, use, expected, emotion, pic_num) 
 
 # does anyone have to be excluded?
 exc = df.tsk %>% group_by(subID) %>% summarise(acc = mean(use)) %>% filter(acc < 2/3)
