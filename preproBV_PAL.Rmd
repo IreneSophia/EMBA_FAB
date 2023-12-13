@@ -16,9 +16,6 @@ library(ggrain)
 library(cowplot)
 library(readr)
 
-source("R_rainclouds.R")
-source("summarySE.R")
-
 dt.path = paste('/home/emba/Documents/EMBA', 'BVET', sep = "/")
 knitr::opts_knit$set(root.dir = dt.path)
 
