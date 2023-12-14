@@ -179,9 +179,13 @@ tbl_fix = renamevars(tbl_fix,cols,newNames);
 cols    = ["trialType","trialNo","trialStm","trialCue", ...
     "trialTar","timeCue","timeFix","timeTar","xPixel","yPixel"];
 tbl_sac = join(tbl_sac,tbl(:,["on",cols]));
+tbl_sac.xPixel = tbl_sac.xPixel + ETparams.screen.resolution(1)/2 - ETparams.screen.dataCenter(1);
+tbl_sac.yPixel = tbl_sac.yPixel + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 newNames = append("on_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
 tbl_sac = join(tbl_sac,tbl(:,["off", cols]));
+tbl_sac.xPixel = tbl_sac.xPixel + ETparams.screen.resolution(1)/2 - ETparams.screen.dataCenter(1);
+tbl_sac.yPixel = tbl_sac.yPixel + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 newNames = append("off_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
 
