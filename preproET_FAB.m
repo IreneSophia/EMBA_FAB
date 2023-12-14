@@ -114,8 +114,8 @@ ETparams.screen.dataCenter              = [ 0 0];        % center of screen has 
 ETparams.screen.subjectStraightAhead    = [ 0 0];        % specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % format gaze directions as screen pixel coords for NH2010
-tbl.xPixel = tbl.leftScreenX/(ETparams.screen.size(1)*ETparams.screen.resolution(1));
-tbl.yPixel = tbl.leftScreenY/(ETparams.screen.size(2)*ETparams.screen.resolution(2));
+tbl.xPixel = tbl.leftScreenX*(ETparams.screen.resolution(1)/(ETparams.screen.size(1)*1000));
+tbl.yPixel = tbl.leftScreenY*(ETparams.screen.resolution(2)/(ETparams.screen.size(2)*1000));
 
 % run the H2010 classifier code on full data set
 [classificationData,ETparams]   = runNH2010Classification(...
