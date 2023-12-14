@@ -164,10 +164,10 @@ tbl_sac = struct2table(classificationData.saccade);
 % add an index row to the data table
 tbl.on  = (1:height(tbl)).';
 tbl.off = (1:height(tbl)).';
-cols    = ["trialType","trialNo","trialStm","trialCue", ...
-    "trialTar","timeCue","timeFix","timeTar"];
 
 % add event info to fixations
+cols    = ["trialType","trialNo","trialStm","trialCue", ...
+    "trialTar","timeCue","timeFix","timeTar"];
 tbl_fix = join(tbl_fix,tbl(:,["on",cols]));
 newNames = append("on_",cols);
 tbl_fix = renamevars(tbl_fix,cols,newNames);
@@ -176,6 +176,8 @@ newNames = append("off_",cols);
 tbl_fix = renamevars(tbl_fix,cols,newNames);
 
 % add event info to saccades
+cols    = ["trialType","trialNo","trialStm","trialCue", ...
+    "trialTar","timeCue","timeFix","timeTar","xPixel","yPixel"];
 tbl_sac = join(tbl_sac,tbl(:,["on",cols]));
 newNames = append("on_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
