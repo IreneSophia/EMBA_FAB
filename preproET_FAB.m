@@ -121,16 +121,13 @@ tbl.yPixel = tbl.leftScreenY*(ETparams.screen.resolution(2)/(ETparams.screen.siz
 [classificationData,ETparams]   = runNH2010Classification(...
     tbl.xPixel,tbl.yPixel,tbl.pupilDiameter,ETparams);
 
-%% create output tables
-
-% glissades
-fn = fieldnames(classificationData.glissade);
-for k = 1:numel(fn)
-    if size(classificationData.glissade.(fn{k}),1) < size(classificationData.glissade.(fn{k}),2)
-        classificationData.glissade.(fn{k}) = classificationData.glissade.(fn{k}).';
-    end
+% merge glissades with saccades
+classificationData = mergeSaccadesAndGlissades(classificationData);
+if isfield(classificationData,'glissade')
+    classificationData = rmfield(classificationData,'glissade');    
 end
-tbl_gli = struct2table(classificationData.glissade);
+
+%% create output tables
 
 % fixations
 fn = fieldnames(classificationData.fixation);
@@ -170,14 +167,6 @@ tbl.off = (1:height(tbl)).';
 cols    = ["trialType","trialNo","trialStm","trialCue", ...
     "trialTar","timeCue","timeFix","timeTar"];
 
-% add event info to glissades
-tbl_gli = join(tbl_gli,tbl(:,["on",cols]));
-newNames = append("on_",cols);
-tbl_gli = renamevars(tbl_gli,cols,newNames);
-tbl_gli = join(tbl_gli,tbl(:,["off", cols]));
-newNames = append("off_",cols);
-tbl_gli = renamevars(tbl_gli,cols,newNames);
-
 % add event info to fixations
 tbl_fix = join(tbl_fix,tbl(:,["on",cols]));
 newNames = append("on_",cols);
@@ -202,6 +191,5 @@ save([dir_path filesep subID '_prepro.mat'], 'classificationData', 'ETparams');
 % save event tables for further analyses
 writetable(tbl_sac, [dir_path filesep subID '_saccades.csv']);
 writetable(tbl_fix, [dir_path filesep subID '_fixations.csv']);
-writetable(tbl_gli, [dir_path filesep subID '_glissades.csv']);
 
 end
