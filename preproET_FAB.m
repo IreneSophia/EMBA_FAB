@@ -114,23 +114,20 @@ ETparams.screen.dataCenter              = [ 0 0];        % center of screen has 
 ETparams.screen.subjectStraightAhead    = [ 0 0];        % specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % format gaze directions as screen pixel coords for NH2010
-tbl.xPixel = tbl.leftScreenX/(ETparams.screen.size(1)*ETparams.screen.resolution(1));
-tbl.yPixel = tbl.leftScreenY/(ETparams.screen.size(2)*ETparams.screen.resolution(2));
+tbl.xPixel = tbl.leftScreenX*(ETparams.screen.resolution(1)/(ETparams.screen.size(1)*1000));
+tbl.yPixel = tbl.leftScreenY*(ETparams.screen.resolution(2)/(ETparams.screen.size(2)*1000));
 
 % run the H2010 classifier code on full data set
 [classificationData,ETparams]   = runNH2010Classification(...
     tbl.xPixel,tbl.yPixel,tbl.pupilDiameter,ETparams);
 
-%% create output tables
-
-% glissades
-fn = fieldnames(classificationData.glissade);
-for k = 1:numel(fn)
-    if size(classificationData.glissade.(fn{k}),1) < size(classificationData.glissade.(fn{k}),2)
-        classificationData.glissade.(fn{k}) = classificationData.glissade.(fn{k}).';
-    end
+% merge glissades with saccades
+classificationData = mergeSaccadesAndGlissades(classificationData);
+if isfield(classificationData,'glissade')
+    classificationData = rmfield(classificationData,'glissade');    
 end
-tbl_gli = struct2table(classificationData.glissade);
+
+%% create output tables
 
 % fixations
 fn = fieldnames(classificationData.fixation);
@@ -167,18 +164,10 @@ tbl_sac = struct2table(classificationData.saccade);
 % add an index row to the data table
 tbl.on  = (1:height(tbl)).';
 tbl.off = (1:height(tbl)).';
-cols    = ["trialType","trialNo","trialStm","trialCue", ...
-    "trialTar","timeCue","timeFix","timeTar"];
-
-% add event info to glissades
-tbl_gli = join(tbl_gli,tbl(:,["on",cols]));
-newNames = append("on_",cols);
-tbl_gli = renamevars(tbl_gli,cols,newNames);
-tbl_gli = join(tbl_gli,tbl(:,["off", cols]));
-newNames = append("off_",cols);
-tbl_gli = renamevars(tbl_gli,cols,newNames);
 
 % add event info to fixations
+cols    = ["trialType","trialNo","trialStm","trialCue", ...
+    "trialTar","timeCue","timeFix","timeTar"];
 tbl_fix = join(tbl_fix,tbl(:,["on",cols]));
 newNames = append("on_",cols);
 tbl_fix = renamevars(tbl_fix,cols,newNames);
@@ -187,10 +176,16 @@ newNames = append("off_",cols);
 tbl_fix = renamevars(tbl_fix,cols,newNames);
 
 % add event info to saccades
+cols    = ["trialType","trialNo","trialStm","trialCue", ...
+    "trialTar","timeCue","timeFix","timeTar","xPixel","yPixel"];
 tbl_sac = join(tbl_sac,tbl(:,["on",cols]));
+tbl_sac.xPixel = tbl_sac.xPixel + ETparams.screen.resolution(1)/2 - ETparams.screen.dataCenter(1);
+tbl_sac.yPixel = tbl_sac.yPixel + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 newNames = append("on_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
 tbl_sac = join(tbl_sac,tbl(:,["off", cols]));
+tbl_sac.xPixel = tbl_sac.xPixel + ETparams.screen.resolution(1)/2 - ETparams.screen.dataCenter(1);
+tbl_sac.yPixel = tbl_sac.yPixel + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 newNames = append("off_",cols);
 tbl_sac = renamevars(tbl_sac,cols,newNames);
 
@@ -202,6 +197,5 @@ save([dir_path filesep subID '_prepro.mat'], 'classificationData', 'ETparams');
 % save event tables for further analyses
 writetable(tbl_sac, [dir_path filesep subID '_saccades.csv']);
 writetable(tbl_fix, [dir_path filesep subID '_fixations.csv']);
-writetable(tbl_gli, [dir_path filesep subID '_glissades.csv']);
 
 end
