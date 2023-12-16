@@ -45,7 +45,8 @@ df.lat = df.sac %>%
   summarise(
     lat   = mean(off_timeTar, na.rm = T),
     count = sum(!is.na(off_timeTar))
-  )
+  ) %>%
+  filter(count >= 5)
 
 df.lat
 
