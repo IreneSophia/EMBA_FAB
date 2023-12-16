@@ -43,7 +43,7 @@ df.lat = df.sac %>%
            on_trialNo == off_trialNo) %>%
   group_by(subID, off_trialCue) %>%
   summarise(
-    lat   = mean(off_timeTar, na.rm = T),
+    lat   = median(off_timeTar, na.rm = T),
     count = sum(!is.na(off_timeTar))
   ) %>%
   filter(count >= 5)
