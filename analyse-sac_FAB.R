@@ -41,12 +41,18 @@ df.lat = df.sac %>%
            on_AOI == "fix" & off_AOI == off_trialTar & 
            # and where the start and finish is within the same trial
            on_trialNo == off_trialNo) %>%
-  group_by(subID, off_trialCue) %>%
+  # outlier detection with IQR method
+  group_by(subID) %>%
+  mutate(
+         lat.up = quantile(on_timeTar, 0.75, na.rm = T) + 1.5 * IQR(on_timeTar, na.rm = T),
+         lat.lo = quantile(on_timeTar, 0.25, na.rm = T) - 1.5 * IQR(on_timeTar, na.rm = T),
+         lat    = case_when(on_timeTar > lat.lo & on_timeTar < lat.up ~ on_timeTar)
+  ) %>% group_by(subID, off_trialCue) %>%
   summarise(
-    lat   = median(off_timeTar, na.rm = T),
-    count = sum(!is.na(off_timeTar))
+    n.tar    = sum(!is.na(lat)),
+    lat.tar  = median(lat, na.rm = T)
   ) %>%
-  filter(count >= 5)
+  filter(n.tar >= 5)
 
 df.lat
 
@@ -64,15 +70,18 @@ df.cnt = df.sac %>%
     )
   ) %>%
   filter(!is.na(sac_cue)) %>% 
-  group_by(subID, sac_cue) %>% count()
+  group_by(subID, sac_cue) %>% 
+  summarise(
+    n.cue = n()
+  )
 
 df.cnt
 
 # visualise the distributions
-ggplot(data = df.cnt, aes(x = n)) +
+ggplot(data = df.cnt, aes(x = n.cue)) +
   geom_density(alpha = .3, colour = "lightgrey", fill = "lightblue") + 
   theme_bw()
 
-ggplot(data = df.lat, aes(x = lat)) +
+ggplot(data = df.lat, aes(x = lat.tar)) +
   geom_density(alpha = .3, colour = "lightgrey", fill = "lightblue") + 
   theme_bw()
