@@ -47,7 +47,13 @@ df.lat = df.sac %>%
          lat.up = quantile(on_timeTar, 0.75, na.rm = T) + 1.5 * IQR(on_timeTar, na.rm = T),
          lat.lo = quantile(on_timeTar, 0.25, na.rm = T) - 1.5 * IQR(on_timeTar, na.rm = T),
          lat    = case_when(on_timeTar > lat.lo & on_timeTar < lat.up ~ on_timeTar)
-  ) %>% group_by(subID, off_trialCue) %>%
+  ) %>% 
+  filter(!is.na(lat)) %>%
+  # only keep the latency of the first saccade of a trial
+  group_by(subID, on_trialNo) %>%
+  arrange(subID, on_trialNo) %>%
+  filter(row_number() == 1) %>%
+  group_by(subID, off_trialCue) %>%
   summarise(
     n.tar    = sum(!is.na(lat)),
     lat.tar  = median(lat, na.rm = T)
