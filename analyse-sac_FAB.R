@@ -53,14 +53,10 @@ df.lat = df.sac %>%
   group_by(subID, on_trialNo) %>%
   arrange(subID, on) %>%
   filter(row_number() == 1) %>%
-  group_by(subID, off_trialCue) %>%
+  group_by(subID, on_trialStm, off_trialCue) %>%
   summarise(
-    n.tar    = sum(!is.na(lat)),
     lat.tar  = median(lat, na.rm = T)
-  ) %>%
-  filter(n.tar >= 5)
-
-df.lat
+  )
 
 # saccades towards the face
 df.cnt = df.sac %>%
@@ -80,8 +76,6 @@ df.cnt = df.sac %>%
   summarise(
     n.cue = n()
   )
-
-df.cnt
 
 # visualise the distributions
 ggplot(data = df.cnt, aes(x = n.cue)) +
