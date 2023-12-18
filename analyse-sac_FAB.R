@@ -51,7 +51,7 @@ df.lat = df.sac %>%
   filter(!is.na(lat)) %>%
   # only keep the latency of the first saccade of a trial
   group_by(subID, on_trialNo) %>%
-  arrange(subID, on_trialNo) %>%
+  arrange(subID, on) %>%
   filter(row_number() == 1) %>%
   group_by(subID, off_trialCue) %>%
   summarise(
@@ -91,3 +91,6 @@ ggplot(data = df.cnt, aes(x = n.cue)) +
 ggplot(data = df.lat, aes(x = lat.tar)) +
   geom_density(alpha = .3, colour = "lightgrey", fill = "lightblue") + 
   theme_bw()
+
+# save the data for analysis
+save(file = paste(dt.path, "FAB_ET_data.RData", sep = "/"), list = c("df.cnt", "df.lat"))
