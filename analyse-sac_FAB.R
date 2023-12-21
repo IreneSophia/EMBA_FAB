@@ -40,7 +40,10 @@ df.lat = df.sac %>%
            # where the saccade starts at the fixation cross and ends at the correct target
            on_AOI == "fix" & off_AOI == off_trialTar & 
            # and where the start and finish is within the same trial
-           on_trialNo == off_trialNo) %>%
+           on_trialNo == off_trialNo &
+         # only keep saccades with latencies above 150ms (based on Tokushige et al., 2021)
+           on_timeTar > 150
+         ) %>%
   # outlier detection with IQR method
   group_by(subID) %>%
   mutate(
