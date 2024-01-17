@@ -61,6 +61,31 @@ df.lat = df.sac %>%
     lat.tar  = median(lat, na.rm = T)
   )
 
+# saccades that end up at the area of the correct target
+df.lat.trl = df.sac %>%
+  # filter only saccades during targets and cues
+  filter(on_trialType != "fix" & !is.na(on_trialType) & 
+           # where the saccade starts at the fixation cross and ends at the correct target
+           on_AOI == "fix" & off_AOI == off_trialTar & 
+           # and where the start and finish is within the same trial
+           on_trialNo == off_trialNo &
+           # only keep saccades with latencies above 150ms (based on Tokushige et al., 2021)
+           on_timeTar > 150
+  ) %>%
+  # outlier detection with IQR method
+  group_by(subID) %>%
+  mutate(
+    lat.up = quantile(on_timeTar, 0.75, na.rm = T) + 1.5 * IQR(on_timeTar, na.rm = T),
+    lat.lo = quantile(on_timeTar, 0.25, na.rm = T) - 1.5 * IQR(on_timeTar, na.rm = T),
+    lat    = case_when(on_timeTar > lat.lo & on_timeTar < lat.up ~ on_timeTar)
+  ) %>% 
+  filter(!is.na(lat)) %>%
+  # only keep the latency of the first saccade of a trial
+  group_by(subID, on_trialNo) %>%
+  arrange(subID, on) %>%
+  filter(row_number() == 1) %>%
+  select(subID, on_trialNo, on_trialStm, off_trialCue, lat)
+
 # saccades towards the face
 df.cnt = df.sac %>%
   filter(on_trialType != "fix" & on_AOI == "fix") %>%
@@ -90,4 +115,4 @@ ggplot(data = df.lat, aes(x = lat.tar)) +
   theme_bw()
 
 # save the data for analysis
-save(file = paste(dt.path, "FAB_ET_data.RData", sep = "/"), list = c("df.cnt", "df.lat"))
+save(file = paste(dt.path, "FAB_ET_data.RData", sep = "/"), list = c("df.cnt", "df.lat", "df.lat.trl"))
