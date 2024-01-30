@@ -53,7 +53,7 @@ df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
                 "1" = "face",
                 "0" = "object"),
          stm = if_else(left < right, paste(left, right, sep = "_"), paste(right, left, sep = "_"))) %>%
-  select(subID, stm, rt, acc, cue, target) %>%
+  select(subID, trl, stm, rt, acc, cue, target) %>%
   filter(nchar(subID) == 10) %>% 
   # outlier detection with IQR method
   group_by(subID) %>%

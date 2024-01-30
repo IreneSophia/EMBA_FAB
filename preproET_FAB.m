@@ -110,8 +110,8 @@ ETparams = defaultParameters;
 ETparams.screen.resolution              = [2560 1600];   % screen resolution in pixel
 ETparams.screen.size                    = [0.344 0.215]; % screen size in m
 ETparams.screen.viewingDist             = 0.57;          % viewing distance in m
-ETparams.screen.dataCenter              = [ 0 0];        % center of screen has these coordinates in data
-ETparams.screen.subjectStraightAhead    = [ 0 0];        % specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
+ETparams.screen.dataCenter              = [0 0];         % center of screen has these coordinates in data
+ETparams.screen.subjectStraightAhead    = [0 0];         % specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % format gaze directions as screen pixel coords for NH2010
 tbl.xPixel = tbl.leftScreenX*(ETparams.screen.resolution(1)/(ETparams.screen.size(1)*1000));
