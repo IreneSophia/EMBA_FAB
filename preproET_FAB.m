@@ -4,7 +4,9 @@
 % as the input file. 
 % 
 % Detection of events (blinks, saccades, glissades and fixations) is based
-% on NYSTRÖM & HOLMQVIST (2010).
+% on Nyström & Holmqvist 2010) and Niehorster, Siu & Li (2015). The
+% implementation was pulled from
+% https://github.com/dcnieho/NystromHolmqvist2010.
 %
 % (c) Irene Sophia Plank 10planki@gmail.com
 
@@ -16,90 +18,112 @@ function preproET_FAB(filename, dir_path)
 subID = convertStringsToChars(extractBefore(filename,"_"));
 fprintf('\nNow processing subject %s.\n', extractAfter(subID,'-'));
 
-% set options for reading in the data
-opts = delimitedTextImportOptions("NumVariables", 11);
-opts.DataLines = [2, Inf];
-opts.Delimiter = ",";
-opts.VariableNames = ["timestamp", "trigger", "leftScreenX", "leftScreenY",...
-    "rightScreenX", "rightScreenY", "leftPupilMajorAxis", "leftPupilMinorAxis",...
-    "rightPupilMajorAxis", "rightPupilMinorAxis", "comment"];
-opts.VariableTypes = ["double", "double", "double", "double", "double",...
-    "double", "double", "double", "double", "double", "string"];
+% set screen parameters
+screen_res  = [2560 1600];
+screen_size = [0.344 0.215];
 
-tbl = readtable([dir_path filesep filename], opts); 
-tbl.pupilDiameter = mean([tbl.leftPupilMajorAxis,tbl.leftPupilMinorAxis],2);
-tbl.tracked = bitget(tbl.trigger,14-3); 
-tbl.pupilDiameterRight = mean([tbl.rightPupilMajorAxis,tbl.rightPupilMinorAxis],2);
-tbl.trackedRight = bitget(tbl.trigger,15-3); 
+% check if the table already exists
+if exist([dir_path filesep subID '_tbl.mat'], 'file')
+    % if yes, then load it instead of recreating
+    load([dir_path filesep subID '_tbl.mat'], 'tbl')
 
-%% add trial information
-
-% total number of trials
-not = 432;
-
-% find trial indices
-idx = [find(extractBefore(tbl.comment,4) == "fix"),...
-    find(extractBefore(tbl.comment,4) == "cue"),...
-    find(extractBefore(tbl.comment,4) == "tar")];
-
-if size(idx,1) ~= not
-    error("This FAB dataset does NOT have the correct amount of 432 trials!")
-end
-
-% add another row at the end
-if height(tbl)-idx(end,3) < 500
-    last = height(tbl)-idx(end,3);
 else
-    last = 500;
-end
-idx(not+1,:) = [idx(end,3)+last NaN NaN];
 
-% create empty columns to be filled with information
-tbl.trialType = strings(height(tbl),1);
-tbl.trialNo   = nan(height(tbl),1);
-tbl.trialStm  = strings(height(tbl),1);
-tbl.trialCue  = strings(height(tbl),1);
-tbl.trialTar  = strings(height(tbl),1);
-tbl.timeCue   = nan(height(tbl),1);
-tbl.timeFix   = nan(height(tbl),1);
-tbl.timeTar   = nan(height(tbl),1);
-
-% loop through the trials and add the information from the comment: "type", "trial", "left",
-% "right", "target", "face"
-for i = 1:not
-
-    % divide string
-    trialinfo = strsplit(tbl.comment(idx(i,1)), "_");
-    % trial number
-    tbl.trialNo(idx(i,1):(idx(i+1,1)-1))   = trialinfo(2);
-    % trial type
-    tbl.trialType(idx(i,1):(idx(i,2)-1))   = "fix";
-    tbl.trialType(idx(i,2):(idx(i,3)-1))   = "cue";
-    tbl.trialType(idx(i,3):(idx(i+1,1)-1)) = "tar";
-    % trial cue
-    if trialinfo(6) == "1"
-        tbl.trialCue(idx(i,1):(idx(i+1,1)-1)) = "face";
-    else
-        tbl.trialCue(idx(i,1):(idx(i+1,1)-1)) = "object";
+    % set options for reading in the data
+    opts = delimitedTextImportOptions("NumVariables", 11);
+    opts.DataLines = [2, Inf];
+    opts.Delimiter = ",";
+    opts.VariableNames = ["timestamp", "trigger", "leftScreenX", "leftScreenY",...
+        "rightScreenX", "rightScreenY", "leftPupilMajorAxis", "leftPupilMinorAxis",...
+        "rightPupilMajorAxis", "rightPupilMinorAxis", "comment"];
+    opts.VariableTypes = ["double", "double", "double", "double", "double",...
+        "double", "double", "double", "double", "double", "string"];
+    
+    tbl = readtable([dir_path filesep filename], opts); 
+    tbl.pupilDiameter = mean([tbl.leftPupilMajorAxis,tbl.leftPupilMinorAxis,...
+        tbl.rightPupilMajorAxis,tbl.rightPupilMinorAxis],2);
+    tbl.tracked = bitget(tbl.trigger,14-3); 
+    tbl.trackedRight = bitget(tbl.trigger,15-3); 
+    
+    %% add trial information
+    
+    % total number of trials
+    not = 432;
+    
+    % find trial indices
+    idx = [find(extractBefore(tbl.comment,4) == "fix"),...
+        find(extractBefore(tbl.comment,4) == "cue"),...
+        find(extractBefore(tbl.comment,4) == "tar")];
+    
+    if size(idx,1) ~= not
+        error("This FAB dataset does NOT have the correct amount of 432 trials!")
     end
-    % trial target location
-    if trialinfo(5) == "2"
-        tbl.trialTar(idx(i,1):(idx(i+1,1)-1)) = "right";
+    
+    % add another row at the end
+    if height(tbl)-idx(end,3) < 500
+        last = height(tbl)-idx(end,3);
     else
-        tbl.trialTar(idx(i,1):(idx(i+1,1)-1)) = "left";
+        last = 500;
     end
-    % trial stimulus (face object combination)
-    left  = str2double(trialinfo(3));
-    right = str2double(trialinfo(4));
-    if left < right 
-        tbl.trialStm(idx(i,1):(idx(i+1,1)-1)) = trialinfo(3) + "_" + trialinfo(4);
-    else
-        tbl.trialStm(idx(i,1):(idx(i+1,1)-1)) = trialinfo(4) + "_" + trialinfo(3);
+    idx(not+1,:) = [idx(end,3)+last NaN NaN];
+    
+    % create empty columns to be filled with information
+    tbl.trialType = strings(height(tbl),1);
+    tbl.trialNo   = nan(height(tbl),1);
+    tbl.trialStm  = strings(height(tbl),1);
+    tbl.trialCue  = strings(height(tbl),1);
+    tbl.trialTar  = strings(height(tbl),1);
+    tbl.timeCue   = nan(height(tbl),1);
+    tbl.timeFix   = nan(height(tbl),1);
+    tbl.timeTar   = nan(height(tbl),1);
+    
+    % loop through the trials and add the information from the comment: "type", "trial", "left",
+    % "right", "target", "face"
+    for i = 1:not
+    
+        % divide string
+        trialinfo = strsplit(tbl.comment(idx(i,1)), "_");
+        % trial number
+        tbl.trialNo(idx(i,1):(idx(i+1,1)-1))   = trialinfo(2);
+        % trial type
+        tbl.trialType(idx(i,1):(idx(i,2)-1))   = "fix";
+        tbl.trialType(idx(i,2):(idx(i,3)-1))   = "cue";
+        tbl.trialType(idx(i,3):(idx(i+1,1)-1)) = "tar";
+        % trial cue
+        if trialinfo(6) == "1"
+            tbl.trialCue(idx(i,1):(idx(i+1,1)-1)) = "face";
+        else
+            tbl.trialCue(idx(i,1):(idx(i+1,1)-1)) = "object";
+        end
+        % trial target location
+        if trialinfo(5) == "2"
+            tbl.trialTar(idx(i,1):(idx(i+1,1)-1)) = "right";
+        else
+            tbl.trialTar(idx(i,1):(idx(i+1,1)-1)) = "left";
+        end
+        % trial stimulus (face object combination)
+        left  = str2double(trialinfo(3));
+        right = str2double(trialinfo(4));
+        if left < right 
+            tbl.trialStm(idx(i,1):(idx(i+1,1)-1)) = trialinfo(3) + "_" + trialinfo(4);
+        else
+            tbl.trialStm(idx(i,1):(idx(i+1,1)-1)) = trialinfo(4) + "_" + trialinfo(3);
+        end
+        % add time since onset information
+        tbl.timeFix(idx(i,1):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,1):(idx(i+1,1)-1)))*2)-1);
+        tbl.timeCue(idx(i,2):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,2):(idx(i+1,1)-1)))*2)-1);
+        tbl.timeTar(idx(i,3):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,3):(idx(i+1,1)-1)))*2)-1);
+    
     end
-    % add time since onset information
-    tbl.timeFix(idx(i,1):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,1):(idx(i+1,1)-1)))*2)-1);
-    tbl.timeCue(idx(i,2):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,2):(idx(i+1,1)-1)))*2)-1);
-    tbl.timeTar(idx(i,3):(idx(i+1,1)-1)) = 0:2:((length(tbl.timeFix(idx(i,3):(idx(i+1,1)-1)))*2)-1);
+    
+    % format gaze directions as screen pixel coords for NH2010
+    tbl.xPixel = ((tbl.leftScreenX + tbl.rightScreenX)/2)*...
+        (screen_res(1)/(screen_size(1)*1000));
+    tbl.yPixel = ((tbl.leftScreenY + tbl.rightScreenY)/2)*...
+        (screen_res(2)/(screen_size(2)*1000));
+    
+    % save the table
+    save([dir_path filesep subID '_tbl.mat'], 'tbl');
 
 end
 
@@ -107,19 +131,20 @@ end
 
 % generate parameters for NH2010 classification code.
 ETparams = defaultParameters;
-ETparams.screen.resolution              = [2560 1600];   % screen resolution in pixel
-ETparams.screen.size                    = [0.344 0.215]; % screen size in m
+ETparams.screen.resolution              = screen_res;    % screen resolution in pixel
+ETparams.screen.size                    = screen_size;   % screen size in m
 ETparams.screen.viewingDist             = 0.57;          % viewing distance in m
 ETparams.screen.dataCenter              = [0 0];         % center of screen has these coordinates in data
 ETparams.screen.subjectStraightAhead    = [0 0];         % specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
-% format gaze directions as screen pixel coords for NH2010
-tbl.xPixel = tbl.leftScreenX*(ETparams.screen.resolution(1)/(ETparams.screen.size(1)*1000));
-tbl.yPixel = tbl.leftScreenY*(ETparams.screen.resolution(2)/(ETparams.screen.size(2)*1000));
-
-% run the H2010 classifier code on full data set
+% run the NH2010 classifier code on full data set
 [classificationData,ETparams]   = runNH2010Classification(...
     tbl.xPixel,tbl.yPixel,tbl.pupilDiameter,ETparams);
+
+% add a NOT in front of data if more than 1/3 missing or blinks
+if classificationData.isNoiseTrial
+    subID = ['NOT-' subID];
+end
 
 % merge glissades with saccades
 classificationData = mergeSaccadesAndGlissades(classificationData);
