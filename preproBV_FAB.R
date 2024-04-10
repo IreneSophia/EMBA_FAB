@@ -46,7 +46,7 @@ df.tsk = list.files(path = dt.path, pattern = "FAB-BV_*", full.names = T) %>%
                            T ~ F),
          rt.cor = if_else(use, rt, NA)
   ) %>%
-  select(subID, trl, stm, rt, acc, use, cue, target) 
+  select(subID, trl, stm, rt, rt.cor, acc, use, cue, target) 
 
 df.tsk_acc = df.tsk %>%
   group_by(subID) %>%
