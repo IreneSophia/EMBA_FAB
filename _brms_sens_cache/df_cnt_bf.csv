@@ -1,0 +1,76 @@
+population-level,bf.log,priors
+1,0.0000,chosen
+diagnosis * dir_face,-12.9845,chosen
+diagnosis + dir_face,-5.7140,chosen
+diagnosis,-1.7197,chosen
+dir_face,-3.9951,chosen
+1,0.0000,sdx1.25
+diagnosis * dir_face,-14.0582,sdx1.25
+diagnosis + dir_face,-6.3556,sdx1.25
+diagnosis,-2.1335,sdx1.25
+dir_face,-4.2368,sdx1.25
+1,0.0000,sdx1.5
+diagnosis * dir_face,-14.9499,sdx1.5
+diagnosis + dir_face,-6.8895,sdx1.5
+diagnosis,-2.4701,sdx1.5
+dir_face,-4.4187,sdx1.5
+1,0.0000,sdx2
+diagnosis * dir_face,-16.3690,sdx2
+diagnosis + dir_face,-7.7239,sdx2
+diagnosis,-3.0228,sdx2
+dir_face,-4.7058,sdx2
+1,0.0000,sdx4
+diagnosis * dir_face,-19.8109,sdx4
+diagnosis + dir_face,-9.7781,sdx4
+diagnosis,-4.3839,sdx4
+dir_face,-5.3988,sdx4
+1,0.0000,sdx6
+diagnosis * dir_face,-21.8363,sdx6
+diagnosis + dir_face,-10.9930,sdx6
+diagnosis,-5.2049,sdx6
+dir_face,-5.8132,sdx6
+1,0.0000,sdx8
+diagnosis * dir_face,-23.2798,sdx8
+diagnosis + dir_face,-11.8702,sdx8
+diagnosis,-5.7761,sdx8
+dir_face,-6.1008,sdx8
+1,0.0000,sdx10
+diagnosis * dir_face,-24.3903,sdx10
+diagnosis + dir_face,-12.5201,sdx10
+diagnosis,-6.2028,sdx10
+dir_face,-6.3147,sdx10
+1,0.0000,sdx0.875
+diagnosis * dir_face,-12.3607,sdx0.875
+diagnosis + dir_face,-5.3631,sdx0.875
+diagnosis,-1.4850,sdx0.875
+dir_face,-3.8852,sdx0.875
+1,0.0000,sdx0.75
+diagnosis * dir_face,-11.6392,sdx0.75
+diagnosis + dir_face,-4.9504,sdx0.75
+diagnosis,-1.2273,sdx0.75
+dir_face,-3.7328,sdx0.75
+1,0.0000,sdx0.5
+diagnosis * dir_face,-9.7925,sdx0.5
+diagnosis + dir_face,-3.9072,sdx0.5
+diagnosis,-0.5963,sdx0.5
+dir_face,-3.3288,sdx0.5
+1,0.0000,sdx0.25
+diagnosis * dir_face,-6.8844,sdx0.25
+diagnosis + dir_face,-2.3775,sdx0.25
+diagnosis,0.2533,sdx0.25
+dir_face,-2.6341,sdx0.25
+1,0.0000,sdx0.167
+diagnosis * dir_face,-5.3390,sdx0.167
+diagnosis + dir_face,-1.6232,sdx0.167
+diagnosis,0.6065,sdx0.167
+dir_face,-2.2326,sdx0.167
+1,0.0000,sdx0.125
+diagnosis * dir_face,-4.2851,sdx0.125
+diagnosis + dir_face,-1.1275,sdx0.125
+diagnosis,0.8133,sdx0.125
+dir_face,-1.9469,sdx0.125
+1,0.0000,sdx0.1
+diagnosis * dir_face,-3.5015,sdx0.1
+diagnosis + dir_face,-0.7603,sdx0.1
+diagnosis,0.9660,sdx0.1
+dir_face,-1.7267,sdx0.1

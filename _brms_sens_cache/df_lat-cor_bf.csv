@@ -1,0 +1,76 @@
+population-level,bf.log,priors
+1,0.0000,chosen
+diagnosis * cue,-12.2026,chosen
+diagnosis + cue,-7.1438,chosen
+diagnosis,-4.7473,chosen
+cue,-2.3737,chosen
+1,0.0000,sdx1.25
+diagnosis * cue,-13.3214,sdx1.25
+diagnosis + cue,-7.8128,sdx1.25
+diagnosis,-5.2045,sdx1.25
+cue,-2.6160,sdx1.25
+1,0.0000,sdx1.5
+diagnosis * cue,-14.2170,sdx1.5
+diagnosis + cue,-8.3409,sdx1.5
+diagnosis,-5.5605,sdx1.5
+cue,-2.7849,sdx1.5
+1,0.0000,sdx2
+diagnosis * cue,-15.6492,sdx2
+diagnosis + cue,-9.2087,sdx2
+diagnosis,-6.1343,sdx2
+cue,-3.0809,sdx2
+1,0.0000,sdx4
+diagnosis * cue,-19.1171,sdx4
+diagnosis + cue,-11.2955,sdx4
+diagnosis,-7.5047,sdx4
+cue,-3.7738,sdx4
+1,0.0000,sdx6
+diagnosis * cue,-21.1419,sdx6
+diagnosis + cue,-12.5000,sdx6
+diagnosis,-8.3228,sdx6
+cue,-4.1739,sdx6
+1,0.0000,sdx8
+diagnosis * cue,-22.5756,sdx8
+diagnosis + cue,-13.3626,sdx8
+diagnosis,-8.9094,sdx8
+cue,-4.4710,sdx8
+1,0.0000,sdx10
+diagnosis * cue,-23.6932,sdx10
+diagnosis + cue,-14.0217,sdx10
+diagnosis,-9.3472,sdx10
+cue,-4.6816,sdx10
+1,0.0000,sdx0.875
+diagnosis * cue,-11.5370,sdx0.875
+diagnosis + cue,-6.7385,sdx0.875
+diagnosis,-4.4880,sdx0.875
+cue,-2.2466,sdx0.875
+1,0.0000,sdx0.75
+diagnosis * cue,-10.7977,sdx0.75
+diagnosis + cue,-6.3000,sdx0.75
+diagnosis,-4.1934,sdx0.75
+cue,-2.1089,sdx0.75
+1,0.0000,sdx0.5
+diagnosis * cue,-8.8210,sdx0.5
+diagnosis + cue,-5.1178,sdx0.5
+diagnosis,-3.4153,sdx0.5
+cue,-1.6967,sdx0.5
+1,0.0000,sdx0.25
+diagnosis * cue,-5.6245,sdx0.25
+diagnosis + cue,-3.2187,sdx0.25
+diagnosis,-2.1630,sdx0.25
+cue,-1.0427,sdx0.25
+1,0.0000,sdx0.167
+diagnosis * cue,-3.9754,sdx0.167
+diagnosis + cue,-2.2424,sdx0.167
+diagnosis,-1.5391,sdx0.167
+cue,-0.6954,sdx0.167
+1,0.0000,sdx0.125
+diagnosis * cue,-2.9643,sdx0.125
+diagnosis + cue,-1.6552,sdx0.125
+diagnosis,-1.1656,sdx0.125
+cue,-0.4826,sdx0.125
+1,0.0000,sdx0.1
+diagnosis * cue,-2.2923,sdx0.1
+diagnosis + cue,-1.2643,sdx0.1
+diagnosis,-0.9164,sdx0.1
+cue,-0.3393,sdx0.1
