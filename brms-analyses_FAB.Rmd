@@ -883,20 +883,9 @@ df.ms = df.ms %>%
 
 ```
 
-Results concerning our hypotheses: 
+Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (CI of COMP(object) - COMP(face): `r round(quantile(df.ms$h1a, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1a, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1a$hypothesis$Post.Prob*100, 2)`%). Both clinical groups exhibited increased overall reaction times compared with the COMP group (CI of COMP - ADHD: `r round(quantile(df.ms$h1b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1b$hypothesis$Post.Prob*100, 2)`%; CI of COMP - ASD: `r round(quantile(df.ms$h1c, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1c, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1c$hypothesis$Post.Prob*100, 2)`%). Furthermore, while face attention bias was not credibly decreased in ASD participants compared to COMP participants (CI of ASD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1d_comp, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d_comp, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d_comp$hypothesis$Post.Prob*100, 2)`%), it is credibly decreased compared to the average face attention bias in our sample (CI of ASD(FAB) - average FAB: `r round(quantile(df.ms$h1d, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d$hypothesis$Post.Prob*100, 2)`%). This effect is also reflected in the face attention bias in the ADHD group which differs credibly from face attention bias in COMP participants (CI of ADHD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1e, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1e_comp$hypothesis$Post.Prob*100, 2)`%).
 
-<ol type="a">
-  <li>COMP participants react faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (CI of COMP(object) - COMP(face): `r round(quantile(df.ms$h1a, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1a, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1a$hypothesis$Post.Prob*100, 2)`%).</li>
-  <li>ADHD participants react slower than COMP participants in both cue conditions (CI of COMP - ADHD: `r round(quantile(df.ms$h1b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1b$hypothesis$Post.Prob*100, 2)`%).</li>
-  <li>ASD participants react slower than COMP participants in both cue conditions (CI of COMP - ASD: `r round(quantile(df.ms$h1c, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1c, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1c$hypothesis$Post.Prob*100, 2)`%).</li>
-  <li>Face attention bias is not credibly decreased in ASD participants compared to COMP participants (CI of ASD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1d_comp, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d_comp, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d_comp$hypothesis$Post.Prob*100, 2)`%); nonetheless, it is credibly decreased compared to the average face attention bias in our sample (CI of ASD(FAB) - average FAB: `r round(quantile(df.ms$h1d, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d$hypothesis$Post.Prob*100, 2)`%).</li>
-  <li>Face attention bias in ADHD participants differs credibly from face attention bias in COMP participants (CI of ADHD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1e, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1e_comp$hypothesis$Post.Prob*100, 2)`%).</li>
-</ol>
-
-Results concerning exploration: 
-Our exploration of the data reveals a credible face attention bias across all groups (CI of object - face: `r round(quantile(df.ms$FAB, 0.025)[[1]], 2)` to `r round(quantile(df.ms$FAB, 0.975)[[1]], 2)`ms, posterior probability = `r round(e1$hypothesis$Post.Prob*100, 2)`%). 
-
-We also explored differences between our clinical groups. While there were no credible differences in overall reaction times between adults with ASD and adults with ADHD in our data (CI of ADHD - ASD: `r round(quantile(df.ms$e4, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e4, 0.975)[[1]], 2)`ms, posterior probability = `r round(e4$hypothesis$Post.Prob*100, 2)`%), there is a credible difference between face attention bias in the clinical groups (CI of ASD(FAB) - ADHD(FAB): `r round(quantile(df.ms$e5, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e5, 0.975)[[1]], 2)`ms, posterior probability = `r round(e5$hypothesis$Post.Prob*100, 2)`%).
+Furthermore, our exploration of the data revealed a credible face attention bias across all groups (CI of object - face: `r round(quantile(df.ms$FAB, 0.025)[[1]], 2)` to `r round(quantile(df.ms$FAB, 0.975)[[1]], 2)`ms, posterior probability = `r round(e1$hypothesis$Post.Prob*100, 2)`%). Last, we explored differences between our clinical groups. While there were no credible differences in overall reaction times between adults with ASD and adults with ADHD in our data (CI of ADHD - ASD: `r round(quantile(df.ms$e4, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e4, 0.975)[[1]], 2)`ms, posterior probability = `r round(e4$hypothesis$Post.Prob*100, 2)`%), there was a credible difference between face attention bias in the clinical groups (CI of ASD(FAB) - ADHD(FAB): `r round(quantile(df.ms$e5, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e5, 0.975)[[1]], 2)`ms, posterior probability = `r round(e5$hypothesis$Post.Prob*100, 2)`%).
 
 ## Plots
 
@@ -1118,7 +1107,11 @@ extractBF(aov.acc, logbf = T)
 # print overall accuracy rates
 df.acc %>% 
   group_by(diagnosis, cue) %>% 
-  summarise(mean_accuracy = mean(acc, na.rm = T))
+  summarise(mean_accuracy = mean(acc, na.rm = T), sd_accuracy = sd(acc, na.rm = T))
+
+df.acc %>% 
+  group_by(diagnosis) %>% 
+  summarise(mean_accuracy = mean(acc, na.rm = T), sd_accuracy = sd(acc, na.rm = T))
 
 ```
 
