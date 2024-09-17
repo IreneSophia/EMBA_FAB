@@ -1,14 +1,14 @@
 population-level,bf.log,priors
 1,0.0000,chosen
-diagnosis * dir_face,-5.9245,chosen
-diagnosis + dir_face,0.0256,chosen
-diagnosis,-0.3128,chosen
-dir_face,0.3276,chosen
+diagnosis * dir_face,-5.9206,chosen
+diagnosis + dir_face,0.0281,chosen
+diagnosis,-0.3157,chosen
+dir_face,0.3487,chosen
 1,0.0000,sdx1.25
-diagnosis * dir_face,-6.9673,sdx1.25
-diagnosis + dir_face,-0.5816,sdx1.25
-diagnosis,-0.7003,sdx1.25
-dir_face,0.1234,sdx1.25
+diagnosis * dir_face,-6.9695,sdx1.25
+diagnosis + dir_face,-0.5799,sdx1.25
+diagnosis,-0.6992,sdx1.25
+dir_face,0.1253,sdx1.25
 1,0.0000,sdx1.5
 diagnosis * dir_face,-7.8241,sdx1.5
 diagnosis + dir_face,-1.0792,sdx1.5

@@ -512,9 +512,28 @@ df.m.cnt %>%
 h2a = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1")
 h2a
 
+# extract predicted differences in ms instead of log data
+df.new = df.cnt %>% 
+  select(diagnosis, dir_face) %>% 
+  distinct() %>%
+  mutate(
+    condition = paste(diagnosis, dir_face, sep = "_")
+  )
+df.est = as.data.frame(
+  fitted(m.cnt, summary = F, 
+               newdata = df.new %>% select(diagnosis, dir_face), 
+               re_formula = NA))
+colnames(df.est) = df.new$condition
+
+# calculate our difference columns
+df.est = df.est %>%
+  mutate(
+    h2a  = COMP_TRUE - COMP_FALSE
+  )
+
 ```
 
-Our hypothesis was not confirmed: there was no difference between the number of saccades in the direction of the face compared to the direction of the object in our COMP group (CI of COMP(face) - COMP(object): `r round(h2a$hypothesis$CI.Lower, 2)` to `r round(h2a$hypothesis$CI.Upper, 2)`%, posterior probability = `r round(h2a$hypothesis$Post.Prob*100, 2)`%).
+Our hypothesis was not confirmed: there was no difference between the number of saccades in the direction of the face compared to the direction of the object in our COMP group (CI of COMP(face) - COMP(object): `r round(quantile(df.est$h2a, 0.025)[[1]], 2)` to `r round(quantile(df.est$h2a, 0.975)[[1]], 2)`, posterior probability = `r round(h2a$hypothesis$Post.Prob*100, 2)`%).
 
 ## Plots
 
@@ -632,7 +651,7 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-When we compare the BF of priors where we varied the standard deviation, we observe that no model outperforms the intercept model. On the contrary, the intercept model consistently outperforms the other models except for very narrow priors where the model containing the main effect diagnostic status shows a higher BF value. Therefore, we conclude that there are no differences between diagnostic groups or saccade direction (face or object cue).
+The Bayes Factor analysis revealed no model outperforming the intercept-only model. On the contrary, the intercept-only model consistently outperforms the other models (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). Therefore, we conclude that there are no differences between diagnostic groups, saccade direction (face or object cue) or their interaction. 
 
 # S2.3 Saccade latencies
 
@@ -1120,13 +1139,35 @@ h2b = hypothesis(m.lat, "0 < diagnosis1 + 2*diagnosis2 + diagnosis1:cue1 + 2*dia
 h2b
 
 # explore: faster towards faces
-hypothesis(m.lat, "0 > cue1", alpha = 0.025)
+e = hypothesis(m.lat, "0 > cue1", alpha = 0.025)
+e
+
+# extract predicted differences in ms instead of log data
+df.new = df.lat %>% 
+  select(diagnosis, cue) %>% 
+  distinct() %>%
+  mutate(
+    condition = paste(diagnosis, cue, sep = "_")
+  )
+df.ms = as.data.frame(
+  fitted(m.lat, summary = F, 
+               newdata = df.new %>% select(diagnosis, cue), 
+               re_formula = NA))
+colnames(df.ms) = df.new$condition
+
+# calculate our difference columns
+df.ms = df.ms %>%
+  mutate(
+    COMP = (COMP_face + COMP_object)/2,
+    ADHD = (ADHD_face + ADHD_object)/2,
+    ASD  = (ASD_object + ASD_face)/2,
+    h2b  = COMP_face - COMP_object,
+    e  = (ADHD_face + ASD_face + COMP_face)/3 - (ADHD_object + ASD_object + COMP_object)/3
+  )
 
 ```
 
-Again, our hypothesis is not supported by the data. Latencies towards faces were not longer in the autistic group compared to the control group (CI of ASD(face) - COMP(face): `r round(h2b$hypothesis$CI.Lower, 2)` to `r round(h2b$hypothesis$CI.Upper, 2)`%, posterior probability = `r round(h2b$hypothesis$Post.Prob*100, 2)`%). 
-
-We also explored whether our subjects produced faster saccades towards the targets appearing on the side of the face which also was not the case. 
+None of the population-level predictors showed credible effects on saccade latency. Specifically, we assessed whether latencies associated with saccades towards targets appearing at the previous location of the face are shorter in our comparison group than in the autistic group which was not the case (CI of ASD(face) - COMP(face): `r round(quantile(df.ms$h2b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h2b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h2b$hypothesis$Post.Prob*100, 2)`%). We also explored whether our subjects produced faster saccades towards the targets appearing on the side of the face which also was not the case (CI of face - object: `r round(quantile(df.ms$e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e, 0.975)[[1]], 2)`ms, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). 
 
 ### Plots
 
@@ -1241,7 +1282,7 @@ kable(df.lat.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-Again, the intercept model consistently performs better than all models containing predictors. 
+The null effects were also reflected in the Bayes Factor analysis where the intercept-only model consistently outperformed all other models (diagnostic groups: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`).
 
 # S2.4 Correlation with reaction times: number of saccades
 
@@ -1281,14 +1322,14 @@ cor.bf = computeBayesFactorOneZero(rhoSamples.cnt$rhoSamples,
 # visualise it
 ggplot(data = df.diff, aes(x = n.face, y = rt.fab)) +
   geom_point(colour = "lightblue") +
-  geom_abline(method = "lm", 
+  geom_smooth(method = "lm", 
               formula = y ~ x, 
               geom = "smooth", colour = c_mid_highlight) +
   theme_bw() 
 
 ```
 
-Hypothesis 3 was not supported by the data, in fact there is `r effectsize::interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
+Furthermore, we assessed the relationship between face attention bias and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r effectsize::interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
 
 # S2.5 Exploration: number of saccades towards cue
 
@@ -1327,7 +1368,7 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
 } else {
   # perform the SBC
   set.seed(2468)
-  gen = SBC_generator_brms(f.cnt, data = df.cnt, prior = priors, 
+  gen = SBC_generator_brms(f.cnt, data = df.cnt.cue, prior = priors, 
    thin = 50, warmup = 10000, refresh = 2000,
    generate_lp = TRUE, family = poisson(), init = 0.1)
   bck = SBC_backend_brms_from_generator(gen, chains = 4, thin = 1,
@@ -1460,7 +1501,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 
 # fit the model
 m.cnt = brm(f.cnt,
-            df.cnt, prior = priors,
+            df.cnt.cue, prior = priors,
             iter = iter, warmup = warm,
             backend = "cmdstanr", threads = threading(8),
             file = "m_cnt-cue",
@@ -1572,9 +1613,28 @@ hypothesis(m.cnt, "0 < 2*diagnosis2 + diagnosis1", alpha = 0.025)
 # exploration: ASD(face) > ASD(object)
 hypothesis(m.cnt, "0 > dir_face1 + diagnosis2:dir_face1", alpha = 0.025)
 
+# extract predicted differences in ms instead of log data
+df.new = df.cnt.cue %>% 
+  select(diagnosis, dir_face) %>% 
+  distinct() %>%
+  mutate(
+    condition = paste(diagnosis, dir_face, sep = "_")
+  )
+df.est = as.data.frame(
+  fitted(m.cnt, summary = F, 
+               newdata = df.new %>% select(diagnosis, dir_face), 
+               re_formula = NA))
+colnames(df.est) = df.new$condition
+
+# calculate our difference columns
+df.est = df.est %>%
+  mutate(
+    e  = (COMP_TRUE + ADHD_TRUE + ASD_TRUE)/3 - (COMP_FALSE + ADHD_FALSE + ASD_FALSE)/3
+  )
+
 ```
 
-During the presentation of the cue, all diagnostic groups produced more saccades in the direction of the face compared to the direction of the object (CI of object - face: `r round(e$hypothesis$CI.Lower, 2)` to `r round(e$hypothesis$CI.Upper, 2)`%, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). However, this effect and the general number of saccades during the cue presentation did not differ between diagnostic groups. 
+This model revealed no differences between diagnostic groups; however,  all diagnostic groups produced more saccades in the direction of the face compared to the direction of the object during the presentation of the cue (CI of object - face: `r round(quantile(df.est$e, 0.025)[[1]], 2)` to `r round(quantile(df.est$e, 0.975)[[1]], 2)`, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). 
 
 ## Plots
 
@@ -1630,7 +1690,7 @@ if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
 if (length(pr.descriptions) > 0) {
   # rerun the model with more iterations for bridgesampling
   m.cnt.bf = brm(f.cnt,
-            df.cnt, prior = priors,
+            df.cnt.cue, prior = priors,
             iter = 40000, warmup = 10000,
             backend = "cmdstanr", threads = threading(8),
             file = "m_cnt-cue_bf",
@@ -1717,7 +1777,7 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-When focusing on our chosen priors, the model including whether the saccade was produced towards the face or the object (dir_face TRUE or FALSE) performs slightly better than the intercept model, however, there is only `r effectsize::interpret_bf(df.cnt.bf[(df.cnt.bf$priors == "chosen") & (df.cnt.bf$"population-level" == "dir_face"),]$bf.log, log = T)` the model including dir_face. This combined with the sensitivity analysis showing that this effect is rather inconsistent across priors decreases our confidence in this result. Therefore, we conclude that we cannot determine the best model regarding our data. 
+However, in the Bayes Factor analysis, the model including whether the saccade was produced towards the face or the object performs only slightly better than the intercept-only model, with `r effectsize::interpret_bf(df.cnt.bf[(df.cnt.bf$priors == "chosen") & (df.cnt.bf$"population-level" == "dir_face"),]$bf.log, log = T)` the model including saccade direction (comparisons with intercept-only model, diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). Additionally, the sensitivity analysis shows that this effect is rather inconsistent across priors which decreases our confidence in this result. Therefore, we conclude that more data is needed to determine whether consistently more saccades towards the faces are produced. 
 
 # S2.6 Exploration: number of saccades towards target
 
@@ -1919,7 +1979,7 @@ hypothesis(m.cnt.tar, "0 > cue1", alpha = 0.025)
 
 ```
 
-There are no differences in the number of saccades produced towards the target between diagnostic groups or conditions. 
+This model did not reveal any credible differences associated with the population-level predictors, suggesting that saccades towards a target appearing at the previous location of the face are not more likely than saccades towards a target appearing at the previous location of the object.
 
 ## Plots
 
@@ -2035,336 +2095,4 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-The intercept model consistently outperforms the other models with the exception of very narrow priors. 
-
-# S2.7 Exploration: association of saccade latency and reaction time
-
-Last, we investigate the relationship between reaction times and latencies for each participant.
-
-## Specify the model
-
-```{r cor_lat, fig.height=4, message=T}
-
-# check the distribution plot > not normally distributed
-p1 = ggplot(df.lat, aes(sample = lat)) + stat_qq(alpha = 0.5, colour = "lightblue") + stat_qq_line() + theme_bw()
-p2 = ggplot(df.lat, aes(sample = rt.cor)) + stat_qq(alpha = 0.5, colour = "lightblue") + stat_qq_line() + theme_bw()
-ggarrange(p1, p2, 
-          nrow = 1, ncol = 2, labels = "AUTO")
-
-# compute the correlations per subject and condition using spearman
-df.lat.agg = df.lat %>%
-  group_by(subID, diagnosis, cue) %>%
-  summarise(
-    count  = n(),
-    rt.lat = cor(rt, lat, method = "spearman", use = "na.or.complete")
-  ) %>%
-  filter(!is.na(rt.lat) & count >= 5)
-
-# set the formula
-f.cor = brms::bf(rt.lat ~ diagnosis * cue + (1 | subID))
-
-# set some priors
-priors = c(
-  prior(normal(0.10, 0.75), class = Intercept),
-  prior(normal(0,    0.50), class = sd),
-  prior(normal(0,    0.50), class = b),
-  prior(normal(0.20, 0.50), class = sigma)
-)
-
-# set number of iterations and warmup for models
-iter = 3000
-warm = 1000
-
-```
-
-## SBC
-
-```{r cor_lat_sbc}
-
-# set code
-code = "LAT-cor"
-
-# perform SBC
-if (file.exists(file.path(cache_dir, paste0("df_res_", code, ".rds")))) {
-  # load in the results of the SBC
-  df.results = readRDS(file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  df.backend = readRDS(file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
-  dat        = readRDS(file = file.path(cache_dir, paste0("dat_", code, ".rds")))
-} else {
-  # create the data and the results
-  set.seed(2468)
-  gen = SBC_generator_brms(f.cor, data = df.lat.agg, prior = priors, 
-                           thin =  50, warmup = 10000, refresh = 2000,
-                           generate_lp = TRUE)
-  dat = generate_datasets(gen, nsim) 
-  saveRDS(dat, file = file.path(cache_dir, paste0("dat_", code, ".rds")))
-  backend = SBC_backend_brms_from_generator(gen, chains = 4, thin = 1,
-                                            warmup = warm, iter = iter)
-  results = compute_SBC(dat, backend,
-                        cache_mode     = "results", 
-                        cache_location = file.path(cache_dir, paste0("res_", code)))
-  df.results = results$stats
-  df.backend = results$backend_diagnostics
-  saveRDS(df.results, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  saveRDS(df.backend, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
-  
-}
-
-```
-
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, but `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This reveals some divergence issues, for which we will watch out in the final model. 
-
-## Computational faithfulness and model sensitivity
-
-```{r cor_lat_comp, fig.height=12}
-
-# get simulation numbers with issues
-des_rank = max(df.results$max_rank)
-check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
-    filter(rhat >= 1.05 | mean_rank < des_rank), 
-  df.backend %>% filter(n_divergent > 0), all = T)
-
-# plot SBC with functions from the SBC package focusing on population-level parameters
-
-df.results.b = df.results %>% 
-  filter(substr(variable, 1, 2) == "b_") %>% 
-  filter(!(sim_id %in% check$sim_id)) %>%
-  ungroup() %>%
-  mutate(
-    max_rank = max(rank)
-  )
-p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none") +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(0.75, rep(0.50, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
-  theme_bw() +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-
-p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
-
-```
-
-All looks acceptable.  
-
-## Posterior predictive checks
-
-```{r cor_lat_post, message=T, fig.height=4}
-
-# run the model
-m.cor = brm(f.cor,
-            df.lat.agg, prior = priors,
-            iter = iter, warmup = warm,
-            backend = "cmdstanr", threads = threading(8),
-            file = "m_lat-cor",
-            save_pars = save_pars(all = TRUE)
-            )
-rstan::check_hmc_diagnostics(m.cor$fit)
-
-# check that rhats are below 1.01
-sum(brms::rhat(m.cor) >= 1.01, na.rm = T)
-
-# check the trace plots
-post.draws = as_draws_df(m.cor)
-mcmc_trace(post.draws, regex_pars = "^b_",
-           facet_args = list(ncol = 3)) +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-
-```
-
-The final model only has few divergent transitions. The trace plots and rhats look good. 
-
-```{r cor_lat_post2}
-
-# get posterior predictions
-post.pred = posterior_predict(m.cor, ndraws = nsim)
-
-# check the fit of the predicted data compared to the real data
-p1 = pp_check(m.cor, ndraws = nsim) + 
-  theme_bw() + theme(legend.position = "none") + xlim(-1, 1)
-
-# distributions of means compared to the real values
-p2 = ppc_stat_grouped(df.lat.agg$rt.lat, post.pred, df.lat.agg$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-p = ggarrange(p1, p2, 
-          nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: correlation between latency and RT", face = "bold", size = 14))
-
-```
-
-The predictions based on the model do not capture the data as well as we would hope, however, the diagnostic group averages are captured sufficiently well. 
-
-## Model summary
-
-Now that we are convinced that we can trust our model, we have a look at the model and its estimates.
-
-```{r cor_lat_post3}
-
-# print the summary
-summary(m.cor)
-
-# plot the posterior distributions
-as_draws_df(m.cor) %>% 
-  select(starts_with("b_")) %>%
-  mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2
-    ) %>%
-  pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
-  mutate(
-    coef = case_match(coef,
-      "b_Intercept"  ~ "Overall correlation",
-      "b_diagnosis1" ~ "ADHD",
-      "b_diagnosis2" ~ "ASD",
-      "b_COMP"       ~ "COMP",
-      "b_cue1"       ~ "Face",
-      "b_diagnosis1:cue1" ~ "Interaction: ADHD",
-      "b_diagnosis2:cue1" ~ "Interaction: ASD"
-    ),
-    coef = fct_reorder(coef, desc(coef))
-  ) %>% 
-  group_by(coef) %>%
-  mutate(
-    cred = case_when(
-      (mean(estimate) < 0 & quantile(estimate, probs = 0.975) < 0) |
-        (mean(estimate) > 0 & quantile(estimate, probs = 0.025) > 0) ~ "credible",
-      T ~ "not credible"
-    )
-  ) %>% ungroup() %>%
-  ggplot(aes(x = estimate, y = coef, fill = cred)) +
-  geom_vline(xintercept = 0, linetype = 'dashed') +
-  ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + theme(legend.position = "none")
-
-# is there an average correlation unequal to zero?
-hypothesis(m.cor, "0 < Intercept", alpha = 0.025)
-
-```
-
-On the trials where participants are producing a saccade, there is an association between their reaction time and their saccade latency with longer latencies also being associated with slower reactions. This does not seem to differ between conditions or diagnostic groups. 
-
-## Plots
-
-As the last step, we can now finally plot our data with our predictors of interest in mind. 
-
-```{r cor_lat_plot, fig.height=4}
-
-# rain plot of association per participant and cue condition
-df.lat.agg %>%
-  ggplot(aes(diagnosis, rt.lat, fill = cue, colour = cue)) + #
-  geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = 0.5),
-violin.args = list(color = "black", outlier.shape = NA, alpha = 0.5),
-boxplot.args.pos = list(
-  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
-),
-point.args = list(show_guide = FALSE, alpha = .5),
-violin.args.pos = list(
-  width = 0.6, position = position_nudge(x = 0.16)),
-point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
-  geom_hline(yintercept = 0) +
-  labs(title = "Spearman correlation between latency and RT per subject", x = "", y = "n") +
-  theme_bw() + 
-  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.direction = "horizontal", text = element_text(size = 15))
-
-```
-
-## Bayes factor analysis
-
-To complement our hypothesis testing using brms::hypothesis(), we perform a Bayes Factor analysis with models excluding some of our population-level predictors. 
-
-```{r bf_cor_lat, fig.height=4}
-
-# set the directory in which to save results
-sense_dir = file.path(getwd(), "_brms_sens_cache")
-log_dir = sense_dir
-main.code = "lat-cor"
-
-# describe priors
-pr.descriptions = c("chosen",
-  "sdx1.25",  "sdx1.5",  "sdx2",    "sdx4",   "sdx6",     "sdx8",     "sdx10", 
-  "sdx0.875", "sdx0.75", "sdx0.5", "sdx0.25", "sdx0.167", "sdx0.125", "sdx0.1"
-  )
-
-# check which have been run already
-if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F) %>%
-    select(priors) %>% distinct()
-  pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
-}
-
-if (length(pr.descriptions) > 0) {
-  # rerun the model with more iterations for bridgesampling
-  m.cor.bf = brm(f.cor,
-            df.lat.agg, prior = priors,
-            iter = 40000, warmup = 10000,
-            backend = "cmdstanr", threads = threading(8),
-            file = "m_lat-cor_bf",
-            save_pars = save_pars(all = TRUE)
-            )
-}
-
-# loop through them
-for (pr.desc in pr.descriptions) {
-  tryCatch({
-    # use the function
-    bf_sens_2int(m.cor.bf, "diagnosis", "cue", pr.desc, 
-                 main.code, # prefix for all models and MLL
-                 file.path(log_dir, "log_FAB_bf.txt"), # log file
-                 sense_dir, # where to save the models and MLL
-                 reps = 5
-    )
-  },
-  error = function(err) {
-    message(sprintf("Error for %s: %s", pr.desc, err))
-  }
-  )
-}
-
-# read in the results
-df.cor.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F)
-
-# check the sensitivity analysis result per model
-df.cor.bf %>%
-  filter(`population-level` != "1") %>%
-  mutate(
-    sd = as.factor(case_when(
-      priors == "chosen" ~ "1", 
-      substr(priors, 1, 3) == "sdx" ~ gsub("sdx", "", priors),
-      T ~ priors)
-    ),
-    order = case_when(
-      priors == "chosen" ~ 1, 
-      substr(priors, 1, 3) == "sdx" ~ as.numeric(gsub("sdx", "", priors)),
-      T ~ 999),
-    sd = fct_reorder(sd, order)
-  ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
-  geom_point() +
-  geom_line() + 
-  geom_vline(xintercept = "1") +
-  geom_hline(yintercept = 0) +
-  ggtitle("Sensitivity analysis with the intercept-only model as reference") +
-  #facet_wrap(. ~ `population-level`, scales = "free_y") +
-  scale_colour_manual(values = custom.col) +
-  theme_bw() +
-  theme(legend.position = c(0.15,0.35), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-# print the BFs based on chosen priors
-kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
-  filter(`population-level` != "1") %>% arrange(desc(bf.log)), digits = 3)
-
-```
-
-Very clearly, the intercept model consistently outperforms all other models. 
+This null effect was mirrored by the Bayes Factor analysis where the intercept-only model consistently outperforms the other models with the exception of very narrow priors (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`). 
