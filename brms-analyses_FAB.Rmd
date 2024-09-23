@@ -148,8 +148,21 @@ if (!file.exists("FAB_data.RData")) {
                  readRDS(file = paste0(dt.path, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
   
+  # load data and aggregate emotion discrimination threshold
+  df.fer = readRDS(file = paste0(dt.path, '/df_FER.RDS')) %>%
+    group_by(subID, emo) %>% 
+    summarise(
+      EDT = mean(disc, na.rm = T)
+    ) %>% 
+    group_by(subID) %>%
+    summarise(
+      EDT = mean(EDT)
+    )
+  
   # only keep participants included in the study in the subject data frame
-  df.sub = merge(df.fab %>% select(subID) %>% distinct(), df.sub, all.x = T)
+  df.sub = merge(df.fab %>% select(subID) %>% distinct(), df.sub, all.x = T) %>%
+    # merge with EDT dataframe
+    merge(., df.fer, all.x = T)
   
   # load the eye tracking data and only keep participants included in the study
   load(file.path(dt.path, "FAB_ET_data.RData"))
@@ -184,10 +197,11 @@ if (!file.exists("FAB_data.RData")) {
   # check which outcomes of interest are normally distributed
   df.sht = df.sub %>% 
     group_by(diagnosis) %>%
-    shapiro_test(age, iq, BDI_total, ASRS_total, RAADS_total, TAS_total) %>%
+    shapiro_test(age, iq, BDI_total, ASRS_total, 
+                 RAADS_total, TAS_total, EDT) %>%
     mutate(
       sig = if_else(p < 0.05, "*", "")
-    )
+    ) %>% arrange(variable)
   
   # most of the measures are not normally distributed; 
   # therefore, we compute ranks for these outcomes
@@ -199,6 +213,8 @@ if (!file.exists("FAB_data.RData")) {
       rTAS   = rank(TAS_total),
       diagnosis = as.factor(diagnosis)
     )
+  
+  df.edt = df.sub %>% select(subID, diagnosis, EDT) %>% drop_na()
   
   # now we can compute our ANOVAs
   aov.age   = anovaBF(rage   ~ diagnosis, data = df.sub)
@@ -320,8 +336,24 @@ if (!file.exists("FAB_data.RData")) {
                  sd(df.sub[df.sub$diagnosis == "COMP",]$TAS_total)/
                    sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
          sprintf("%.3f", aov.TAS@bayesFactor[["bf"]])
+       ),
+       c(
+         "EDT",
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.edt[df.edt$diagnosis == "ADHD",]$EDT), 
+                 sd(df.edt[df.edt$diagnosis == "ADHD",]$EDT)/
+                   sqrt(nrow(df.edt[df.edt$diagnosis == "ADHD",]))),
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.edt[df.edt$diagnosis == "ASD",]$EDT), 
+                 sd(df.edt[df.edt$diagnosis == "ASD",]$EDT)/
+                   sqrt(nrow(df.edt[df.edt$diagnosis == "ASD",]))),
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.edt[df.edt$diagnosis == "COMP",]$EDT), 
+                 sd(df.edt[df.edt$diagnosis == "COMP",]$EDT)/
+                   sqrt(nrow(df.edt[df.edt$diagnosis == "COMP",]))),
+         sprintf("%.3f", 2.846)
        )
-  )
+  ) %>% arrange(measurement)
   
   # save it all
   save(df.fab, df.sac, df.table, df.sht, ct.full, ct.mf, df.exc, file = "FAB_data.RData")
