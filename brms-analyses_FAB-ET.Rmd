@@ -118,7 +118,10 @@ df.sac = df.sac %>%
 # divide into cue and target saccades
 inflect = function(density, threshold = 1){
   up   = sapply(1:threshold, function(n) c(density$y[-(seq(n))], rep(NA, n)))
-  down = sapply(-1:-threshold, function(n) c(rep(NA,abs(n)), density$y[-seq(length(density$y), length(density$y) - abs(n) + 1)]))
+  down = sapply(-1:-threshold, 
+                function(n) c(rep(NA,abs(n)), 
+                              density$y[-seq(length(density$y), 
+                                             length(density$y) - abs(n) + 1)]))
   a    = cbind(density$y,up,down)
   minima = round(density$x[which(apply(a, 1, min) == a[,1])])
   maxima = round(density$x[which(apply(a, 1, max) == a[,1])])
@@ -132,8 +135,10 @@ dd = with(density(df.sac$lat), data.frame(x,y))
 ggplot(dd, aes(x = x, y = y)) + 
   geom_line() +
   geom_vline(xintercept = infpoints$minima, linetype=3) +
-  geom_ribbon(data = subset(dd, x <= infpoints$minima[1]), aes(ymax = y), ymin = 0, fill = custom.col[1], colour = NA, alpha = 0.5) +
-  geom_ribbon(data = subset(dd, x >= infpoints$minima[1]), aes(ymax = y), ymin = 0, fill = custom.col[2], colour = NA, alpha = 0.5) + 
+  geom_ribbon(data = subset(dd, x <= infpoints$minima[1]), aes(ymax = y), ymin = 0, 
+              fill = custom.col[1], colour = NA, alpha = 0.5) +
+  geom_ribbon(data = subset(dd, x >= infpoints$minima[1]), aes(ymax = y), ymin = 0, 
+              fill = custom.col[2], colour = NA, alpha = 0.5) + 
   geom_vline(xintercept = 200) + 
   xlim(0, 750) +
   theme_bw()
@@ -168,8 +173,10 @@ df.cnt.tar = df.sac %>%
   )
 
 # add a zero if no saccades were produced
-subID    = rep(as.character(unique(df.sac$subID)), each = length(unique(df.sac$dir_face)))
-dir_face = rep(as.character(unique(df.sac$dir_face)), times = length(unique(df.sac$subID)))
+subID    = rep(as.character(unique(df.sac$subID)), 
+               each = length(unique(df.sac$dir_face)))
+dir_face = rep(as.character(unique(df.sac$dir_face)), 
+               times = length(unique(df.sac$subID)))
 df.cnt = merge(df.cnt, data.frame(subID, dir_face), all = T) %>%
   mutate(
     n.face = if_else(is.na(n.face), 0, n.face)
@@ -369,7 +376,11 @@ Since our priors were set very wide, we do get wide prior predictive distributio
 # get simulation numbers with issues
 des_rank = max(df.results$max_rank)
 check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
+    group_by(sim_id) %>% 
+      summarise(
+        rhat = max(rhat, na.rm = T), 
+        mean_rank = max(max_rank)
+        ) %>% 
     filter(rhat >= 1.05 | mean_rank < des_rank), 
   df.backend %>% filter(n_divergent > 0), all = T)
 
@@ -391,13 +402,19 @@ p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
 p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(1.5, rep(1.0, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
+p4 = plot_contraction(df.results.b, 
+                      prior_sd = setNames(c(1.5, 
+                                            rep(1.0, 
+                                                length(unique(df.results.b$variable))-1)), 
+                                          unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 
 p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Computational faithfulness and model sensitivity", 
+                face = "bold", size = 14))
 
 ```
 
@@ -453,7 +470,9 @@ p2 = ppc_stat_grouped(df.cnt$n.face, post.pred, df.cnt$diagnosis) +
 
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: number of saccades towards face", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: no saccades towards face", 
+                face = "bold", size = 14))
 
 ```
 
@@ -463,7 +482,7 @@ The predictions based on the model capture the data well. This further increases
 
 Now that we are convinced that we can trust our model, we have a look at the model and its estimates.
 
-```{r final_cnt, fig.height=4}
+```{r final_cnt, fig.height=6}
 
 # print a summary
 summary(m.cnt)
@@ -506,7 +525,8 @@ df.m.cnt %>%
   ggplot(aes(x = estimate, y = coef, fill = cred)) +
   geom_vline(xintercept = 0, linetype = 'dashed') +
   ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + theme(legend.position = "none")
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
 
 # H2a: COMP: face > object
 h2a = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1")
@@ -559,7 +579,10 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   scale_color_manual(values = custom.col) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
-  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.direction = "horizontal", text = element_text(size = 15))
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
 
 ```
 
@@ -582,7 +605,8 @@ pr.descriptions = c("chosen",
 
 # check which have been run already
 if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F) %>%
+  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F) %>%
     select(priors) %>% distinct()
   pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
 }
@@ -617,7 +641,8 @@ for (pr.desc in pr.descriptions) {
 }
 
 # read in the results
-df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F)
+df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F)
 
 # check the sensitivity analysis result per model
 df.cnt.bf %>%
@@ -634,7 +659,10 @@ df.cnt.bf %>%
       T ~ 999),
     sd = fct_reorder(sd, order)
   ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
+  ggplot(aes(y = bf.log, 
+             x = sd, 
+             group = `population-level`, 
+             colour = `population-level`)) + 
   geom_point() +
   geom_line() + 
   geom_vline(xintercept = "1") +
@@ -643,7 +671,8 @@ df.cnt.bf %>%
   #facet_wrap(. ~ `population-level`, scales = "free_y") +
   scale_colour_manual(values = custom.col) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.35), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(legend.position = c(0.15,0.35), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # print the BFs based on chosen priors
 kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
@@ -676,7 +705,7 @@ priors = c(
   prior(normal(0,    0.25), class = sd),
   prior(normal(0,    0.25), class = b),
   prior(normal(0.5,  0.50), class = sigma),
-  prior(normal(350, 50.00), class = ndt),  # based on threshold between target and cue saccades
+  prior(normal(350, 50.00), class = ndt),  # threshold between target and cue saccades
   prior(lkj(2),             class = cor)
 )
 
@@ -707,8 +736,10 @@ if (file.exists(file.path(cache_dir, paste0("df_res_", code, ".rds")))) {
   results = compute_SBC(dat, backend,
                         cache_mode     = "results", 
                         cache_location = file.path(cache_dir, paste0("res_", code)))
-  saveRDS(results$stats, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  saveRDS(results$backend_diagnostics, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
+  saveRDS(results$stats, 
+          file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
+  saveRDS(results$backend_diagnostics, 
+          file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
 }
 
 ```
@@ -773,7 +804,9 @@ p3 = ggplot() +
 p = ggarrange(p1, 
   ggarrange(p2, p3, ncol = 2, labels = c("B", "C")), 
   nrow = 2, labels = "A")
-annotate_figure(p, top = text_grob("Prior predictive checks: latency", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Prior predictive checks: latency", 
+                face = "bold", size = 14))
 
 ```
 
@@ -786,7 +819,11 @@ First, we assess whether the simulated values fit our expectations of the distri
 # get simulation numbers with issues
 des_rank = max(df.results$max_rank)
 check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
+    group_by(sim_id) %>% 
+      summarise(
+        rhat = max(rhat, na.rm = T), 
+        mean_rank = max(max_rank)
+        ) %>% 
     filter(rhat >= 1.05 | mean_rank < des_rank), 
   df.backend %>% filter(n_divergent > 0), all = T)
 
@@ -808,13 +845,19 @@ p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
 p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(0.75, rep(0.25, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
+p4 = plot_contraction(df.results.b, 
+                      prior_sd = setNames(c(0.75, 
+                                            rep(0.25,
+                                                length(unique(df.results.b$variable))-1)), 
+                                          unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 
 p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Computational faithfulness and model sensitivity", 
+                face = "bold", size = 14))
 
 ```
 
@@ -870,7 +913,9 @@ p2 = ppc_stat_grouped(df.lat$lat, post.pred, df.lat$diagnosis) +
 
 p = ggarrange(p1, p2, 
           nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: latency", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: latency", 
+                face = "bold", size = 14))
 
 ```
 
@@ -924,8 +969,10 @@ if (file.exists(file.path(cache_dir, paste0("df_res_", code, ".rds")))) {
   results = compute_SBC(dat, backend,
                         cache_mode     = "results", 
                         cache_location = file.path(cache_dir, paste0("res_", code)))
-  saveRDS(results$stats, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  saveRDS(results$backend_diagnostics, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
+  saveRDS(results$stats, 
+          file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
+  saveRDS(results$backend_diagnostics, 
+          file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
 }
 
 ```
@@ -990,7 +1037,9 @@ p3 = ggplot() +
 p = ggarrange(p1, 
   ggarrange(p2, p3, ncol = 2, labels = c("B", "C")), 
   nrow = 2, labels = "A")
-annotate_figure(p, top = text_grob("Prior predictive checks: latency", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Prior predictive checks: latency", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1003,7 +1052,11 @@ Again, our simulated datasets seem to capture well what we know about saccade la
 # get simulation numbers with issues
 des_rank = max(df.results$max_rank)
 check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
+    group_by(sim_id) %>% 
+      summarise(
+        rhat = max(rhat, na.rm = T), 
+        mean_rank = max(max_rank)
+        ) %>% 
     filter(rhat >= 1.05 | mean_rank < des_rank), 
   df.backend %>% filter(n_divergent > 0), all = T)
 
@@ -1025,13 +1078,19 @@ p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
 p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(0.75, rep(0.25, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
+p4 = plot_contraction(df.results.b, 
+                      prior_sd = setNames(c(0.75, 
+                                            rep(0.25, 
+                                                length(unique(df.results.b$variable))-1)), 
+                                          unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 
 p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Computational faithfulness and model sensitivity", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1087,7 +1146,9 @@ p2 = ppc_stat_grouped(df.lat.agg$lat, post.pred, df.lat.agg$diagnosis) +
 
 p = ggarrange(p1, p2, 
           nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: latency", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: latency", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1132,10 +1193,12 @@ as_draws_df(m.lat) %>%
   ggplot(aes(x = estimate, y = coef, fill = cred)) +
   geom_vline(xintercept = 0, linetype = 'dashed') +
   ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + theme(legend.position = "none")
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
 
 # H2b: ASD(face) > COMP(face)
-h2b = hypothesis(m.lat, "0 < diagnosis1 + 2*diagnosis2 + diagnosis1:cue1 + 2*diagnosis2:cue1")
+h2b = hypothesis(m.lat, 
+                 "0 < diagnosis1 + 2*diagnosis2 + diagnosis1:cue1 + 2*diagnosis2:cue1")
 h2b
 
 # explore: faster towards faces
@@ -1190,7 +1253,10 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   scale_color_manual(values = custom.col) +
   labs(title = "Latencies of saccades per subject", x = "", y = "ms") +
   theme_bw() + 
-  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.direction = "horizontal", text = element_text(size = 15))
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
 
 ```
 
@@ -1213,7 +1279,8 @@ pr.descriptions = c("chosen",
 
 # check which have been run already
 if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F) %>%
+  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F) %>%
     select(priors) %>% distinct()
   pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
 }
@@ -1248,7 +1315,8 @@ for (pr.desc in pr.descriptions) {
 }
 
 # read in the results
-df.lat.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F)
+df.lat.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F)
 
 # check the sensitivity analysis result per model
 df.lat.bf %>%
@@ -1265,7 +1333,10 @@ df.lat.bf %>%
       T ~ 999),
     sd = fct_reorder(sd, order)
   ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
+  ggplot(aes(y = bf.log, 
+             x = sd, 
+             group = `population-level`, 
+             colour = `population-level`)) + 
   geom_point() +
   geom_line() + 
   geom_vline(xintercept = "1") +
@@ -1274,7 +1345,8 @@ df.lat.bf %>%
   #facet_wrap(. ~ `population-level`, scales = "free_y") +
   scale_colour_manual(values = custom.col) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.35), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(legend.position = c(0.15,0.35), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # print the BFs based on chosen priors
 kable(df.lat.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
@@ -1294,8 +1366,14 @@ Last, we hypothesised that the FAB effect on reaction times may be associated wi
 df.diff = df.cnt %>% filter(dir_face == TRUE)
 
 # check the distribution plot > not normally distributed
-p1 = ggplot(df.diff, aes(sample = n.face)) + stat_qq(alpha = 0.5, colour = "lightblue") + stat_qq_line() + theme_bw()
-p2 = ggplot(df.diff, aes(sample = rt.fab)) + stat_qq(alpha = 0.5, colour = "lightblue") + stat_qq_line() + theme_bw()
+p1 = ggplot(df.diff, aes(sample = n.face)) + 
+  stat_qq(alpha = 0.5, colour = "lightblue") + 
+  stat_qq_line() + 
+  theme_bw()
+p2 = ggplot(df.diff, aes(sample = rt.fab)) + 
+  stat_qq(alpha = 0.5, colour = "lightblue") + 
+  stat_qq_line() + 
+  theme_bw()
 ggarrange(p1, p2, 
           nrow = 1, ncol = 2, labels = "AUTO")
 
@@ -1379,8 +1457,10 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
         bck,
         cache_mode     = "results", 
         cache_location = file.path(cache_dir, sprintf("res_%s", code)))
-  saveRDS(res$stats, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  saveRDS(res$backend_diagnostics, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
+  saveRDS(res$stats, 
+          file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
+  saveRDS(res$backend_diagnostics, 
+          file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
 }
 ```
 
@@ -1455,7 +1535,11 @@ annotate_figure(p, top = text_grob("Prior predictive checks", face = "bold", siz
 # get simulation numbers with issues
 des_rank = max(df.results$max_rank)
 check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
+    group_by(sim_id) %>% 
+      summarise(
+        rhat = max(rhat, na.rm = T), 
+        mean_rank = max(max_rank)
+        ) %>% 
     filter(rhat >= 1.05 | mean_rank < des_rank), 
   df.backend %>% filter(n_divergent > 0), all = T)
 
@@ -1477,13 +1561,19 @@ p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
 p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(1.5, rep(1.0, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
+p4 = plot_contraction(df.results.b, 
+                      prior_sd = setNames(c(1.5, 
+                                            rep(1.0, 
+                                                length(unique(df.results.b$variable))-1)), 
+                                          unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 
 p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Computational faithfulness and model sensitivity", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1539,7 +1629,9 @@ p2 = ppc_stat_grouped(df.cnt.cue$n.cue, post.pred, df.cnt.cue$diagnosis) +
 
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: number of saccades towards cue", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: no saccades towards cue", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1549,7 +1641,7 @@ The predictions based on the model capture the data well. This further increased
 
 Now that we are convinced that we can trust our model, we have a look at the model and its estimates.
 
-```{r final_cnt_cue, fig.height=4}
+```{r final_cnt_cue, fig.height=6}
 
 # print a summary
 summary(m.cnt)
@@ -1592,10 +1684,12 @@ df.m.cnt %>%
   ggplot(aes(x = estimate, y = coef, fill = cred)) +
   geom_vline(xintercept = 0, linetype = 'dashed') +
   ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + theme(legend.position = "none")
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
 
 # exploration: COMP: face > object
-hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1", alpha = 0.025)
+hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1", 
+           alpha = 0.025)
 
 # exploration: face > object
 e = hypothesis(m.cnt, "0 > dir_face1", alpha = 0.025)
@@ -1659,7 +1753,10 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   scale_color_manual(values = custom.col) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
-  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.direction = "horizontal", text = element_text(size = 15))
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
 
 ```
 
@@ -1682,7 +1779,8 @@ pr.descriptions = c("chosen",
 
 # check which have been run already
 if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F) %>%
+  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F) %>%
     select(priors) %>% distinct()
   pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
 }
@@ -1717,7 +1815,8 @@ for (pr.desc in pr.descriptions) {
 }
 
 # read in the results
-df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F)
+df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F)
 
 # check the sensitivity analysis result per model
 df.cnt.bf %>%
@@ -1734,7 +1833,10 @@ df.cnt.bf %>%
       T ~ 999),
     sd = fct_reorder(sd, order)
   ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
+  ggplot(aes(y = bf.log, 
+             x = sd, 
+             group = `population-level`, 
+             colour = `population-level`)) + 
   geom_point() +
   geom_line() + 
   geom_vline(xintercept = "1") +
@@ -1743,7 +1845,8 @@ df.cnt.bf %>%
   #facet_wrap(. ~ `population-level`, scales = "free_y") +
   scale_colour_manual(values = custom.col) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.35), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(legend.position = c(0.15,0.35), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # let's focus on a smaller range of bayes factor values to see the differences better
 df.cnt.bf %>%
@@ -1760,7 +1863,10 @@ df.cnt.bf %>%
       T ~ 999),
     sd = fct_reorder(sd, order)
   ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
+  ggplot(aes(y = bf.log, 
+             x = sd, 
+             group = `population-level`, 
+             colour = `population-level`)) + 
   geom_point() +
   geom_line() + 
   geom_vline(xintercept = "1") +
@@ -1769,7 +1875,8 @@ df.cnt.bf %>%
   ylim(-3.5, 3.5) +
   scale_colour_manual(values = custom.col) +
   theme_bw() +
-  theme(legend.position = "none", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # print the BFs based on chosen priors
 kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
@@ -1829,8 +1936,10 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
         bck,
         cache_mode     = "results", 
         cache_location = file.path(cache_dir, sprintf("res_%s", code)))
-  saveRDS(res$stats, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
-  saveRDS(res$backend_diagnostics, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
+  saveRDS(res$stats, 
+          file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
+  saveRDS(res$backend_diagnostics, 
+          file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
 }
 ```
 
@@ -1843,7 +1952,11 @@ We start by investigating the rhats and the number of divergent samples. This sh
 # get simulation numbers with issues
 des_rank = max(df.results$max_rank)
 check = merge(df.results %>% 
-    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T), mean_rank = max(max_rank)) %>% 
+    group_by(sim_id) %>% 
+      summarise(
+        rhat = max(rhat, na.rm = T), 
+        mean_rank = max(max_rank)
+        ) %>% 
     filter(rhat >= 1.05 | mean_rank < des_rank), 
   df.backend %>% filter(n_divergent > 0), all = T)
 
@@ -1865,13 +1978,19 @@ p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
 p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p4 = plot_contraction(df.results.b, prior_sd = setNames(c(1.5, rep(1.0, length(unique(df.results.b$variable))-1)), unique(df.results.b$variable))) +
+p4 = plot_contraction(df.results.b, 
+                      prior_sd = setNames(c(1.5, 
+                                            rep(1.0, 
+                                                length(unique(df.results.b$variable))-1)), 
+                                          unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 
 p = ggarrange(p1, p2, p3, p4, labels = "AUTO", ncol = 1, nrow = 4)
-annotate_figure(p, top = text_grob("Computational faithfulness and model sensitivity", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Computational faithfulness and model sensitivity", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1927,7 +2046,9 @@ p2 = ppc_stat_grouped(df.cnt.tar$n.tar, post.pred, df.cnt.tar$diagnosis) +
 
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
-annotate_figure(p, top = text_grob("Posterior predictive checks: number of saccades towards target", face = "bold", size = 14))
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: no saccades towards target", 
+                face = "bold", size = 14))
 
 ```
 
@@ -1937,7 +2058,7 @@ The predictions based on the model capture the data well. This further increased
 
 Now that we are convinced that we can trust our model, we have a look at the model and its estimates.
 
-```{r final_cnt_tar, fig.height=4}
+```{r final_cnt_tar, fig.height=6}
 
 # print a summary
 summary(m.cnt.tar)
@@ -1972,7 +2093,8 @@ as_draws_df(m.cnt.tar) %>%
   ggplot(aes(x = estimate, y = coef, fill = cred)) +
   geom_vline(xintercept = 0, linetype = 'dashed') +
   ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + theme(legend.position = "none")
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
 
 # explore: face > object
 hypothesis(m.cnt.tar, "0 > cue1", alpha = 0.025)
@@ -2003,7 +2125,9 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   scale_color_manual(values = custom.col) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
-  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.direction = "horizontal", text = element_text(size = 15))
+  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
 
 ```
 
@@ -2026,7 +2150,8 @@ pr.descriptions = c("chosen",
 
 # check which have been run already
 if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F) %>%
+  pr.done = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F) %>%
     select(priors) %>% distinct()
   pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
 }
@@ -2061,7 +2186,8 @@ for (pr.desc in pr.descriptions) {
 }
 
 # read in the results
-df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), show_col_types = F)
+df.cnt.bf = read_csv(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
+                     show_col_types = F)
 
 # check the sensitivity analysis result per model
 df.cnt.bf %>%
@@ -2078,7 +2204,10 @@ df.cnt.bf %>%
       T ~ 999),
     sd = fct_reorder(sd, order)
   ) %>%
-  ggplot(aes(y = bf.log, x = sd, group = `population-level`, colour = `population-level`)) + 
+  ggplot(aes(y = bf.log, 
+             x = sd, 
+             group = `population-level`, 
+             colour = `population-level`)) + 
   geom_point() +
   geom_line() + 
   geom_vline(xintercept = "1") +
@@ -2087,7 +2216,8 @@ df.cnt.bf %>%
   #facet_wrap(. ~ `population-level`, scales = "free_y") +
   scale_colour_manual(values = custom.col) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.35), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(legend.position = c(0.15,0.35), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # print the BFs based on chosen priors
 kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
