@@ -67,9 +67,9 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 `df.table`
 
 * measurement : questionnaire or socio-demographic variable
-* ADHD : mean and standard deviation or counts for the gender identities for the ADHD group
-* ASD : mean and standard deviation or counts for the gender identities for the ASD group
-* COMP : mean and standard deviation or counts for the gender identities for the COMP group
+* ADHD : mean and standard errors or counts for the gender identities for the ADHD group
+* ASD : mean and standard errors or counts for the gender identities for the ASD group
+* COMP : mean and standard errors or counts for the gender identities for the COMP group
 * logBF10 : logarithmic Bayes Factor comparing the model including diagnosis to the null model
 
 as well as `df.exc` (group and number of excluded participants), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` and `ct.mf`).

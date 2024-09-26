@@ -116,7 +116,7 @@ df.sac = df.sac %>%
            lat > 100)
 
 # divide into cue and target saccades
-inflect = function(density, threshold = 1){
+criticalpoints = function(density, threshold = 1){
   up   = sapply(1:threshold, function(n) c(density$y[-(seq(n))], rep(NA, n)))
   down = sapply(-1:-threshold, 
                 function(n) c(rep(NA,abs(n)), 
@@ -128,16 +128,16 @@ inflect = function(density, threshold = 1){
   return(list(minima = minima, maxima = maxima))
 }
 
-infpoints = inflect(density(df.sac$lat))
+points = criticalpoints(density(df.sac$lat))
 
 dd = with(density(df.sac$lat), data.frame(x,y))
 
 ggplot(dd, aes(x = x, y = y)) + 
   geom_line() +
-  geom_vline(xintercept = infpoints$minima, linetype=3) +
-  geom_ribbon(data = subset(dd, x <= infpoints$minima[1]), aes(ymax = y), ymin = 0, 
+  geom_vline(xintercept = points$minima, linetype=3) +
+  geom_ribbon(data = subset(dd, x <= points$minima[1]), aes(ymax = y), ymin = 0, 
               fill = custom.col[1], colour = NA, alpha = 0.5) +
-  geom_ribbon(data = subset(dd, x >= infpoints$minima[1]), aes(ymax = y), ymin = 0, 
+  geom_ribbon(data = subset(dd, x >= points$minima[1]), aes(ymax = y), ymin = 0, 
               fill = custom.col[2], colour = NA, alpha = 0.5) + 
   geom_vline(xintercept = 200) + 
   xlim(0, 750) +
@@ -158,7 +158,7 @@ df.cnt = df.sac %>%
 
 # preprocess cue saccade counts
 df.cnt.cue = df.sac %>% 
-  filter(lat <= infpoints$minima[1]) %>%
+  filter(lat <= points$minima[1]) %>%
   group_by(subID, dir_face) %>% 
   summarise(
     n.cue = n()
@@ -166,7 +166,7 @@ df.cnt.cue = df.sac %>%
 
 # preprocess target saccade counts
 df.cnt.tar = df.sac %>% 
-  filter(lat > infpoints$minima[1] & dir_target) %>%
+  filter(lat > points$minima[1] & dir_target) %>%
   group_by(subID, cue) %>% 
   summarise(
     n.tar = n()
@@ -203,7 +203,7 @@ df.cnt.tar = merge(df.cnt.tar, data.frame(subID, cue), all = T) %>%
 # preprocess target latencies
 df.lat = df.sac %>% 
   # only keep latencies during cue
-  filter(lat > infpoints$minima[1]) %>%
+  filter(lat > points$minima[1]) %>%
   # only keep the first latency of each trial
   group_by(subID, trl, cue) %>%
   filter(sac_trl == min(sac_trl)) %>%
