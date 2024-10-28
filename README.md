@@ -29,6 +29,8 @@ The `prepro` folder contains scripts used during preprocessing. All scripts cont
 
 Each html file contains an output of the versions used to run that particular script. It is important to install all packages mentioned in the html file before running a specific analysis file. Not all packages can be installed with `install.packages`, please consult the respective installation pages of the packages for more information. If the models are rerun, ensure a valid cmdstanr installation. 
 
+To render the RMarkdown file as a PDF, an installation of pdflatex is mandatory. 
+
 For preprocessing of the eye tracking data, MATLAB R2023a was used. 
 
 ## Variables
