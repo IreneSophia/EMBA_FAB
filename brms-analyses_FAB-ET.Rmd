@@ -17,6 +17,7 @@ ls.packages = c("knitr",# kable
     "bayesplot",        # plots for posterior predictive checks
     "SBC",              # plots for checking computational faithfulness
     "rstatix",          # anova
+    "logspline",        # needed for the Bayesian Spearman correlation
     "BayesFactor"
 )
 
@@ -91,7 +92,7 @@ for (package in ls.packages) {
 
 ## Preparation
 
-First, we load the eye tracking data and combine it with demographic information including the diagnostic status of the subjects. Second, we preprocess the latencies and divide them into saccades elicited by the cues and saccades elicited by the target. To do so, we use the knowledge that latencies below 100ms are extremely unlikely and that we can use inflection points to find local minima in the density function.
+First, we load the eye tracking data and combine it with demographic information including the diagnostic status of the subjects. Second, we preprocess the latencies of the saccades and divide them into saccades elicited by the cues and saccades elicited by the target. To do so, we use the knowledge that latencies below 100ms are extremely unlikely and local minima in the density function. We also load in the behavioural data again to be able to use reaction times for further correlational analyses. 
 
 ```{r prep, fig.height=4}
 
@@ -140,12 +141,13 @@ ggplot(dd, aes(x = x, y = y)) +
   geom_ribbon(data = subset(dd, x >= points$minima[1]), aes(ymax = y), ymin = 0, 
               fill = custom.col[2], colour = NA, alpha = 0.5) + 
   geom_vline(xintercept = 200) + 
+  labs(title = "Classification of saccades", x = "latency", y = "density") +
   xlim(0, 750) +
   theme_bw()
 
 ```
 
-The graph above shows the density of the latencies with zero on the x-axis being the onset of the cue. After 200ms, the cue disappears and the target is presented on the screen. We can see that there is an inflection point about 125ms after the target appears. We can assume that saccades produced before this were in response to the cue (blue) and saccades after were in response to the target (green). Therefore, we divide the saccades accordingly. Then, we aggregate the data per subject and cue. Last, we set all predictors to sum contrasts.
+The graph above shows the density of the latencies with zero on the x-axis being the onset of the cue. After 200ms, the cue disappears and the target is presented on the screen (solid line). We can see that there is a local minimum about 125ms after the target appears (dotted line). We can assume that saccades produced before this were in response to the cue (pink) and saccades after were in response to the target (green). Therefore, we divide the saccades accordingly. Then, we aggregate the data per subject and cue. Last, we set all predictors to sum contrasts.
 
 ```{r prepro}
 
@@ -919,7 +921,7 @@ annotate_figure(p,
 
 ```
 
-The simulated data based on the model does not fit our data very well: it is wider and seems to underestimate latencies for ADHD and COMP while overestimating for ASD. 
+The simulated data based on the model does not fit our data very well: it is wider and seems to underestimate latencies for ADHD and COMP while overestimating for ASD with the dark blue line showing the mean of the actual dataset and the light blue bars showing the distribution of the predicted data.
 
 ## Aggregated model
 

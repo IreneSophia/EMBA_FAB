@@ -50,6 +50,7 @@ c_light = "#a9afb2"; c_light_highlight = "#8ea5b2"; c_mid = "#6b98b2"
 c_mid_highlight = "#3585b2"; c_dark = "#0072b2"; c_dark_highlight = "#0058b2" 
 c_green = "#009E73"
 sz = 1
+a = 0.5
 
 # custom colour palette
 custom.col = c(c_dark_highlight, "#CC79A7", "#009E73", "#D55E00")
@@ -536,7 +537,6 @@ check = merge(df.results %>%
   df.backend %>% filter(n_divergent > 0), all = T)
 
 # plot SBC with functions from the SBC package focusing on population-level parameters
-a = 0.5
 df.results.b = df.results %>% 
   filter(substr(variable, 1, 2) == "b_") %>% 
   filter(!(sim_id %in% check$sim_id))
@@ -643,7 +643,7 @@ annotate_figure(p,
 
 ```
 
-Although the overall shape in subfigure A of the simulated data fits well with the real data, the model seems to underestimate the reaction times of the ADHD group and overestimate the reaction times of the COMP group. This is also apparent when looking at the two cue conditions separately. 
+Although the overall shape in subfigure A of the simulated data fits well with the real data, the model seems to underestimate the reaction times of the ADHD group and overestimate the reaction times of the COMP group: the dark blue line shows the mean of the actual dataset while the light blue bars show the distribution of the predicted data. This disconnect is also apparent when looking at the two cue conditions separately. 
 
 Since we are interested in accurate estimates, we decide to aggregate with the median of the reaction times per stimulus (face object combination) and cue. Then, there are no missing values in the data and we model an estimate for each specific stimulus and cue combination for each participant. 
 
@@ -791,7 +791,6 @@ check = merge(df.results %>%
   df.backend %>% filter(n_divergent > 0), all = T)
 
 # plot SBC with functions from the SBC package focusing on population-level parameters
-a = 0.5
 df.results.b = df.results %>% 
   filter(substr(variable, 1, 2) == "b_") %>% 
   filter(!(sim_id %in% check$sim_id))
@@ -1240,6 +1239,8 @@ Specifically, there is `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors ==
 
 # S1.3 Explorative analysis of RTs on trials without saccades
 
+Since saccadic behaviour may have influenced reaction times, we rerun the model concerning reaction times with only trials where no saccades were produced. 
+
 ```{r rt_sac}
 
 # aggregate saccades
@@ -1259,8 +1260,8 @@ df.sac.fab = merge(df.fab, df.sac.agg, all.x = T) %>%
   mutate(
     n.sac.total = sum(n.sac, na.rm = T)
   ) %>%
-  filter(n.sac.total > 0) %>%
   # only keep trials without saccades %>%
+  filter(n.sac.total > 0) %>%
   filter(is.na(n.sac)) %>%
   # compute median rt.cor
   group_by(subID, diagnosis, cue, stm) %>%
