@@ -57,9 +57,9 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * stm : number of the face and object pictures shown in this trial
 * cue : whether the target appeared at the previous location of the face or object
 * target : whether the target appeared on the left or right side
-* on_trialType : during which part of the trial did this saccade start? tar = target or cue presentation?
-* off_trialType : during which part of the trial did this saccade end? tar = target, fix = fixation cross or cue presentation?
-* sac_trl : how many-th saccade of this trial
+* on_trialType : during which part of the trial did this saccade start? Either during the presentation of the target (tar) or the cue (cue).
+* off_trialType : during which part of the trial did this saccade end? Either during the presentation of the target (tar), the cue (cue) or the fixation cross (fix).
+* sac_trl : n-th saccade of this trial
 * dir_degree : direction of the saccade in degrees
 * dir_target : whether the saccades produced was towards the target
 * dir_face : whether the saccade produced was towards the (previous) location of the face
@@ -74,7 +74,29 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * COMP : mean and standard errors or counts for the gender identities for the COMP group
 * logBF10 : logarithmic Bayes Factor comparing the model including diagnosis to the null model
 
-as well as `df.exc` (group and number of excluded participants), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` and `ct.mf`).
+as well as `df.exc` (group and number of excluded participants), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` containing the full dataset and `ct.mf` only containing male and female participants).
+
+## Result files
+
+All results are saved in RDS files which can be read into R. The following files are shared: 
+
+`CNT_rho.rds`: rho samples of the Bayesian spearman correlation between the number of saccades towards the side of the face cue and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
+
+`m_cnt-cue.rds`: brms model assessing the number of saccades towards the cue with the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
+
+`m_cnt-face.rds`: brms model assessing the number of saccades with the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
+
+`m_cnt-tar.rds`: brms model assessing the number of saccades towards targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+
+`m_fab_final.rds`: brms model assessing aggregated reaction times to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+
+`m_fab_full.rds`: brms model assessing reaction times to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+
+`m_fab_sac.rds`: brms model assessing aggregated reaction times to targets with the predictors diagnostic status and cue side (face or object), ignoring trials on which a saccade was produced as well as their interaction.
+
+`m_lat.rds`: brms model assessing the saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+
+`m_lat_agg.rds`: brms model assessing the aggregated saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
 ## Project members
 
