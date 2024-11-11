@@ -550,8 +550,13 @@ p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
-                      prior_sd = setNames(c(0.15, rep(0.10, 
-                                                      length(unique(df.results.b$variable))-1)), 
+                      prior_sd = setNames(
+                        c(as.numeric(
+                          gsub(".*, (.+)\\).*", "\\1", 
+                               priors[priors$class == "Intercept",]$prior)), 
+                          as.numeric(
+                            gsub(".*, (.+)\\).*", "\\1", 
+                                 priors[priors$class == "b",]$prior))), 
                                           unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
@@ -804,8 +809,13 @@ p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
-                      prior_sd = setNames(c(0.15, rep(0.10, 
-                                                      length(unique(df.results.b$variable))-1)),
+                      prior_sd = setNames(
+                        c(as.numeric(
+                          gsub(".*, (.+)\\).*", "\\1", 
+                               priors[priors$class == "Intercept",]$prior)), 
+                          as.numeric(
+                            gsub(".*, (.+)\\).*", "\\1", 
+                                 priors[priors$class == "b",]$prior))), 
                                           unique(df.results.b$variable))) +
   theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
