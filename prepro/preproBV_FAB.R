@@ -3,6 +3,7 @@ library(tidyverse)       # tibble stuff
 
 fl.path = '/home/emba/Documents/EMBA'
 dt.path = paste(fl.path, 'BVET', sep = "/")
+dt.path = paste(fl.path, 'BVET-explo', sep = "/")
 
 # how long does one flip of the screen take in ms?
 flip = 1000/60
@@ -57,11 +58,11 @@ df.tsk_acc = df.tsk %>%
 # does anyone have to be excluded?
 exc = df.tsk_acc %>% filter(acc < 2/3)
 exc = as.character(exc$subID)
-# save the excluded subjects
-write(exc, file.path(dt.path, "FAB_exc.txt"))
 
 # load pilot participants and add to the list. 
 pilot = read_csv(paste0(dt.path, "/pilot-subIDs.csv"), show_col_types = F)
+# save the excluded subjects
+write(setdiff(exc, pilot$subID), file.path(dt.path, "FAB_exc.txt"))
 exc   = c(exc, pilot$subID)
 
 # exclude these participants
