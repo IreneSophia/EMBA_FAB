@@ -2,7 +2,7 @@
 title: "S1: behavioural analysis with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: html_document
 ---
   
 ```{r settings, include=FALSE}
@@ -78,7 +78,7 @@ custom.col2 = c("#E1BE6A", "#B04D40")
   
 This R Markdown script analyses behavioural data from the FAB (face attention bias) paradigm of the EMBA project. The data was preprocessed before being read into this script. 
 
-The task is modeled after Jakobsen et al. (2021), *Attention, Perception, & Psychophysics* and the authors were happy to share their  stimuli. Each trial starts with a black fixation cross on a white background. Then, a cue consisting of a pair of pictures, one object and one face, is shown with one picture on the left and one on the right of the previous location of the fixation cross. In line with Moore et al. (2012), *J Autism Dev Disord*, we set the duration of the cue presentation to 200ms. Afterwards, a target square appears either at the previous location of the face or the object. Subjects task is to determine the location (right or left) of the target as fast and accurate as possible. The target only disappears when the participant gives their answer. 
+The task is modeled after Jakobsen et al. (2021), *Attention, Perception, & Psychophysics* and the authors were kind enough to share their  stimuli. Each trial starts with a black fixation cross on a white background. Then, a cue consisting of a pair of pictures, one object and one face, is shown with one picture on the left and one on the right of the previous location of the fixation cross. In line with Moore et al. (2012), *J Autism Dev Disord*, we set the duration of the cue presentation to 200ms. Afterwards, a target square appears either at the previous location of the face or the object. Subjects task is to determine the location (right or left) of the target as fast and accurate as possible. The target only disappears when the participant gives their answer. 
 
 ## Some general settings
 
@@ -114,13 +114,15 @@ for (package in ls.packages) {
 
 We planned to determine the group-level effect subjects following Barr (2013). For each model, experiment specific priors were set based on previous literature or the task (see comments in the code).
 
-We perform prior predictive checks as proposed in Schad, Betancourt and Vasishth (2020) using the SBC package. To do so, we create `r nsim` simulated datasets where parameters are simulated from the priors. These parameters are used to create one fake dataset. Both the true underlying parameters and the simulated discrimination values are saved. 
+We performed prior predictive checks as proposed in Schad, Betancourt and Vasishth (2020) using the SBC package based on the original design with three groups. To do so, we create `r nsim` simulated datasets where parameters are simulated from the priors. These parameters are used to create one fake dataset. Both the true underlying parameters and the simulated discrimination values are saved.
 
-Then, we create graphs showing the prior predictive distribution of the simulated discrimination threshold to check whether our priors fit our general expectations about the data. Next, we perform checks of computational faithfulness and model sensitivity as proposed by Schad, Betancourt and Vasishth (2020) and implemented in the SBC package. We create models for each of the simulated datasets. Last, we calculate performance metrics for each of these models, focusing on the population-level parameters. 
+Then, we create graphs showing the prior predictive distribution of the simulated discrimination threshold to check whether our priors fit our general expectations about the data. Next, we perform checks of computational faithfulness and model sensitivity as proposed by Schad, Betancourt and Vasishth (2020) and implemented in the SBC package. We create models for each of the simulated datasets. Last, we calculate performance metrics for each of these models, focusing on the population-level parameters. We did not rerun SBC after adding the exploratory sample of ADHD+ASD.
+
+We base our assessment of the hypothesis on the posterior distributions. Therefore, we perform posterior prdictive checks and in some cases simplify the model by aggregating values to improve posterior fit. 
 
 ## Preparation and group comparisons
 
-First, we load the data and combine it with demographic information including the diagnostic status of the subjects. Then, all predictors are set to sum contrasts. We have a look at the demographics describing our three diagnostic groups: adults with ADHD, autistic adults and adults without any neurological and psychiatric diagnoses. 
+First, we load the data and combine it with demographic information including the diagnostic status of the subjects. Then, all predictors are set to sum contrasts. We have a look at the demographics describing our four diagnostic groups: adults with ADHD, autistic adults, autistic adults with ADHD (explorative) and adults without any neurological and psychiatric diagnoses. 
 
 Since this is sensitive data, we load the anonymised version of the processed data at this point but also leave the code we used to create it. 
 
@@ -403,14 +405,16 @@ if (!file.exists("FAB_data.RData")) {
   
 }
 
-# print the group of excluded participants
+# print the group of excluded participants based on low accuracy (< 2/3)
 kable(df.exc)
 rm(df.exc)
 
 # print the group of the participants included in behavioural and eye tracking 
 kable(merge(
-  df.sac %>% select(subID, diagnosis) %>% distinct() %>% group_by(diagnosis) %>% summarise(`nos eye tracking` = n()),
-  rbind(df.fab, df.exp) %>% select(subID, diagnosis) %>% distinct() %>% group_by(diagnosis) %>% summarise(`nos behavioural` = n())
+  df.sac %>% select(subID, diagnosis) %>% distinct() %>% 
+    group_by(diagnosis) %>% summarise(`sample size eye tracking` = n()),
+  rbind(df.fab, df.exp) %>% select(subID, diagnosis) %>% distinct() %>% 
+    group_by(diagnosis) %>% summarise(`sample size behavioural` = n())
   ))
 
 # Note: eye-tracking only collected if calibration accuracy < 0.5, then exclusion:
@@ -421,11 +425,13 @@ kable(df.nosac)
 rm(df.nosac)
 
 # print the outcome of the shapiro tests
-kable(df.sht)
+kable(df.sht) %>% arrange(variable)
 rm(df.sht)
 
 # print the outcome of the two contingency tables for comparison
+# based on full sample with agender, diverse and non-binary in one category
 ct.full@bayesFactor
+# based on female and male participants only
 ct.mf@bayesFactor
 
 # combine explorative and original data
@@ -452,17 +458,17 @@ The three diagnostic groups are similar in age, IQ and gender distribution. Howe
 
 First, we analyse the reaction times for all correctly answered trials to assess whether participants answer faster if the target appears at the previous location of the face, which we refer to as face attention bias (FAB). In our preregistration, we formulated the following hypotheses: 
 
-<ol type="a">
-  <li>COMP participants react faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (face attention bias; Jakobsen et al., 2021).</li>
-  <li>ADHD participants react slower than COMP participants in both cue conditions (Sonuga-Barke et al., 2004).</li>
-  <li>ASD participants react slower than COMP participants in both cue conditions (Ghosn et al., 2018).</li>
-  <li>Face attention bias is decreased in ASD participants compared to COMP participants (Moore et al., 2012).</li>
-  <li>Face attention bias in ADHD participants differs from face attention bias in COMP participants.</li>
-</ol>
+H1a) COMP participants react faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (face attention bias; Jakobsen et al., 2021).
+H1b) ADHD participants react slower than COMP participants in both cue conditions (Sonuga-Barke et al., 2004).
+H1c) ASD participants react slower than COMP participants in both cue conditions (Ghosn et al., 2018).
+H1d) Face attention bias is decreased in ASD participants compared to COMP participants (Moore et al., 2012).
+H1e) Face attention bias in ADHD participants differs from face attention bias in COMP participants.
 
 ## Full model
 
 ### Simulation-based calibration
+
+First, we attempted to use a full model for the data. This model includes multiple instances of each stimulus per participant in each of the conditions (face cue or object cue). Therefore, we need slopes for the cue per subject as well as for cue, diagnosis and their interaction for the stimulus. 
 
 ```{r sbc_checks}
 
@@ -519,7 +525,7 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
 
 ```
 
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well. 
+We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and `r nrow(df.backend %>% filter(n_divergent > 0))` model had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well. 
 
 Next, we can plot the simulated values to perform prior predictive checks. 
 
@@ -662,7 +668,7 @@ mcmc_trace(post.draws, regex_pars = "^b_",
 
 ```
 
-This model has no pathological behaviour with E-BFMI, no divergent samples and only one rhat that is higher or equal to 1.01. Therefore, we go ahead and perform our posterior predictive checks. 
+This model has no pathological behaviour with E-BFMI, no divergent samples and no rhat that is higher or equal to 1.01. Therefore, we go ahead and perform our posterior predictive checks. 
 
 ```{r postpc2, fig.height=9}
 
@@ -684,31 +690,17 @@ p2 = ppc_stat_grouped(df.fab.na$rt.cor, post.pred, df.fab.na$diagnosis) +
 p3 = ppc_stat_grouped(df.fab.na$rt.cor, post.pred, df.fab.na$cue) + 
   theme_bw() + theme(legend.position = "none")
 
-# distributions of means compared to the real values per group for faces
-p4 = ppc_stat_grouped(
-  df.fab.na[df.fab.na$cue == "face",]$rt.cor,
-  post.pred[,which(df.fab.na$cue == "face")], 
-  df.fab.na[df.fab.na$cue == "face",]$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-# distributions of means compared to the real values per group for objects
-p5 = ppc_stat_grouped(
-  df.fab.na[df.fab.na$cue == "face",]$rt.cor, 
-  post.pred[,which(df.fab.na$cue == "face")], 
-  df.fab.na[df.fab.na$cue == "face",]$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-p = ggarrange(p1, p2, p3, p4, p5,
-          nrow = 5, ncol = 1, labels = "AUTO")
+p = ggarrange(p1, p2, p3,
+          nrow = 3, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
                 top = text_grob("Posterior predictive checks: RTs", 
                 face = "bold", size = 14))
 
 ```
 
-Although the overall shape in subfigure A of the simulated data fits well with the real data, the model seems to underestimate the reaction times of the ADHD group and overestimate the reaction times of the COMP group: the dark blue line shows the mean of the actual dataset while the light blue bars show the distribution of the predicted data. This disconnect is also apparent when looking at the two cue conditions separately. 
+Although the overall shape in subfigure A of the simulated data fits well with the real data, the model seems to underestimate the reaction times of the ADHD and ASD groups and overestimate the reaction times of the COMP group: the dark blue line shows the mean of the actual dataset while the light blue bars show the distribution of the predicted data. 
 
-Since we are interested in accurate estimates, we decide to aggregate with the median of the reaction times per stimulus (face object combination) and cue. Then, there are no missing values in the data and we model an estimate for each specific stimulus and cue combination for each participant. 
+Since we are interested in accurate estimates, we decide to aggregate with the median of the reaction times per stimulus (face-object cue combination) and cue. Then, there are no missing values in the data and we model an estimate for each specific stimulus and cue combination for each participant. 
 
 ## Aggregated model
 
@@ -737,7 +729,7 @@ summary(df.fab)
 
 ```
 
-There are now no NAs in the data, because no one made an error on all instances of one stimulus combination. 
+There are now no NAs in the data, because no one made an error on all instances of one stimulus combination.
 
 ### Stimulation-based calibration
 
@@ -781,7 +773,7 @@ set.seed(4682)
 
 ```
 
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well. 
+We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well enough and only few simulated models exhibit issues. 
 
 Next, we can plot the simulated values to perform prior predictive checks. 
 
@@ -889,15 +881,12 @@ annotate_figure(p,
 
 ```
 
-Next, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Then, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05. 
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). All of this looks good for this model. 
+Rank histogramms, sample ECDF, the relationship between the simulated true parameters and the posterior estimates as well as z-score and posterior contraction of our population-level predictors all are acceptable for this model as well. 
 
 ### Posterior predictive checks
 
 As the next step, we fit the model to the data, check whether there are divergence or rhat issues, and then check whether the chains have converged.
+
 
 ```{r agg_postpc, fig.height=6, message=T}
 
@@ -924,7 +913,7 @@ mcmc_trace(post.draws, regex_pars = "^b_",
 
 ```
 
-This model has no pathological behaviour with E-BFMI, no divergent samples and only one rhat that is higher or equal to 1.01. Therefore, we go ahead and perform our posterior predictive checks. 
+This model has no pathological behaviour with E-BFMI, no divergent samples and no rhat that is higher or equal to 1.01. Therefore, we go ahead and perform our posterior predictive checks. 
 
 ```{r agg_postpc2, fig.height=9}
 
@@ -943,29 +932,15 @@ p2 = ppc_stat_grouped(df.fab$rt.cor, post.pred, df.fab$diagnosis) +
 p3 = ppc_stat_grouped(df.fab$rt.cor, post.pred, df.fab$cue) + 
   theme_bw() + theme(legend.position = "none")
 
-# distributions of means compared to the real values per group for faces
-p4 = ppc_stat_grouped(
-  df.fab[df.fab$cue == "face",]$rt.cor, 
-  post.pred[,which(df.fab$cue == "face")], 
-  df.fab[df.fab$cue == "face",]$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-# distributions of means compared to the real values per group for objects
-p5 = ppc_stat_grouped(
-  df.fab[df.fab$cue == "face",]$rt.cor, 
-  post.pred[,which(df.fab$cue == "face")], 
-  df.fab[df.fab$cue == "face",]$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-p = ggarrange(p1, p2, p3, p4, p5,
-          nrow = 5, ncol = 1, labels = "AUTO")
+p = ggarrange(p1, p2, p3,
+          nrow = 3, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
                 top = text_grob("Posterior predictive checks: RTs", 
                 face = "bold", size = 14))
 
 ```
 
-This model fits our data much better, so we continue with it and can finally have a look at the estimates. 
+This model fits our data much better.
 
 ### Inferences
 
@@ -1020,58 +995,69 @@ df.m.fab %>%
   theme(legend.position = "none")
 
 # H1a: FAB effect in COMP
-h1a = hypothesis(m.fab, "0 < (diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
+h1a = hypothesis(m.fab, 
+                 "0 < 2*(diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
 h1a
 
 # H1b: ADHD slower than COMP
-h1b = hypothesis(m.fab, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3")
+h1b = hypothesis(m.fab, 
+                 "0 < 2*diagnosis1 + diagnosis2 + diagnosis3")
 h1b
 
 # H1c: ASD slower than COMP
-h1c = hypothesis(m.fab, "0 < 2*diagnosis2 + diagnosis1 + diagnosis3")
+h1c = hypothesis(m.fab, 
+                 "0 < 2*diagnosis2 + diagnosis1 + diagnosis3")
 h1c
 
-# H1d: FAB in ASD decreased
-h1d = hypothesis(m.fab, "0 < diagnosis2:cue1")
+# H1d: FAB in ASD decreased compared to COMP
+h1d = hypothesis(m.fab, 
+                 "0 < 4*diagnosis2:cue1 + 2*diagnosis1:cue1 + 2*diagnosis3:cue1")
 h1d
-# ... compared to COMP
-h1d_comp = hypothesis(m.fab, "0 < 2*diagnosis2:cue1 + diagnosis1:cue1 + diagnosis3:cue1")
-h1d_comp
 
-# H1e: FAB in ADHD differs from FAB generally (undirected)
-h1e = hypothesis(m.fab, "0 > diagnosis1:cue1", alpha = 0.025)
+# H1e: FAB in ADHD differs from FAB in COMP (undirected)
+h1e = hypothesis(m.fab, 
+                 "0 > 4*diagnosis1:cue1 + 2*diagnosis2:cue1 + 2*diagnosis3:cue1", 
+                 alpha = 0.025)
 h1e
-# ... compared to COMP
-h1e_comp = hypothesis(m.fab, "0 > 2*diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1", alpha = 0.025)
-h1e_comp
 
 # Exploration
 
 # E1: FAB generally
-e1 = hypothesis(m.fab, "cue1 < 0", alpha = 0.025)
+e1 = hypothesis(m.fab, "2*cue1 < 0", alpha = 0.025)
 e1
 
 # E2: FAB effect in ADHD
-e2 = hypothesis(m.fab, "0 < -cue1 - diagnosis1:cue1", alpha = 0.025)
+e2 = hypothesis(m.fab, "0 < -2*cue1 - 2*diagnosis1:cue1", alpha = 0.025)
 e2
 
 # E3: FAB effect in ASD
-e3 = hypothesis(m.fab, "0 < -cue1 - diagnosis2:cue1", alpha = 0.025)
+e3 = hypothesis(m.fab, "0 < -2*cue1 - 2*diagnosis2:cue1", alpha = 0.025)
 e3
 
 # E4: FAB effect in ADHD+ASD
-e4 = hypothesis(m.fab, "0 < -cue1 - diagnosis3:cue1", alpha = 0.025)
+e4 = hypothesis(m.fab, "0 < -2*cue1 - 2*diagnosis3:cue1", alpha = 0.025)
 e4
 
 # E5: FAB in ADHD differs from FAB in ASD
-e5 = hypothesis(m.fab, "diagnosis1:cue1 < diagnosis2:cue1", alpha = 0.025)
+e5 = hypothesis(m.fab, 
+                "0 < -2*diagnosis1:cue1 + 2*diagnosis2:cue1", alpha = 0.025)
 e5
 
-# equivalence tests
-e_equ = equivalence_test(df.m.fab %>% 
-                            mutate(`b_ADHD-ASD`  = b_diagnosis1 - b_diagnosis2) %>% 
-                            select(`b_ADHD-ASD`))
-e_equ
+# E6: FAB in ADHD differs from FAB in BOTH
+e6 = hypothesis(m.fab, 
+                "0 < -2*diagnosis1:cue1 + 2*diagnosis3:cue1", alpha = 0.025)
+e6
+
+# E7: FAB in ASD differs from FAB in BOTH
+e7 = hypothesis(m.fab, 
+                "0 < -2*diagnosis2:cue1 + 2*diagnosis3:cue1", alpha = 0.025)
+e7
+
+# E8: FAB in COMP differs from FAB in BOTH
+e8 = hypothesis(m.fab, 
+                "0 < 2*diagnosis1:cue1 + 2*diagnosis2:cue1 + 4*diagnosis3:cue1", 
+                alpha = 0.025)
+e8
 
 # extract predicted differences in ms instead of log data
 df.new = df.fab %>% 
@@ -1095,22 +1081,24 @@ df.ms = df.ms %>%
     BOTH = rowMeans(select(., matches("BOTH_.*")), na.rm = T),
     FAB  = rowMeans(select(., matches(".*_object")), na.rm = T) -
       rowMeans(select(., matches(".*_face")), na.rm = T),
-    h1a  = COMP_object - COMP_face,
-    h1b  = COMP - ADHD,
-    h1c  = COMP - ASD,
-    h1d_comp = (ASD_object - ASD_face) - (h1a),
-    h1d  = (ASD_object - ASD_face) - FAB,
-    h1e  = (ADHD_object - ADHD_face) - (h1a),
-    e4   = BOTH_object - BOTH_face,
-    e5   = (ADHD_object - ADHD_face) - (ASD_object - ASD_face)
+    FAB_COMP = COMP_object - COMP_face,
+    FAB_ADHD = ADHD_object - ADHD_face,
+    FAB_ASD  = ASD_object  - ASD_face,
+    FAB_BOTH = BOTH_object - BOTH_face,
+    h1b  = ADHD - COMP,
+    h1c  = ASD - COMP,
+    h1d  = FAB_COMP - FAB_ASD,
+    h1e  = FAB_ADHD - FAB_COMP,
+    BOTH_COMP = BOTH - COMP
   )
 
 
 ```
 
-Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (CI of COMP(object) - COMP(face): `r round(quantile(df.ms$h1a, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1a, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1a$hypothesis$Post.Prob*100, 2)`%). Both clinical groups exhibited increased overall reaction times compared with the COMP group (CI of COMP - ADHD: `r round(quantile(df.ms$h1b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1b$hypothesis$Post.Prob*100, 2)`%; CI of COMP - ASD: `r round(quantile(df.ms$h1c, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1c, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1c$hypothesis$Post.Prob*100, 2)`%). Furthermore, while face attention bias was not credibly decreased in ASD participants compared to COMP participants (CI of ASD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1d_comp, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d_comp, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d_comp$hypothesis$Post.Prob*100, 2)`%), it is credibly decreased compared to the average face attention bias in our sample (CI of ASD(FAB) - average FAB: `r round(quantile(df.ms$h1d, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1d, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1d$hypothesis$Post.Prob*100, 2)`%). This effect is also reflected in the face attention bias in the ADHD group which differs credibly from face attention bias in COMP participants (CI of ADHD(FAB) - COMP(FAB): `r round(quantile(df.ms$h1e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h1e, 0.975)[[1]], 2)`ms, posterior probability = `r round(h1e_comp$hypothesis$Post.Prob*100, 2)`%). 
+Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob,3)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob,3)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob,3)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP),3)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 3)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 3)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD),3)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 3)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD),3)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 3)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH),3)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 3)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 3)`] in the ADHD+ASD group. These estimates are reflected in our exploration of the FAB in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob,3)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob,3)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob,3)`%). 
 
-Furthermore, our exploration of the data revealed a credible face attention bias across all groups (CI of object - face: `r round(quantile(df.ms$FAB, 0.025)[[1]], 2)` to `r round(quantile(df.ms$FAB, 0.975)[[1]], 2)`ms, posterior probability = `r round(e1$hypothesis$Post.Prob*100, 2)`%). Last, we explored differences between our clinical groups. While an equivalence test was undecided on differences in overall reaction times between adults with ASD and adults with ADHD in our data ([!ADD]), there was a credible difference between face attention bias in the clinical groups (CI of ASD(FAB) - ADHD(FAB): `r round(quantile(df.ms$e5, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e5, 0.975)[[1]], 2)`ms, posterior probability = `r round(e5$hypothesis$Post.Prob*100, 2)`%). [!ADD exploratory fourth group]
+As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob,3)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob,3)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b),3)`ms [`r round(ci(df.ms$h1b)$CI_low, 3)`, `r round(ci(df.ms$h1b)$CI_high, 3)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c),3)`ms [`r round(ci(df.ms$h1c)$CI_low, 3)`, `r round(ci(df.ms$h1c)$CI_high, 3)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP),3)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 3)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 3)`] faster than adults in the ADHD+ASD group. 
+
 
 ## Plots
 
@@ -1301,7 +1289,7 @@ df.fab.bf %>%
   theme_bw() +
   ggtitle("Sensitivity analysis with the 'diagnosis + cue' model as reference") +
   scale_colour_manual(values = custom.col) +
-  theme(legend.position = c(0.2, 0.25), 
+  theme(legend.position = "bottom", 
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
@@ -1409,36 +1397,38 @@ annotate_figure(p,
 summary(m.rtsac)
 
 # H1a: FAB effect in COMP
-h1a = hypothesis(m.rtsac, "0 < (diagnosis1:cue1 + diagnosis2:cue1 - cue1)")
+h1a = hypothesis(m.rtsac, 
+                 "0 < 2*(diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
 h1a
 
 # H1b: ADHD slower than COMP
-h1b = hypothesis(m.rtsac, "0 < 2*diagnosis1 + diagnosis2")
+h1b = hypothesis(m.rtsac, 
+                 "0 < 2*diagnosis1 + diagnosis2 + diagnosis3")
 h1b
 
 # H1c: ASD slower than COMP
-h1c = hypothesis(m.rtsac, "0 < 2*diagnosis2 + diagnosis1")
+h1c = hypothesis(m.rtsac, 
+                 "0 < 2*diagnosis2 + diagnosis1 + diagnosis3")
 h1c
 
-# H1d: FAB in ASD decreased
-h1d = hypothesis(m.rtsac, "0 < diagnosis2:cue1")
+# H1d: FAB in ASD decreased compared to COMP
+h1d = hypothesis(m.rtsac, 
+                 "0 < 4*diagnosis2:cue1 + 2*diagnosis1:cue1 + 2*diagnosis3:cue1")
 h1d
-# ... compared to COMP
-h1d_comp = hypothesis(m.rtsac, "0 < 2*diagnosis2:cue1 + diagnosis1:cue1")
-h1d_comp
 
-# H1e: FAB in ADHD differs from FAB generally (undirected)
-h1e = hypothesis(m.rtsac, "0 > diagnosis1:cue1", alpha = 0.025)
+# H1e: FAB in ADHD differs from FAB in COMP (undirected)
+h1e = hypothesis(m.rtsac, 
+                 "0 > 4*diagnosis1:cue1 + 2*diagnosis2:cue1 + 2*diagnosis3:cue1", 
+                 alpha = 0.025)
 h1e
-# ... compared to COMP
-h1e_comp = hypothesis(m.rtsac, "0 > 2*diagnosis1:cue1 + diagnosis2:cue1", alpha = 0.025)
-h1e_comp
 
 ```
 
+The assessment of most hypotheses stays the same; however, the difference in FAB between COMP and ADHD is not credible anymore. This change could indicate that difference in saccadic behaviour may be a driver of the differences in FAB between these groups. 
+
 # S1.4 Explorative analysis of errors
 
-Last but not least, we are going to explore possible differences with regards to mean accuracies using a Bayesian ANOVA
+Last but not least, we are going to explore possible differences with regards to mean accuracies using a Bayesian ANOVA. 
 
 ```{r acc}
 
