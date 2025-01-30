@@ -1,76 +1,36 @@
 population-level,bf.log,priors
 1,0.0000,chosen
-diagnosis * cue,5.6859,chosen
-diagnosis + cue,4.7679,chosen
-diagnosis,2.4709,chosen
-cue,2.2831,chosen
-1,0.0000,sdx1.25
-diagnosis * cue,4.7758,sdx1.25
-diagnosis + cue,4.2721,sdx1.25
-diagnosis,2.2379,sdx1.25
-cue,2.0358,sdx1.25
-1,0.0000,sdx1.5
-diagnosis * cue,4.0509,sdx1.5
-diagnosis + cue,3.9267,sdx1.5
-diagnosis,2.0976,sdx1.5
-cue,1.8764,sdx1.5
+diagnosis * cue,2.1734,chosen
+diagnosis + cue,2.4626,chosen
+diagnosis,0.9998,chosen
+cue,1.4193,chosen
 1,0.0000,sdx2
-diagnosis * cue,2.7083,sdx2
-diagnosis + cue,3.1898,sdx2
-diagnosis,1.6331,sdx2
-cue,1.5455,sdx2
+diagnosis * cue,-0.9659,sdx2
+diagnosis + cue,1.3111,sdx2
+diagnosis,0.5381,sdx2
+cue,0.8022,sdx2
 1,0.0000,sdx4
-diagnosis * cue,-0.4667,sdx4
-diagnosis + cue,1.4071,sdx4
-diagnosis,0.5241,sdx4
-cue,0.9430,sdx4
-1,0.0000,sdx6
-diagnosis * cue,-2.5285,sdx6
-diagnosis + cue,0.1798,sdx6
-diagnosis,-0.3289,sdx6
-cue,0.4535,sdx6
+diagnosis * cue,-5.0911,sdx4
+diagnosis + cue,-0.7163,sdx4
+diagnosis,-0.8196,sdx4
+cue,0.0476,sdx4
 1,0.0000,sdx8
-diagnosis * cue,-3.9680,sdx8
-diagnosis + cue,-0.6375,sdx8
-diagnosis,-0.8393,sdx8
-cue,0.2435,sdx8
-1,0.0000,sdx10
-diagnosis * cue,-5.1639,sdx10
-diagnosis + cue,-1.3441,sdx10
-diagnosis,-1.3344,sdx10
-cue,-0.0714,sdx10
-1,0.0000,sdx0.875
-diagnosis * cue,6.2066,sdx0.875
-diagnosis + cue,5.0588,sdx0.875
-diagnosis,2.6234,sdx0.875
-cue,2.3918,sdx0.875
-1,0.0000,sdx0.75
-diagnosis * cue,6.8273,sdx0.75
-diagnosis + cue,5.3384,sdx0.75
-diagnosis,2.7376,sdx0.75
-cue,2.5632,sdx0.75
+diagnosis * cue,-9.7761,sdx8
+diagnosis + cue,-3.3438,sdx8
+diagnosis,-2.7841,sdx8
+cue,-0.6914,sdx8
 1,0.0000,sdx0.5
-diagnosis * cue,8.3238,sdx0.5
-diagnosis + cue,6.1233,sdx0.5
-diagnosis,3.1475,sdx0.5
-cue,2.9418,sdx0.5
+diagnosis * cue,4.6707,sdx0.5
+diagnosis + cue,3.1106,sdx0.5
+diagnosis,0.8609,sdx0.5
+cue,2.1381,sdx0.5
 1,0.0000,sdx0.25
-diagnosis * cue,11.1865,sdx0.25
-diagnosis + cue,8.0852,sdx0.25
-diagnosis,4.2906,sdx0.25
-cue,3.7931,sdx0.25
-1,0.0000,sdx0.167
-diagnosis * cue,12.9908,sdx0.167
-diagnosis + cue,9.6828,sdx0.167
-diagnosis,5.3949,sdx0.167
-cue,4.2917,sdx0.167
+diagnosis * cue,6.4864,sdx0.25
+diagnosis + cue,3.7523,sdx0.25
+diagnosis,0.7403,sdx0.25
+cue,2.9115,sdx0.25
 1,0.0000,sdx0.125
-diagnosis * cue,14.4039,sdx0.125
-diagnosis + cue,11.2343,sdx0.125
-diagnosis,6.4314,sdx0.125
-cue,4.8441,sdx0.125
-1,0.0000,sdx0.1
-diagnosis * cue,15.6132,sdx0.1
-diagnosis + cue,12.7013,sdx0.1
-diagnosis,7.4396,sdx0.1
-cue,5.3338,sdx0.1
+diagnosis * cue,7.4612,sdx0.125
+diagnosis + cue,4.8022,sdx0.125
+diagnosis,0.8206,sdx0.125
+cue,3.9359,sdx0.125

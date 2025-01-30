@@ -18,7 +18,8 @@ ls.packages = c("knitr",# kable
     "SBC",              # plots for checking computational faithfulness
     "rstatix",          # anova
     "logspline",        # needed for the Bayesian Spearman correlation
-    "BayesFactor"
+    "BayesFactor", 
+    "bayestestR"        # equivalence_test
 )
 
 lapply(ls.packages, library, character.only=TRUE)
@@ -50,7 +51,8 @@ c_green = "#009E73"
 sz = 1
 
 # custom colour palette
-custom.col = c("#CC79A7", "#009E73", "#0072B2", "#56B4E9", "#D55E00")
+custom.col = c(c_dark_highlight, "#CC79A7", "#009E73", "#D55E00")
+custom.col2 = c("#E1BE6A", "#B04D40")
 
 ```
 
@@ -99,8 +101,13 @@ First, we load the eye tracking data and combine it with demographic information
 # load the data
 load("FAB_data.RData")
 
+# combine both behavioural datasets
+df.fab = rbind(df.fab, df.exp)
+df.fab$diagnosis = factor(df.fab$diagnosis, 
+                          levels = c("ADHD", "ASD", "BOTH", "COMP"))
+
 # aggregate the behavioural data disregarding stimuli and trials
-df.fab.agg = df.fab %>%
+df.fab.agg = rbind(df.fab, df.exp) %>%
   group_by(subID, diagnosis, cue) %>%
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
@@ -110,6 +117,9 @@ df.fab.agg = df.fab %>%
   summarise(
     rt.fab = combn(rt.cor, 2, FUN = function(x) x[1] - x[2])
   ) 
+
+# remove participants without any data
+df.sac = df.sac %>% filter(!is.na(lat))
 
 # remove unbelievably short and extremely long saccades
 df.sac = df.sac %>%
@@ -131,15 +141,20 @@ criticalpoints = function(density, threshold = 1){
 
 points = criticalpoints(density(df.sac$lat))
 
+# get the density of the latencies
 dd = with(density(df.sac$lat), data.frame(x,y))
+
+# find which point is the global minimum
+lat.points = dd$y[points$minima]
+idx = which.min(lat.points)
 
 ggplot(dd, aes(x = x, y = y)) + 
   geom_line() +
-  geom_vline(xintercept = points$minima, linetype=3) +
-  geom_ribbon(data = subset(dd, x <= points$minima[1]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[1], colour = NA, alpha = 0.5) +
-  geom_ribbon(data = subset(dd, x >= points$minima[1]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[2], colour = NA, alpha = 0.5) + 
+  geom_vline(xintercept = points$minima[idx], linetype=3) +
+  geom_ribbon(data = subset(dd, x <= points$minima[idx]), aes(ymax = y), ymin = 0, 
+              fill = custom.col[1], colour = NA, alpha = .8) +
+  geom_ribbon(data = subset(dd, x >= points$minima[idx]), aes(ymax = y), ymin = 0, 
+              fill = custom.col[2], colour = NA, alpha = .8) + 
   geom_vline(xintercept = 200) + 
   labs(title = "Classification of saccades", x = "latency", y = "density") +
   xlim(0, 750) +
@@ -153,23 +168,23 @@ The graph above shows the density of the latencies with zero on the x-axis being
 
 # preprocess face saccade counts
 df.cnt = df.sac %>% 
-  group_by(subID, dir_face) %>% 
+  group_by(subID, diagnosis, dir_face) %>% 
   summarise(
     n.face = n()
   )
 
 # preprocess cue saccade counts
 df.cnt.cue = df.sac %>% 
-  filter(lat <= points$minima[1]) %>%
-  group_by(subID, dir_face) %>% 
+  filter(lat <= points$minima[idx]) %>%
+  group_by(subID, diagnosis, dir_face) %>% 
   summarise(
     n.cue = n()
   )
 
 # preprocess target saccade counts
 df.cnt.tar = df.sac %>% 
-  filter(lat > points$minima[1] & dir_target) %>%
-  group_by(subID, cue) %>% 
+  filter(lat > points$minima[idx] & dir_target) %>%
+  group_by(subID, diagnosis, cue) %>% 
   summarise(
     n.tar = n()
   )
@@ -205,9 +220,10 @@ df.cnt.tar = merge(df.cnt.tar, data.frame(subID, cue), all = T) %>%
 # preprocess target latencies
 df.lat = df.sac %>% 
   # only keep latencies during cue
-  filter(lat > points$minima[1]) %>%
+  filter(lat > points$minima[idx]) %>%
   # only keep the first latency of each trial
-  group_by(subID, trl, cue) %>%
+  group_by(subID, diagnosis, trl, cue) %>%
+  # only keep the first of the remaining saccades
   filter(sac_trl == min(sac_trl)) %>%
   merge(., df.fab) %>%
   mutate_if(is.character, as.factor)
@@ -222,29 +238,24 @@ df.fab = df.fab %>%
 # set and print the contrasts
 contrasts(df.lat$cue) = contr.sum(2)
 contrasts(df.lat$cue)
-contrasts(df.lat$diagnosis) = contr.sum(3)
+contrasts(df.lat$diagnosis) = contr.sum(4)
 contrasts(df.lat$diagnosis)
 contrasts(df.cnt.tar$cue) = contr.sum(2)
 contrasts(df.cnt.tar$cue)
-contrasts(df.cnt.tar$diagnosis) = contr.sum(3)
+contrasts(df.cnt.tar$diagnosis) = contr.sum(4)
 contrasts(df.cnt.tar$diagnosis)
 contrasts(df.cnt.cue$dir_face) = contr.sum(2)
 contrasts(df.cnt.cue$dir_face)
-contrasts(df.cnt.cue$diagnosis) = contr.sum(3)
+contrasts(df.cnt.cue$diagnosis) = contr.sum(4)
 contrasts(df.cnt.cue$diagnosis)
 contrasts(df.cnt$dir_face) = contr.sum(2)
 contrasts(df.cnt$dir_face)
-contrasts(df.cnt$diagnosis) = contr.sum(3)
+contrasts(df.cnt$diagnosis) = contr.sum(4)
 contrasts(df.cnt$diagnosis)
 contrasts(df.fab$cue) = contr.sum(2)
 contrasts(df.fab$cue)
-contrasts(df.fab$diagnosis) = contr.sum(3)
+contrasts(df.fab$diagnosis) = contr.sum(4)
 contrasts(df.fab$diagnosis)
-
-# print number of subjects per group
-kable(merge(
-  df.cnt %>% select(subID, diagnosis) %>% distinct() %>% group_by(diagnosis) %>% count(),
-  df.lat %>% select(subID, diagnosis) %>% distinct() %>% group_by(diagnosis) %>% count()))
 
 ```
 
@@ -401,7 +412,7 @@ p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none")
 p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+p3 = plot_sim_estimated(df.results.b, alpha = .8) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
@@ -439,6 +450,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 ```{r postpc_cnt, message=T, fig.height=4}
 
 # fit the model
+set.seed(2468)
 m.cnt = brm(f.cnt,
             df.cnt, prior = priors,
             iter = iter, warmup = warm,
@@ -479,7 +491,7 @@ p2 = ppc_stat_grouped(df.cnt$n.face, post.pred, df.cnt$diagnosis) +
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
-                top = text_grob("Posterior predictive checks: no saccades towards face", 
+                top = text_grob("Posterior predictive checks: number of saccades towards face", 
                 face = "bold", size = 14))
 
 ```
@@ -499,9 +511,10 @@ summary(m.cnt)
 df.m.cnt = as_draws_df(m.cnt) %>% 
   select(starts_with("b_")) %>%
   mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2,
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3,
     ASD       = b_Intercept + b_diagnosis2,
     ADHD      = b_Intercept + b_diagnosis1,
+    BOTH      = b_Intercept + b_diagnosis3,
     b_dir_faceTRUE = - b_dir_face1,
     COMP      = b_Intercept + b_COMP
     )
@@ -515,12 +528,14 @@ df.m.cnt %>%
     coef = case_match(coef,
       "b_diagnosis1" ~ "ADHD",
       "b_diagnosis2" ~ "ASD",
+      "b_diagnosis3" ~ "ADHD+ASD",
       "b_COMP"       ~ "COMP",
       "b_dir_faceTRUE"         ~ "Face",
       "b_diagnosis1:dir_face1" ~ "Interaction: ADHD",
-      "b_diagnosis2:dir_face1" ~ "Interaction: ASD"
+      "b_diagnosis2:dir_face1" ~ "Interaction: ASD",
+      "b_diagnosis3:dir_face1" ~ "Interaction: ADHD+ASD"
     ),
-    coef = fct_reorder(coef, desc(coef))
+    coef = fct_reorder(coef, desc(estimate))
   ) %>% 
   group_by(coef) %>%
   mutate(
@@ -537,8 +552,33 @@ df.m.cnt %>%
   theme(legend.position = "none")
 
 # H2a: COMP: face > object
-h2a = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1")
+h2a = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1 - diagnosis3:dir_face1")
 h2a
+
+# explore difference in saccades between COMP and BOTH
+e1 = hypothesis(m.cnt, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3", 
+                alpha = 0.025)
+e1
+
+# explore difference in saccades between ADHD and BOTH
+e2 = hypothesis(m.cnt, "0 > diagnosis1 - diagnosis3", 
+                alpha = 0.025)
+e2
+
+# explore difference in saccades between ASD and BOTH
+e3 = hypothesis(m.cnt, "0 > diagnosis2 - diagnosis3", 
+                alpha = 0.025)
+e3
+
+# check equivalence of the groups that seem similar
+equ.cnt =
+  equivalence_test(df.m.cnt %>% 
+                     mutate(`b_ADHD-ASD`  = b_diagnosis1 - b_diagnosis2,
+                            `b_COMP-ASD`  = -b_diagnosis1 - 2*b_diagnosis2 - b_diagnosis3,
+                            `b_COMP-ADHD` = -2*b_diagnosis1 - b_diagnosis2 - b_diagnosis3
+                            ) %>% 
+                     select(contains('-')))
+equ.cnt
 
 # extract predicted differences in ms instead of log data
 df.new = df.cnt %>% 
@@ -574,8 +614,8 @@ df.cnt %>%
   mutate(direction = if_else(dir_face == T, "face", "object")) %>%
   ggplot(aes(diagnosis, n.face, fill = direction, colour = direction)) + #
   geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = 0.5),
-violin.args = list(color = "black", outlier.shape = NA, alpha = 0.5),
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
 boxplot.args.pos = list(
   position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
 ),
@@ -583,8 +623,8 @@ point.args = list(show_guide = FALSE, alpha = .5),
 violin.args.pos = list(
   width = 0.6, position = position_nudge(x = 0.16)),
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
   theme(legend.position = "bottom", 
@@ -607,8 +647,8 @@ main.code = "cnt"
 
 # describe priors
 pr.descriptions = c("chosen",
-  "sdx1.25",  "sdx1.5",  "sdx2",    "sdx4",   "sdx6",     "sdx8",     "sdx10", 
-  "sdx0.875", "sdx0.75", "sdx0.5", "sdx0.25", "sdx0.167", "sdx0.125", "sdx0.1"
+  "sdx2",    "sdx4",   "sdx8", 
+  "sdx0.5", "sdx0.25", "sdx0.125"
   )
 
 # check which have been run already
@@ -621,6 +661,7 @@ if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
 
 if (length(pr.descriptions) > 0) {
   # rerun the model with more iterations for bridgesampling
+  set.seed(6633)
   m.cnt.bf = brm(f.cnt,
             df.cnt, prior = priors,
             iter = 40000, warmup = 10000,
@@ -688,7 +729,7 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-The Bayes Factor analysis revealed no model outperforming the intercept-only model. On the contrary, the intercept-only model consistently outperforms the other models (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). Therefore, we conclude that there are no differences between diagnostic groups, saccade direction (face or object cue) or their interaction. 
+The Bayes Factor analysis revealed the model only including the main effect diagnostic status outperforming the intercept-only model. With wider priors, the Bayes Factor of this model also indicates worse fit for our data than the intercept-only model.  For our chosen priors though, there is `r effectsize::interpret_bf(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, log = T)` this model compared to the intercept-only model (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`). The intercept-only model consistently outperforms the other models (saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). These results suggest that diagnostic status influences the amount of saccades made, however, this effect is independent of the direction. 
 
 # S2.3 Saccade latencies
 
@@ -850,7 +891,7 @@ p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none")
 p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+p3 = plot_sim_estimated(df.results.b, alpha = .8) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
@@ -888,6 +929,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 ```{r postpc_lat, fig.height=4, message=T}
 
 # fit the maximal model
+set.seed(2587)
 m.lat = brm(f.lat,
             df.lat, prior = priors,
             iter = iter, warmup = warm,
@@ -1089,7 +1131,7 @@ p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none")
 p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+p3 = plot_sim_estimated(df.results.b, alpha = .8) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
@@ -1127,6 +1169,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 ```{r postpc_lat_agg, fig.height=4, message=T}
 
 # fit the maximal model
+set.seed(7799)
 m.lat = brm(f.lat,
             df.lat.agg, prior = priors,
             iter = iter, warmup = warm,
@@ -1187,7 +1230,7 @@ summary(m.lat)
 as_draws_df(m.lat) %>% 
   select(starts_with("b_")) %>%
   mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
     ) %>%
   pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
   filter(coef != "b_Intercept") %>%
@@ -1196,11 +1239,13 @@ as_draws_df(m.lat) %>%
       "b_cue1" ~ "Face",
       "b_diagnosis1" ~ "ADHD",
       "b_diagnosis2" ~ "ASD",
+      "b_diagnosis3" ~ "ADHD+ASD",
       "b_COMP" ~ "COMP",
       "b_diagnosis1:cue1" ~ "Interaction: ADHD x cue",
-      "b_diagnosis2:cue1" ~ "Interaction: ASD x cue"
+      "b_diagnosis2:cue1" ~ "Interaction: ASD x cue",
+      "b_diagnosis3:cue1" ~ "Interaction: ADHD+ASD x cue"
     ),
-    coef = fct_reorder(coef, desc(coef))
+    coef = fct_reorder(coef, desc(estimate))
   ) %>% 
   group_by(coef) %>%
   mutate(
@@ -1218,7 +1263,8 @@ as_draws_df(m.lat) %>%
 
 # H2b: ASD(face) > COMP(face)
 h2b = hypothesis(m.lat, 
-                 "0 < diagnosis1 + 2*diagnosis2 + diagnosis1:cue1 + 2*diagnosis2:cue1")
+                 "0 < diagnosis1 + diagnosis3 + 2*diagnosis2 +
+                 diagnosis1:cue1 + diagnosis3:cue1 + 2*diagnosis2:cue1")
 h2b
 
 # explore: faster towards faces
@@ -1241,16 +1287,18 @@ colnames(df.ms) = df.new$condition
 # calculate our difference columns
 df.ms = df.ms %>%
   mutate(
-    COMP = (COMP_face + COMP_object)/2,
-    ADHD = (ADHD_face + ADHD_object)/2,
-    ASD  = (ASD_object + ASD_face)/2,
+    COMP = rowMeans(select(., matches("COMP_.*")), na.rm = T),
+    ADHD = rowMeans(select(., matches("ADHD_.*")), na.rm = T),
+    ASD  = rowMeans(select(., matches("ASD_.*")), na.rm = T),
+    BOTH = rowMeans(select(., matches("BOTH_.*")), na.rm = T),
     h2b  = COMP_face - COMP_object,
-    e  = (ADHD_face + ASD_face + COMP_face)/3 - (ADHD_object + ASD_object + COMP_object)/3
+    e  = rowMeans(select(., matches(".*_object")), na.rm = T) - 
+      rowMeans(select(., matches(".*_face")), na.rm = T)
   )
 
 ```
 
-None of the population-level predictors showed credible effects on saccade latency. Specifically, we assessed whether latencies associated with saccades towards targets appearing at the previous location of the face are shorter in our comparison group than in the autistic group which was not the case (CI of ASD(face) - COMP(face): `r round(quantile(df.ms$h2b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h2b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h2b$hypothesis$Post.Prob*100, 2)`%). We also explored whether our subjects produced faster saccades towards the targets appearing on the side of the face which also was not the case (CI of face - object: `r round(quantile(df.ms$e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e, 0.975)[[1]], 2)`ms, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). 
+None of the population-level predictors showed credible effects on saccade latency. Specifically, we assessed whether latencies associated with saccades towards targets appearing at the previous location of the face are shorter in our comparison group than in the autistic group which was not the case (CI of ASD(face) - COMP(face): `r round(quantile(df.ms$h2b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h2b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h2b$hypothesis$Post.Prob*100, 2)`%). We also explored whether our subjects produced faster saccades towards the targets appearing on the side of the face which also was not the case (CI of face - object: `r round(quantile(df.ms$e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e, 0.975)[[1]], 2)`ms, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). [!ADJUST]
 
 ### Plots
 
@@ -1260,8 +1308,8 @@ None of the population-level predictors showed credible effects on saccade laten
 df.lat.agg %>%
   ggplot(aes(diagnosis, lat, fill = cue, colour = cue)) + #
   geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = 0.5),
-violin.args = list(color = "black", outlier.shape = NA, alpha = 0.5),
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
 boxplot.args.pos = list(
   position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
 ),
@@ -1293,8 +1341,8 @@ main.code = "lat-agg"
 
 # describe priors
 pr.descriptions = c("chosen",
-  "sdx1.25",  "sdx1.5",  "sdx2",    "sdx4",   "sdx6",     "sdx8",     "sdx10", 
-  "sdx0.875", "sdx0.75", "sdx0.5", "sdx0.25", "sdx0.167", "sdx0.125", "sdx0.1"
+  "sdx2",    "sdx4",   "sdx8", 
+  "sdx0.5", "sdx0.25", "sdx0.125"
   )
 
 # check which have been run already
@@ -1307,6 +1355,7 @@ if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
 
 if (length(pr.descriptions) > 0) {
   # rerun the model with more iterations for bridgesampling
+  set.seed(5599)
   m.lat.bf = brm(f.lat,
             df.lat.agg, prior = priors,
             iter = 40000, warmup = 10000,
@@ -1387,11 +1436,11 @@ df.diff = df.cnt %>% filter(dir_face == TRUE)
 
 # check the distribution plot > not normally distributed
 p1 = ggplot(df.diff, aes(sample = n.face)) + 
-  stat_qq(alpha = 0.5, colour = "lightblue") + 
+  stat_qq(alpha = 0.75, colour = "lightblue") + 
   stat_qq_line() + 
   theme_bw()
 p2 = ggplot(df.diff, aes(sample = rt.fab)) + 
-  stat_qq(alpha = 0.5, colour = "lightblue") + 
+  stat_qq(alpha = 0.75, colour = "lightblue") + 
   stat_qq_line() + 
   theme_bw()
 ggarrange(p1, p2, 
@@ -1578,7 +1627,7 @@ p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none")
 p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+p3 = plot_sim_estimated(df.results.b, alpha = .8) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
@@ -1616,6 +1665,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 ```{r postpc_cnt_cue, message=T, fig.height=4}
 
 # fit the model
+set.seed(6644)
 m.cnt = brm(f.cnt,
             df.cnt.cue, prior = priors,
             iter = iter, warmup = warm,
@@ -1656,7 +1706,7 @@ p2 = ppc_stat_grouped(df.cnt.cue$n.cue, post.pred, df.cnt.cue$diagnosis) +
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
-                top = text_grob("Posterior predictive checks: no saccades towards cue", 
+                top = text_grob("Posterior predictive checks: number of saccades towards cue", 
                 face = "bold", size = 14))
 
 ```
@@ -1676,9 +1726,10 @@ summary(m.cnt)
 df.m.cnt = as_draws_df(m.cnt) %>% 
   select(starts_with("b_")) %>%
   mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2,
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3,
     ASD       = b_Intercept + b_diagnosis2,
     ADHD      = b_Intercept + b_diagnosis1,
+    BOTH      = b_Intercept + b_diagnosis3,
     b_dir_faceTRUE = - b_dir_face1,
     COMP      = b_Intercept + b_COMP
     )
@@ -1692,12 +1743,14 @@ df.m.cnt %>%
     coef = case_match(coef,
       "b_diagnosis1" ~ "ADHD",
       "b_diagnosis2" ~ "ASD",
+      "b_diagnosis3" ~ "ADHD+ASD",
       "b_COMP"       ~ "COMP",
       "b_dir_faceTRUE"         ~ "Face",
       "b_diagnosis1:dir_face1" ~ "Interaction: ADHD",
+      "b_diagnosis3:dir_face1" ~ "Interaction: ADHD+ASD",
       "b_diagnosis2:dir_face1" ~ "Interaction: ASD"
     ),
-    coef = fct_reorder(coef, desc(coef))
+    coef = fct_reorder(coef, desc(estimate))
   ) %>% 
   group_by(coef) %>%
   mutate(
@@ -1714,7 +1767,7 @@ df.m.cnt %>%
   theme(legend.position = "none")
 
 # exploration: COMP: face > object
-hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1", 
+hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1 - diagnosis3:dir_face1", 
            alpha = 0.025)
 
 # exploration: face > object
@@ -1722,16 +1775,22 @@ e = hypothesis(m.cnt, "0 > dir_face1", alpha = 0.025)
 e
 
 # exploration: ADHD > COMP
-hypothesis(m.cnt, "0 < 2*diagnosis1 + diagnosis2", alpha = 0.025)
+hypothesis(m.cnt, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
 
 # exploration: ADHD(face) > ADHD(object)
 hypothesis(m.cnt, "0 > dir_face1 + diagnosis1:dir_face1", alpha = 0.025)
 
 # exploration: ASD > COMP
-hypothesis(m.cnt, "0 < 2*diagnosis2 + diagnosis1", alpha = 0.025)
+hypothesis(m.cnt, "0 < 2*diagnosis2 + diagnosis1 + diagnosis3", alpha = 0.025)
+
+# exploration: BOTH > COMP
+hypothesis(m.cnt, "0 < diagnosis2 + diagnosis1 + 2*diagnosis3", alpha = 0.025)
 
 # exploration: ASD(face) > ASD(object)
 hypothesis(m.cnt, "0 > dir_face1 + diagnosis2:dir_face1", alpha = 0.025)
+
+# exploration: BOTH(face) > BOTH(object)
+hypothesis(m.cnt, "0 > dir_face1 + diagnosis3:dir_face1", alpha = 0.025)
 
 # extract predicted differences in ms instead of log data
 df.new = df.cnt.cue %>% 
@@ -1746,15 +1805,9 @@ df.est = as.data.frame(
                re_formula = NA))
 colnames(df.est) = df.new$condition
 
-# calculate our difference columns
-df.est = df.est %>%
-  mutate(
-    e  = (COMP_TRUE + ADHD_TRUE + ASD_TRUE)/3 - (COMP_FALSE + ADHD_FALSE + ASD_FALSE)/3
-  )
-
 ```
 
-This model revealed no differences between diagnostic groups; however,  all diagnostic groups produced more saccades in the direction of the face compared to the direction of the object during the presentation of the cue (CI of object - face: `r round(quantile(df.est$e, 0.025)[[1]], 2)` to `r round(quantile(df.est$e, 0.975)[[1]], 2)`, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). 
+[!ADD]
 
 ## Plots
 
@@ -1766,8 +1819,8 @@ df.cnt.cue %>%
   mutate(direction = if_else(dir_face == T, "face", "object")) %>%
   ggplot(aes(diagnosis, n.cue, fill = direction, colour = direction)) + #
   geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = 0.5),
-violin.args = list(color = "black", outlier.shape = NA, alpha = 0.5),
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
 boxplot.args.pos = list(
   position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
 ),
@@ -1799,8 +1852,8 @@ main.code = "cnt-cue"
 
 # describe priors
 pr.descriptions = c("chosen",
-  "sdx1.25",  "sdx1.5",  "sdx2",    "sdx4",   "sdx6",     "sdx8",     "sdx10", 
-  "sdx0.875", "sdx0.75", "sdx0.5", "sdx0.25", "sdx0.167", "sdx0.125", "sdx0.1"
+  "sdx2",    "sdx4",   "sdx8", 
+  "sdx0.5", "sdx0.25", "sdx0.125"
   )
 
 # check which have been run already
@@ -1813,6 +1866,7 @@ if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
 
 if (length(pr.descriptions) > 0) {
   # rerun the model with more iterations for bridgesampling
+  set.seed(3311)
   m.cnt.bf = brm(f.cnt,
             df.cnt.cue, prior = priors,
             iter = 40000, warmup = 10000,
@@ -2001,7 +2055,7 @@ p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none")
 p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+p3 = plot_sim_estimated(df.results.b, alpha = .8) + theme_bw() +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
   scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
 p4 = plot_contraction(df.results.b, 
@@ -2039,6 +2093,7 @@ As the next step, we fit the model and check whether the chains have converged, 
 ```{r postpc_cnt_tar, message=T, fig.height=4}
 
 # fit the maximal model
+set.seed(7744)
 m.cnt.tar = brm(f.cnt,
             df.cnt.tar, prior = priors,
             iter = iter, warmup = warm,
@@ -2079,7 +2134,7 @@ p2 = ppc_stat_grouped(df.cnt.tar$n.tar, post.pred, df.cnt.tar$diagnosis) +
 p = ggarrange(p1, p2,
           nrow = 2, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
-                top = text_grob("Posterior predictive checks: no saccades towards target", 
+                top = text_grob("Posterior predictive checks: number of saccades towards target", 
                 face = "bold", size = 14))
 
 ```
@@ -2107,12 +2162,14 @@ as_draws_df(m.cnt.tar) %>%
     coef = case_match(coef,
       "b_diagnosis1" ~ "ADHD",
       "b_diagnosis2" ~ "ASD",
+      "b_diagnosis3" ~ "ADHD+ASD",
       "b_COMP"       ~ "COMP",
       "b_cue1"       ~ "Face",
       "b_diagnosis1:cue1" ~ "Interaction: ADHD",
-      "b_diagnosis2:cue1" ~ "Interaction: ASD"
+      "b_diagnosis2:cue1" ~ "Interaction: ASD",
+      "b_diagnosis3:cue1" ~ "Interaction: ADHD+ASD"
     ),
-    coef = fct_reorder(coef, desc(coef))
+    coef = fct_reorder(coef, desc(estimate))
   ) %>% 
   group_by(coef) %>%
   mutate(
@@ -2144,8 +2201,8 @@ This model did not reveal any credible differences associated with the populatio
 df.cnt.tar %>%
   ggplot(aes(diagnosis, n.tar, fill = cue, colour = cue)) + #
   geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = 0.5),
-violin.args = list(color = "black", outlier.shape = NA, alpha = 0.5),
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
 boxplot.args.pos = list(
   position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
 ),
@@ -2176,8 +2233,8 @@ main.code = "cnt-tar"
 
 # describe priors
 pr.descriptions = c("chosen",
-  "sdx1.25",  "sdx1.5",  "sdx2",    "sdx4",   "sdx6",     "sdx8",     "sdx10", 
-  "sdx0.875", "sdx0.75", "sdx0.5", "sdx0.25", "sdx0.167", "sdx0.125", "sdx0.1"
+  "sdx2",    "sdx4",   "sdx8", 
+  "sdx0.5", "sdx0.25", "sdx0.125"
   )
 
 # check which have been run already
@@ -2190,6 +2247,7 @@ if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
 
 if (length(pr.descriptions) > 0) {
   # rerun the model with more iterations for bridgesampling
+  set.seed(2244)
   m.cnt.bf = brm(f.cnt,
             df.cnt.tar, prior = priors,
             iter = 40000, warmup = 10000,

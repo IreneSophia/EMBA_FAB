@@ -57,7 +57,8 @@ else
 
     % calculate mean pupil diameter
     if two_eyes
-        tbl.pupilDiameter = mean([tbl.leftPupilMajorAxis,tbl.leftPupilMinorAxis],2);
+        tbl.pupilDiameter = mean([tbl.leftPupilMajorAxis,tbl.leftPupilMinorAxis,...
+        tbl.rightPupilMajorAxis,tbl.rightPupilMinorAxis],2);
     else
         tbl.pupilDiameter = mean([tbl.PupilMajorAxis,tbl.PupilMinorAxis],2);
     end
@@ -145,7 +146,7 @@ else
         tbl.yPixel = (tbl.ScreenY)*...
             (screen_res(2)/(screen_size(2)*1000));
     end
-    
+
     % save the table
     save([dir_path filesep subID '_tbl.mat'], 'tbl');
 

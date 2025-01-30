@@ -1,135 +1,63 @@
 
 ---------------------------------------
-2024-08-26 13:59:13.413706: chosen
+2025-01-29 13:04:38.193524: chosen
 
-2024-08-26 13:59:13.414415: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 14:01:41.823362: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 14:17:52.226868: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 14:34:39.44784: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 14:51:40.186839: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-26 15:08:05.92324: sdx1.25
-
-2024-08-26 15:08:05.923357: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 15:25:01.612014: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 15:41:14.680678: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 15:57:54.109257: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 16:14:52.990805: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 13:04:38.194241: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 13:08:26.01894: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 13:32:35.560369: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 13:58:25.850629: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 14:24:00.142611: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-26 16:31:24.344907: sdx1.5
+2025-01-29 14:49:00.860124: sdx2
 
-2024-08-26 16:31:24.345104: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 16:48:11.814667: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 17:04:31.210443: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 17:21:16.061741: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 17:38:20.565083: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-26 17:55:06.387409: sdx2
-
-2024-08-26 17:55:06.387593: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 18:12:00.348776: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 18:27:48.298388: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 18:44:34.882491: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 19:01:36.31805: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 14:49:00.860313: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 15:15:47.153821: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 15:40:26.020409: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 16:07:15.329852: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 16:33:20.80554: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-26 19:18:28.081764: sdx4
+2025-01-29 16:59:34.679687: sdx4
 
-2024-08-26 19:18:28.081953: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 19:35:28.991757: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 19:51:59.90093: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 20:08:44.458088: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 20:25:49.920456: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-26 20:42:56.889265: sdx6
-
-2024-08-26 20:42:56.88945: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 20:59:53.060327: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 21:16:22.689122: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 21:33:18.126778: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 21:50:19.593745: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 16:59:34.679875: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 17:26:38.892095: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 17:51:25.416713: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 18:17:38.11986: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 18:43:32.543597: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-26 22:07:16.577387: sdx8
+2025-01-29 19:09:05.684309: sdx8
 
-2024-08-26 22:07:16.577574: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 22:24:28.20414: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 22:40:42.261968: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 22:57:34.129941: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 23:14:55.502412: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-26 23:32:01.729701: sdx10
-
-2024-08-26 23:32:01.729897: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-26 23:49:01.960419: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 00:05:20.173708: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 00:22:17.782598: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 00:39:26.100447: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 19:09:05.684503: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 19:36:01.177044: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 20:00:28.782325: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 20:26:58.299543: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 20:52:57.316021: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-27 00:56:03.259855: sdx0.875
+2025-01-29 21:18:39.189144: sdx0.5
 
-2024-08-27 00:56:03.260062: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 01:12:50.906042: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 01:28:56.500317: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 01:45:50.990869: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 02:03:10.050364: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-27 02:19:34.48405: sdx0.75
-
-2024-08-27 02:19:34.484247: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 02:36:35.789954: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 02:52:55.606801: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 03:09:46.245739: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 03:26:49.481978: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 21:18:39.189332: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 21:45:22.452559: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 22:09:58.91884: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 22:36:20.160775: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 23:02:00.055587: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-27 03:43:37.756851: sdx0.5
+2025-01-29 23:27:09.521286: sdx0.25
 
-2024-08-27 03:43:37.757059: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 04:00:46.833623: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 04:17:11.978227: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 04:34:05.921261: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 04:51:02.855247: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-27 05:07:43.160003: sdx0.25
-
-2024-08-27 05:07:43.160216: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 05:24:34.313118: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 05:40:49.785919: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 05:57:38.979766: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 06:14:29.56128: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 23:27:09.52148: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-29 23:53:19.178313: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 00:18:00.130305: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 00:44:25.282959: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 01:09:44.898412: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
 
 ---------------------------------------
-2024-08-27 06:31:07.191535: sdx0.167
+2025-01-30 01:35:34.263074: sdx0.125
 
-2024-08-27 06:31:07.191722: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 06:47:44.15509: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 07:03:50.340621: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 07:20:20.316964: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 07:36:57.515915: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-27 07:53:21.13118: sdx0.125
-
-2024-08-27 07:53:21.131366: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 08:09:33.059384: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 08:24:50.800195: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 08:40:32.443588: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 08:56:01.525759: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
-
----------------------------------------
-2024-08-27 09:11:31.849083: sdx0.1
-
-2024-08-27 09:11:31.849272: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 09:22:08.605945: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 09:35:13.404072: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 09:46:14.27511: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
-2024-08-27 09:57:01.371454: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 01:35:34.263259: rt.cor ~ diagnosis * cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 02:01:30.03288: rt.cor ~ 1 + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 02:25:38.946616: rt.cor ~ diagnosis + cue + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 02:51:27.485745: rt.cor ~ diagnosis + (cue | subID) + (cue * diagnosis | stm)
+2025-01-30 03:15:58.217557: rt.cor ~ cue + (cue | subID) + (cue * diagnosis | stm)

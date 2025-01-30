@@ -2,6 +2,7 @@
 library(tidyverse)
 fl.path = '/home/emba/Documents/EMBA'
 dt.path = paste(fl.path, 'BVET', sep = "/")
+#dt.path = paste(fl.path, 'BVET-explo', sep = "/")
 
 # some info on the experiment
 screenX = 2560
@@ -49,5 +50,10 @@ df.sac = df %>%
 # check if there is someone who did not have any saccades
 noSac = setdiff(unique(df$subID), unique(df.sac$subID))
 
+# add them to dataframe with NAs
+for (sub in noSac) {
+  df.sac = df.sac %>% add_row(subID = sub)
+}
+
 # save the data for analysis
-save(file = paste(dt.path, "FAB_ET_data.RData", sep = "/"), list = c("df.sac", "noSac"))
+saveRDS(df.sac, file = file.path(dt.path, "FAB_ET_data.rds"))
