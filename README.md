@@ -37,10 +37,10 @@ For preprocessing of the eye tracking data, MATLAB R2023a was used.
 
 Data is shared in one RData `FAB_data.RData` file which can be read into R. This file contains the following data frames: 
 
-`df.fab`
+`df.fab` and `df.exp`
 
 * subID : anonymised participant ID
-* diagnosis: diagnostic status of this participant, either ADHD, ASD or COMP (comparison group, no psychiatric diagnoses)
+* diagnosis: diagnostic status of this participant, either ADHD, ASD, ADHD+ASD or COMP (comparison group, no psychiatric diagnoses)
 * trl : trial number (1 to 432)
 * stm : number of the face and object pictures shown in this trial
 * rt  : reaction time with which the participant logged their answer (left or right)
@@ -64,7 +64,7 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * dir_target : whether the saccades produced was towards the target
 * dir_face : whether the saccade produced was towards the (previous) location of the face
 * lat : latency, starting with the presentation of the cue
-* diagnosis: diagnostic status of this participant, either ADHD, ASD or COMP (comparison group, no psychiatric diagnoses)
+* diagnosis: diagnostic status of this participant, either ADHD, ASD, ADHD+ASD or COMP (comparison group, no psychiatric diagnoses)
 
 `df.table`
 
@@ -72,9 +72,10 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * ADHD : mean and standard errors or counts for the gender identities for the ADHD group
 * ASD : mean and standard errors or counts for the gender identities for the ASD group
 * COMP : mean and standard errors or counts for the gender identities for the COMP group
+* BOTH : mean and standard errors or counts for the gender identities for the ADHD+ASD group
 * logBF10 : logarithmic Bayes Factor comparing the model including diagnosis to the null model
 
-as well as `df.exc` (group and number of excluded participants), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` containing the full dataset and `ct.mf` only containing male and female participants).
+as well as `df.exc` (group and number of excluded participants for behavioural analysis), `df.nosac` (group and number of participants without any relevant saccades despite useable eye tracking data), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` containing the full dataset and `ct.mf` only containing male and female participants).
 
 ## Result files
 
