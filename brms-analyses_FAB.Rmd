@@ -2,7 +2,7 @@
 title: "S1: behavioural analysis with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: word_document
 ---
   
 ```{r settings, include=FALSE}
@@ -1118,9 +1118,9 @@ df.ms = df.ms %>%
 
 ```
 
-Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob,3)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob,3)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob,3)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP),3)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 3)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 3)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD),3)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 3)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD),3)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 3)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH),3)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 3)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 3)`] in the ADHD+ASD group. These estimates are reflected in our exploration of the FAB in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob,3)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob,3)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob,3)`%). 
+As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob*100,2)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob*100,2)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b),3)`ms [`r round(ci(df.ms$h1b)$CI_low, 3)`, `r round(ci(df.ms$h1b)$CI_high, 3)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c),3)`ms [`r round(ci(df.ms$h1c)$CI_low, 3)`, `r round(ci(df.ms$h1c)$CI_high, 3)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP),3)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 3)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 3)`] faster than adults in the ADHD+ASD group. 
 
-As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob,3)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob,3)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b),3)`ms [`r round(ci(df.ms$h1b)$CI_low, 3)`, `r round(ci(df.ms$h1b)$CI_high, 3)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c),3)`ms [`r round(ci(df.ms$h1c)$CI_low, 3)`, `r round(ci(df.ms$h1c)$CI_high, 3)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP),3)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 3)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 3)`] faster than adults in the ADHD+ASD group. 
+Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob*100,2)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob*100,2)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP),3)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 3)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 3)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD),3)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 3)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD),3)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 3)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH),3)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 3)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 3)`] in the ADHD+ASD group. These estimates are reflected in our exploration of the FAB in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%). 
 
 
 ## Plots
@@ -1133,6 +1133,9 @@ df.fab %>%
   summarise(
     rt.cor = mean(rt.cor, na.rm = T)
     ) %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>% 
   ggplot(aes(diagnosis, rt.cor, fill = cue, colour = cue)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
@@ -1147,7 +1150,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   ylim(0, 700) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Median reaction times per subject", 
+  labs(title = "Median reaction times", 
        x = "", 
        y = "reaction time (ms)") +
   theme_bw() + 
@@ -1171,6 +1174,9 @@ df.fab %>%
   group_by(subID, diagnosis) %>%
   arrange(subID, diagnosis, cue) %>%
   summarise(FAB = diff(rt.cor[1:2])) %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>% 
   ggplot(aes(diagnosis, FAB, fill = diagnosis, colour = diagnosis)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
@@ -1185,11 +1191,11 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   geom_hline(yintercept = 0) +
   scale_fill_manual(values = custom.col) +
   scale_color_manual(values = custom.col) +
-  labs(title = "Face attention bias (median RT object - face) per subject", 
+  labs(title = "Face attention bias (median RT object - face)", 
        x = "", 
-       y = "fab (ms)") +
+       y = "FAB (ms)") +
   theme_bw() + 
-  theme(legend.position = "bottom", 
+  theme(legend.position = "none", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
@@ -1197,7 +1203,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
 ggsave("Fig4_FAB.pdf", 
        units = "mm", 
        width  = 170,
-       height = 100,
+       height = 70,
        dpi    = 300)
 
 ```
@@ -1431,6 +1437,7 @@ annotate_figure(p,
 # print a summary
 summary(m.rtsac)
 
+
 # H1a: FAB effect in COMP
 h1a = hypothesis(m.rtsac, 
                  "0 < 2*(diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
@@ -1459,7 +1466,7 @@ h1e
 
 ```
 
-The assessment of most hypotheses stays the same; however, the difference in FAB between COMP and ADHD is not credible anymore. This change could indicate that difference in saccadic behaviour may be a driver of the differences in FAB between these groups. 
+This model confirmed the same hypotheses with the exception for the difference in FAB between COMP and ADHD group which is not credible anymore (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). This change could indicate that difference in saccadic behaviour may partly drive these group differences.
 
 # S1.4 Explorative analysis of errors
 
@@ -1493,11 +1500,13 @@ extractBF(aov.acc, logbf = T)
 # print overall accuracy rates
 df.acc %>% 
   group_by(diagnosis, cue) %>% 
-  summarise(mean_accuracy = mean(acc, na.rm = T), sd_accuracy = sd(acc, na.rm = T))
+  summarise(mean_accuracy = mean(acc, na.rm = T), 
+            se_accuracy = sd(acc, na.rm = T)/sqrt(n()))
 
 df.acc %>% 
   group_by(diagnosis) %>% 
-  summarise(mean_accuracy = mean(acc, na.rm = T), sd_accuracy = sd(acc, na.rm = T))
+  summarise(mean_accuracy = mean(acc, na.rm = T), 
+            se_accuracy = sd(acc, na.rm = T)/sqrt(n()))
 
 ```
 
@@ -1523,7 +1532,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   ylim(0, 100) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Mean accuracies per subject", x = "", y = "percent") +
+  labs(title = "Mean accuracies", x = "", y = "percent") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
