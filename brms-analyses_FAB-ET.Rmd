@@ -94,7 +94,7 @@ for (package in ls.packages) {
 
 ## Preparation
 
-First, we load the eye tracking data and combine it with demographic information including the diagnostic status of the subjects. Second, we preprocess the latencies of the saccades and divide them into saccades elicited by the cues and saccades elicited by the target. To do so, we use the knowledge that latencies below 100ms are extremely unlikely and local minima in the density function. We also load in the behavioural data again to be able to use reaction times for further correlational analyses. 
+First, we load the eye tracking data and combine it with demographic information including the diagnostic status of the subjects. Second, we preprocess the latencies of the saccades and divide them into saccades elicited by the cues and saccades elicited by the target. To do so, we use the knowledge that latencies below 100ms are extremely unlikely and use the global minimum in the density function. We also load in the behavioural data again to be able to use reaction times for further correlational analyses. 
 
 ```{r prep, fig.height=4}
 
@@ -152,17 +152,27 @@ ggplot(dd, aes(x = x, y = y)) +
   geom_line() +
   geom_vline(xintercept = points$minima[idx], linetype=3) +
   geom_ribbon(data = subset(dd, x <= points$minima[idx]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[1], colour = NA, alpha = .8) +
+              fill = custom.col[2], colour = NA, alpha = .8) +
   geom_ribbon(data = subset(dd, x >= points$minima[idx]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[2], colour = NA, alpha = .8) + 
+              fill = custom.col[3], colour = NA, alpha = .8) + 
   geom_vline(xintercept = 200) + 
   labs(title = "Classification of saccades", x = "latency", y = "density") +
-  xlim(0, 750) +
-  theme_bw()
+  xlim(0, 800) +
+  theme_bw() + 
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
+
+ggsave("Fig2_densLatency.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
 
 ```
 
-The graph above shows the density of the latencies with zero on the x-axis being the onset of the cue. After 200ms, the cue disappears and the target is presented on the screen (solid line). We can see that there is a local minimum about 125ms after the target appears (dotted line). We can assume that saccades produced before this were in response to the cue (pink) and saccades after were in response to the target (green). Therefore, we divide the saccades accordingly. Then, we aggregate the data per subject and cue. Last, we set all predictors to sum contrasts.
+The graph above shows the density of the latencies with zero on the x-axis being the onset of the cue. After 200ms, the cue disappears and the target is presented on the screen (solid line). We can see that there is a minimum about 130ms after the target appears (dotted line). We can assume that saccades produced before this were in response to the cue (pink) and saccades after were in response to the target (green). Therefore, we divide the saccades accordingly. Then, we aggregate the data per subject and cue. Last, we set all predictors to sum contrasts.
 
 ```{r prepro}
 
@@ -286,6 +296,8 @@ iter = 4500
 warm = 1500
 
 ```
+
+## Simulation-based calibration
 
 ``` {r sbc_cnt}
 
@@ -437,11 +449,7 @@ annotate_figure(p,
 
 ```
 
-Second, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Third, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05.
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). Despite our wide priors, the contraction shows a bit of a distribution which increases our trust that the wide priors are appropriate.
+All of this looks good. Despite our wide priors, the contraction shows a bit of a distribution which increases our trust that the wide priors are appropriate.
 
 ## Posterior predictive checks
 
@@ -496,7 +504,7 @@ annotate_figure(p,
 
 ```
 
-The predictions based on the model capture the data well. This further increases our trust in the model and we move on to interpret its parameter. 
+The predictions based on the model capture the data well. This further increases our trust in the model. 
 
 ## Inferences
 
@@ -552,7 +560,9 @@ df.m.cnt %>%
   theme(legend.position = "none")
 
 # H2a: COMP: face > object
-h2a = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1 - diagnosis3:dir_face1")
+h2a = hypothesis(m.cnt, 
+                 "0 < 2*(dir_face1 - diagnosis1:dir_face1 - 
+                 diagnosis2:dir_face1 - diagnosis3:dir_face1)")
 h2a
 
 # explore difference in saccades between COMP and BOTH
@@ -561,26 +571,16 @@ e1 = hypothesis(m.cnt, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3",
 e1
 
 # explore difference in saccades between ADHD and BOTH
-e2 = hypothesis(m.cnt, "0 > diagnosis1 - diagnosis3", 
+e2 = hypothesis(m.cnt, "0 > 2*diagnosis1 - 2*diagnosis3", 
                 alpha = 0.025)
 e2
 
 # explore difference in saccades between ASD and BOTH
-e3 = hypothesis(m.cnt, "0 > diagnosis2 - diagnosis3", 
+e3 = hypothesis(m.cnt, "0 < -2*diagnosis2 + 2*diagnosis3", 
                 alpha = 0.025)
 e3
 
-# check equivalence of the groups that seem similar
-equ.cnt =
-  equivalence_test(df.m.cnt %>% 
-                     mutate(`b_ADHD-ASD`  = b_diagnosis1 - b_diagnosis2,
-                            `b_COMP-ASD`  = -b_diagnosis1 - 2*b_diagnosis2 - b_diagnosis3,
-                            `b_COMP-ADHD` = -2*b_diagnosis1 - b_diagnosis2 - b_diagnosis3
-                            ) %>% 
-                     select(contains('-')))
-equ.cnt
-
-# extract predicted differences in ms instead of log data
+# extract predicted differences 
 df.new = df.cnt %>% 
   select(diagnosis, dir_face) %>% 
   distinct() %>%
@@ -593,15 +593,9 @@ df.est = as.data.frame(
                re_formula = NA))
 colnames(df.est) = df.new$condition
 
-# calculate our difference columns
-df.est = df.est %>%
-  mutate(
-    h2a  = COMP_TRUE - COMP_FALSE
-  )
-
 ```
 
-Our hypothesis was not confirmed: there was no difference between the number of saccades in the direction of the face compared to the direction of the object in our COMP group (CI of COMP(face) - COMP(object): `r round(quantile(df.est$h2a, 0.025)[[1]], 2)` to `r round(quantile(df.est$h2a, 0.975)[[1]], 2)`, posterior probability = `r round(h2a$hypothesis$Post.Prob*100, 2)`%).
+Our hypothesis was not confirmed: there was no difference between the number of saccades in the direction of the face compared to the direction of the object in our COMP group (*estimate* = `r round(h2a$hypothesis$Estimate,2)` [`r round(h2a$hypothesis$CI.Lower,2)`, `r round(h2a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2a$hypothesis$Post.Prob,3)`%). Exploration of other group differences indicates a larger number of saccades produced by the ADHD+ASD group than in any of the other groups (COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob,3)`%; ADHD: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob,3)`%; ASD: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob,3)`%). 
 
 ## Plots
 
@@ -729,11 +723,11 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-The Bayes Factor analysis revealed the model only including the main effect diagnostic status outperforming the intercept-only model. With wider priors, the Bayes Factor of this model also indicates worse fit for our data than the intercept-only model.  For our chosen priors though, there is `r effectsize::interpret_bf(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, log = T)` this model compared to the intercept-only model (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`). The intercept-only model consistently outperforms the other models (saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). These results suggest that diagnostic status influences the amount of saccades made, however, this effect is independent of the direction. 
+The Bayes Factor analysis revealed the model only including the main effect diagnostic status outperforming the intercept-only model. With wider priors, the Bayes Factor of this model also indicates worse fit for our data than the intercept-only model.  For our chosen priors though, there is `r effectsize::interpret_bf(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, log = T)` this model compared to the intercept-only model (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`). The intercept-only model consistently outperforms the other models (saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). These results suggest that diagnostic status influences the amount of saccades made, however, the same amount of saccades are produced towards the face and towards the object. 
 
 # S2.3 Saccade latencies
 
-Next, we focus on the latencies of the saccades that are produced during the presentation of the targets to assess whether cue type, diagnostic group or their interaction influence latencies. Based on Guillon et al. (2014), we hypothesised that ASD participants show an increased latency compared to COMP participants when producing saccades towards targets appearing at the location of a face. 
+Next, we focus on the latencies of the saccades that are produced during the presentation of the targets to assess whether cue type, diagnostic group or their interaction influence latencies. We hypothesised that ASD participants show an increased latency compared to COMP participants when producing saccades towards targets appearing at the location of a face. 
 
 ## Full model
 
@@ -793,7 +787,7 @@ if (file.exists(file.path(cache_dir, paste0("df_res_", code, ".rds")))) {
 
 ```
 
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, but `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well.
+We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05 and only `r nrow(df.backend %>% filter(n_divergent > 0))` model had divergent samples (mean number of samples of the simulations with divergent samples: `r as.numeric(df.backend %>% filter(n_divergent > 0) %>% summarise(n_divergent = round(mean(n_divergent), digits = 2)))`). This suggests that this model performs well.
 
 ### Prior predictive checks
 
@@ -916,11 +910,7 @@ annotate_figure(p,
 
 ```
 
-Second, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Third, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05. 
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). Both look acceptable. 
+All looks acceptable here.  
 
 ### Posterior predictive checks
 
@@ -975,7 +965,7 @@ annotate_figure(p,
 
 ```
 
-The simulated data based on the model does not fit our data very well: it is wider and seems to underestimate latencies for ADHD and COMP while overestimating for ASD with the dark blue line showing the mean of the actual dataset and the light blue bars showing the distribution of the predicted data.
+The simulated data based on the model does not fit our data very well: it is wider and seems to underestimate latencies for COMP while overestimating for ADHD and ASD with the dark blue line showing the mean of the actual dataset and the light blue bars showing the distribution of the predicted data.
 
 ## Aggregated model
 
@@ -1156,11 +1146,7 @@ annotate_figure(p,
 
 ```
 
-Second, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Third, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05. 
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). Both look acceptable. 
+The intercept looks slightly off here, the model could have a slight tendency to underestimate it.
 
 ### Posterior predictive checks
 
@@ -1192,7 +1178,7 @@ mcmc_trace(post.draws, regex_pars = "^b_",
 
 ```
 
-In the final model, there are very few divergent transitions, so we continue to assess it. 
+The final model does not exhibit any divergence issues or suboptimal rhats. 
 
 ```{r postpc2_lat_agg, fig.height=6}
 
@@ -1268,10 +1254,10 @@ h2b = hypothesis(m.lat,
 h2b
 
 # explore: faster towards faces
-e = hypothesis(m.lat, "0 > cue1", alpha = 0.025)
+e = hypothesis(m.lat, "0 > 2*cue1", alpha = 0.025)
 e
 
-# extract predicted differences in ms instead of log data
+# extract predicted differences 
 df.new = df.lat %>% 
   select(diagnosis, cue) %>% 
   distinct() %>%
@@ -1287,18 +1273,13 @@ colnames(df.ms) = df.new$condition
 # calculate our difference columns
 df.ms = df.ms %>%
   mutate(
-    COMP = rowMeans(select(., matches("COMP_.*")), na.rm = T),
-    ADHD = rowMeans(select(., matches("ADHD_.*")), na.rm = T),
-    ASD  = rowMeans(select(., matches("ASD_.*")), na.rm = T),
-    BOTH = rowMeans(select(., matches("BOTH_.*")), na.rm = T),
-    h2b  = COMP_face - COMP_object,
     e  = rowMeans(select(., matches(".*_object")), na.rm = T) - 
       rowMeans(select(., matches(".*_face")), na.rm = T)
   )
 
 ```
 
-None of the population-level predictors showed credible effects on saccade latency. Specifically, we assessed whether latencies associated with saccades towards targets appearing at the previous location of the face are shorter in our comparison group than in the autistic group which was not the case (CI of ASD(face) - COMP(face): `r round(quantile(df.ms$h2b, 0.025)[[1]], 2)` to `r round(quantile(df.ms$h2b, 0.975)[[1]], 2)`ms, posterior probability = `r round(h2b$hypothesis$Post.Prob*100, 2)`%). We also explored whether our subjects produced faster saccades towards the targets appearing on the side of the face which also was not the case (CI of face - object: `r round(quantile(df.ms$e, 0.025)[[1]], 2)` to `r round(quantile(df.ms$e, 0.975)[[1]], 2)`ms, posterior probability = `r round(e$hypothesis$Post.Prob*100, 2)`%). [!ADJUST]
+Our hypothesis that saccades towards the faces have a longer latency in ASD than COMP adults was not confirmed by the data (*estimate* = `r round(h2b$hypothesis$Estimate,2)` [`r round(h2b$hypothesis$CI.Lower,2)`, `r round(h2b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2b$hypothesis$Post.Prob,3)`%). However, our exploration revealed that latencies of saccades during a trial where the target appeared at the side of the face were faster regardless of the diagnostic group (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob,3)`%). Specifically, the model predicted that if a saccade was produced towards a target appearing on the side of the face the latency was `r round(mean(df.ms$e),3)`ms [`r round(ci(df.ms$e)$CI_low, 3)`, `r round(ci(df.ms$e)$CI_high, 3)`] shorter than if a saccade was produced towards a target appearing at the side of the object cue.  
 
 ### Plots
 
@@ -1423,7 +1404,7 @@ kable(df.lat.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-The null effects were also reflected in the Bayes Factor analysis where the intercept-only model consistently outperformed all other models (diagnostic groups: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`).
+Despite the effect of cue revealed by our explorative analysis, the Bayes Factor analysis revealed that the intercept-only model consistently outperformed all other models (diagnostic groups: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.lat.bf[df.lat.bf$priors == "chosen" & df.lat.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`).
 
 # S2.4 Correlation with reaction times: number of saccades
 
@@ -1476,7 +1457,7 @@ ggplot(data = df.diff, aes(x = n.face, y = rt.fab)) +
 
 ```
 
-Furthermore, we assessed the relationship between face attention bias and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r effectsize::interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
+Furthermore, we assessed the relationship between FAB and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r effectsize::interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
 
 # S2.5 Exploration: number of saccades towards cue
 
@@ -1533,7 +1514,7 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
 }
 ```
 
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and only `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples. This suggests that this model performs well.
+We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples. This suggests that this model performs well.
 
 ## Prior predictive checks
 
@@ -1597,6 +1578,8 @@ annotate_figure(p, top = text_grob("Prior predictive checks", face = "bold", siz
 
 ```
 
+Again, we set our priors deliberately wide. 
+
 ## Computational faithfulness and model sensitivity
 
 ```{r comp_check_cnt_cue, fig.height=12}
@@ -1652,11 +1635,7 @@ annotate_figure(p,
 
 ```
 
-Second, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Third, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05.
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). There seem to be singular models where the posterior sd was still larger than the prior sd. However, since we already have quite wide priors, especially for the Intercept, we go ahead with this model.
+All looks acceptable.
 
 ## Posterior predictive checks
 
@@ -1711,7 +1690,7 @@ annotate_figure(p,
 
 ```
 
-The predictions based on the model capture the data well. This further increased our trust in the model and we move on to interpret its parameter. 
+The predictions based on the model capture the data well. This further increased our trust in the model. 
 
 ## Inferences
 
@@ -1766,33 +1745,41 @@ df.m.cnt %>%
   scale_fill_manual(values = c(credible = c_dark, c_light)) + 
   theme(legend.position = "none")
 
-# exploration: COMP: face > object
-hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - diagnosis2:dir_face1 - diagnosis3:dir_face1", 
-           alpha = 0.025)
-
 # exploration: face > object
-e = hypothesis(m.cnt, "0 > dir_face1", alpha = 0.025)
-e
+e1 = hypothesis(m.cnt, "0 > dir_face1", alpha = 0.025)
+e1
 
 # exploration: ADHD > COMP
-hypothesis(m.cnt, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
-
-# exploration: ADHD(face) > ADHD(object)
-hypothesis(m.cnt, "0 > dir_face1 + diagnosis1:dir_face1", alpha = 0.025)
+e2 = hypothesis(m.cnt, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
+e2
 
 # exploration: ASD > COMP
-hypothesis(m.cnt, "0 < 2*diagnosis2 + diagnosis1 + diagnosis3", alpha = 0.025)
+e3 = hypothesis(m.cnt, "0 < 2*diagnosis2 + diagnosis1 + diagnosis3", alpha = 0.025)
+e3
 
 # exploration: BOTH > COMP
-hypothesis(m.cnt, "0 < diagnosis2 + diagnosis1 + 2*diagnosis3", alpha = 0.025)
+e4 = hypothesis(m.cnt, "0 < diagnosis2 + diagnosis1 + 2*diagnosis3", alpha = 0.025)
+e4
 
 # exploration: ASD(face) > ASD(object)
-hypothesis(m.cnt, "0 > dir_face1 + diagnosis2:dir_face1", alpha = 0.025)
+e5 = hypothesis(m.cnt, "0 > dir_face1 + diagnosis2:dir_face1", alpha = 0.025)
+e5
 
 # exploration: BOTH(face) > BOTH(object)
-hypothesis(m.cnt, "0 > dir_face1 + diagnosis3:dir_face1", alpha = 0.025)
+e6 = hypothesis(m.cnt, "0 > dir_face1 + diagnosis3:dir_face1", alpha = 0.025)
+e6
 
-# extract predicted differences in ms instead of log data
+# exploration: ADHD(face) > ADHD(object)
+e7 = hypothesis(m.cnt, "0 > dir_face1 + diagnosis1:dir_face1", alpha = 0.025)
+e7
+
+# exploration: COMP(face) > COMP(object)
+e8 = hypothesis(m.cnt, "0 > dir_face1 - diagnosis1:dir_face1 - 
+           diagnosis2:dir_face1 - diagnosis3:dir_face1",
+           alpha = 0.025)
+e8
+
+# extract predicted differences 
 df.new = df.cnt.cue %>% 
   select(diagnosis, dir_face) %>% 
   distinct() %>%
@@ -1807,7 +1794,7 @@ colnames(df.est) = df.new$condition
 
 ```
 
-[!ADD]
+Exploring on the saccades elicited by the presentation of the cue, we find that our ADHD+ASD and our ASD group produced more saccades than our COMP group (ADHD+ASD vs. COMP: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob,3)`%; ASD vs. COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob,3)`%). There was no credible effect between the ADHD and the COMP group (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob,3)`%). Additionally, there was a credible increase of saccades produced towards the face compared to the object cues in the ADHD+ASD (*estimate* = `r round(e6$hypothesis$Estimate,2)` [`r round(e6$hypothesis$CI.Lower,2)`, `r round(e6$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e6$hypothesis$Post.Prob,3)`%) and the ASD (*estimate* = `r round(e5$hypothesis$Estimate,2)` [`r round(e5$hypothesis$CI.Lower,2)`, `r round(e5$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e5$hypothesis$Post.Prob,3)`%) group but not in the COMP (*estimate* = `r round(e8$hypothesis$Estimate,2)` [`r round(e8$hypothesis$CI.Lower,2)`, `r round(e8$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e8$hypothesis$Post.Prob,3)`%) or the ADHD group (*estimate* = `r round(e7$hypothesis$Estimate,2)` [`r round(e7$hypothesis$CI.Lower,2)`, `r round(e7$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e7$hypothesis$Post.Prob,3)`%). 
 
 ## Plots
 
@@ -1928,43 +1915,13 @@ df.cnt.bf %>%
   theme(legend.position = c(0.15,0.35), 
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-# let's focus on a smaller range of bayes factor values to see the differences better
-df.cnt.bf %>%
-  filter(`population-level` != "1") %>%
-  mutate(
-    sd = as.factor(case_when(
-      priors == "chosen" ~ "1", 
-      substr(priors, 1, 3) == "sdx" ~ gsub("sdx", "", priors),
-      T ~ priors)
-    ),
-    order = case_when(
-      priors == "chosen" ~ 1, 
-      substr(priors, 1, 3) == "sdx" ~ as.numeric(gsub("sdx", "", priors)),
-      T ~ 999),
-    sd = fct_reorder(sd, order)
-  ) %>%
-  ggplot(aes(y = bf.log, 
-             x = sd, 
-             group = `population-level`, 
-             colour = `population-level`)) + 
-  geom_point() +
-  geom_line() + 
-  geom_vline(xintercept = "1") +
-  geom_hline(yintercept = 0) +
-  ggtitle("Sensitivity analysis with the intercept-only model as reference") +
-  ylim(-3.5, 3.5) +
-  scale_colour_manual(values = custom.col) +
-  theme_bw() +
-  theme(legend.position = "none", 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
 # print the BFs based on chosen priors
 kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
   filter(`population-level` != "1") %>% arrange(desc(bf.log)), digits = 3)
 
 ```
 
-However, in the Bayes Factor analysis, the model including whether the saccade was produced towards the face or the object performs only slightly better than the intercept-only model, with `r effectsize::interpret_bf(df.cnt.bf[(df.cnt.bf$priors == "chosen") & (df.cnt.bf$"population-level" == "dir_face"),]$bf.log, log = T)` the model including saccade direction (comparisons with intercept-only model, diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). Additionally, the sensitivity analysis shows that this effect is rather inconsistent across priors which decreases our confidence in this result. Therefore, we conclude that more data is needed to determine whether consistently more saccades towards the faces are produced. 
+However, in the Bayes Factor analysis, the model including the diagnosis performs only slightly better than the intercept-only model for our chosen priors, with `r effectsize::interpret_bf(df.cnt.bf[(df.cnt.bf$priors == "chosen") & (df.cnt.bf$"population-level" == "diagnosis"),]$bf.log, log = T)` the model including diagnostic group (comparisons with intercept-only model, diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "dir_face",]$bf.log, 3)`;  diagnostic group and saccade direction: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + dir_face",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * dir_face",]$bf.log, 3)`). The sensitivity analysis shows that this effect is stable for priors which were narrower than our deliberately wide chosen priors. 
 
 # S2.6 Exploration: number of saccades towards target
 
@@ -2023,7 +1980,7 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
 }
 ```
 
-We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, but `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples. This suggests that this model performs well.
+We start by investigating the rhats and the number of divergent samples. This shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05, and only `r nrow(df.backend %>% filter(n_divergent > 0))` models had divergent samples. This suggests that this model performs well.
 
 ## Computational faithfulness and model sensitivity
 
@@ -2080,11 +2037,7 @@ annotate_figure(p,
 
 ```
 
-Second, we check the ranks of the parameters. If the model is unbiased, these should be uniformly distributed (Schad, Betancourt and Vasishth, 2020). The sample empirical cumulative distribution function (ECDF) lies within the theoretical distribution (95%) and the rank histogram also shows ranks within the 95% expected range, although there are some small deviations. We judge this to be acceptable.
-
-Third, we investigated the relationship between the simulated true parameters and the posterior estimates. Although there are individual values diverging from the expected pattern, most parameters were recovered successfully within an uncertainty interval of alpha = 0.05.
-
-Last, we explore the z-score and the posterior contraction of our population-level predictors. The z-score "determines the distance of the posterior mean from the true simulating parameter", while the posterior contraction "estimates how much prior uncertainty is reduced in the posterior estimation" (Schad, Betancourt and Vasisth, 2020). There seem to be singular models where the posterior sd was still larger than the prior sd. However, since we already have quite wide priors, especially for the Intercept, we go ahead with this model.
+This looks good.
 
 ## Posterior predictive checks
 
@@ -2139,7 +2092,7 @@ annotate_figure(p,
 
 ```
 
-The predictions based on the model capture the data well. This further increased our trust in the model and we move on to interpret its parameter. 
+The predictions based on the model capture the data well. This further increased our trust in the model.
 
 ## Model summary
 
@@ -2154,7 +2107,7 @@ summary(m.cnt.tar)
 as_draws_df(m.cnt.tar) %>% 
   select(starts_with("b_")) %>%
   mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
     ) %>%
   pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
   filter(coef != "b_Intercept") %>%
@@ -2186,11 +2139,24 @@ as_draws_df(m.cnt.tar) %>%
   theme(legend.position = "none")
 
 # explore: face > object
-hypothesis(m.cnt.tar, "0 > cue1", alpha = 0.025)
+e1 = hypothesis(m.cnt.tar, "0 > 2*cue1", alpha = 0.025)
+e1
+
+# explore: BOTH > COMP
+e2 = hypothesis(m.cnt.tar, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3", alpha = 0.025)
+e2
+
+# explore: BOTH > ADHD
+e3 = hypothesis(m.cnt.tar, "0 < -2*diagnosis1 + 2*diagnosis3", alpha = 0.025)
+e3
+
+# explore: BOTH > ASD
+e4 = hypothesis(m.cnt.tar, "0 < -2*diagnosis2 + 2*diagnosis3", alpha = 0.025)
+e4
 
 ```
 
-This model did not reveal any credible differences associated with the population-level predictors, suggesting that saccades towards a target appearing at the previous location of the face are not more likely than saccades towards a target appearing at the previous location of the object.
+This model again suggests a larger number of saccades produced by the ADHD+ASD group than the other groups (ADHD+ASD vs. COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob,3)`%; ADHD+ASD vs. ADHD: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob,3)`%; ADHD+ASD vs. ASD: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob,3)`%). There seems to be no credible effect of cue, i.e., whether the saccade was produced towards a target appearing on the side of the face or the object (*estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob,3)`%). 
 
 ## Plots
 
@@ -2315,4 +2281,4 @@ kable(df.cnt.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
 
 ```
 
-This null effect was mirrored by the Bayes Factor analysis where the intercept-only model consistently outperforms the other models with the exception of very narrow priors (diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`). 
+These effects were mirrored by the Bayes Factor analysis where the model only including the main effect diagnostic group outperforms the other models with the exception of very wide priors (all comparisons with intercept-only model; diagnostic groups: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis",]$bf.log, 3)`; cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "cue",]$bf.log, 3)`;  diagnostic group and cue: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`;  full model: log(*BF*) = `r round(df.cnt.bf[df.cnt.bf$priors == "chosen" & df.cnt.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`). 

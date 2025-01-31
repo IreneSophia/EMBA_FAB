@@ -56,6 +56,35 @@ a = 0.5
 custom.col = c(c_dark_highlight, "#CC79A7", "#009E73", "#D55E00")
 custom.col2 = c("#E1BE6A", "#B04D40")
 
+# calculate visual angle: px.x should be a vector of c(width, height) in pixel
+vis_ang = function(px.x) {
+  
+  # infos on the setup
+  mm.w = 344    # monitor width in mm
+  mm.h = 215    # monitor height in mm
+  px.w = 2650   # monitor resolution: width
+  px.h = 1600   # monitor resolution: height
+  dist = 570    # viewing distance
+  
+  # convert width from screen pixel size to mm and take half
+  mm.x    = (px.x[1] / (px.w/mm.w))/2
+  
+  # convert height from screen pixel size to mm and take half
+  mm.x[2] = (px.x[2] / (px.h/mm.h))/2
+  
+  # calculate angles
+  rad.alpha    = atan(mm.x[1]/dist)
+  rad.alpha[2] = atan(mm.x[2]/dist)
+  
+  # convert to degrees and double again
+  deg.alpha    = (rad.alpha[1] / (pi/180)) * 2
+  deg.alpha[2] = (rad.alpha[2] / (pi/180)) * 2
+  
+  return(deg.alpha)
+  
+}
+
+
 ```
 
 <style type="text/css">
@@ -64,14 +93,6 @@ custom.col2 = c("#E1BE6A", "#B04D40")
     margin-left: auto;
     margin-right: auto;
   }
-  ol {
-    counter-reset: item;
-    list-style-type: none;
-  }
-  ol li:before {
-    content: 'H1' counter(item, lower-latin) '. ';
-    counter-increment: item;
-  }
 </style>
   
 # S1.1 Introduction
@@ -79,6 +100,8 @@ custom.col2 = c("#E1BE6A", "#B04D40")
 This R Markdown script analyses behavioural data from the FAB (face attention bias) paradigm of the EMBA project. The data was preprocessed before being read into this script. 
 
 The task is modeled after Jakobsen et al. (2021), *Attention, Perception, & Psychophysics* and the authors were kind enough to share their  stimuli. Each trial starts with a black fixation cross on a white background. Then, a cue consisting of a pair of pictures, one object and one face, is shown with one picture on the left and one on the right of the previous location of the fixation cross. In line with Moore et al. (2012), *J Autism Dev Disord*, we set the duration of the cue presentation to 200ms. Afterwards, a target square appears either at the previous location of the face or the object. Subjects task is to determine the location (right or left) of the target as fast and accurate as possible. The target only disappears when the participant gives their answer. 
+
+The size of the cue is 
 
 ## Some general settings
 
