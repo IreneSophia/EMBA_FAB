@@ -626,6 +626,12 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
+ggsave("Fig5_nrSac.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
+
 ```
 
 ## Bayes factor analysis
@@ -1298,14 +1304,20 @@ point.args = list(show_guide = FALSE, alpha = .5),
 violin.args.pos = list(
   width = 0.6, position = position_nudge(x = 0.16)),
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
   labs(title = "Latencies of saccades per subject", x = "", y = "ms") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
+
+ggsave("Fig6_latSac.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
 
 ```
 
@@ -1815,8 +1827,8 @@ point.args = list(show_guide = FALSE, alpha = .5),
 violin.args.pos = list(
   width = 0.6, position = position_nudge(x = 0.16)),
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
   theme(legend.position = "bottom", 
@@ -2176,8 +2188,8 @@ point.args = list(show_guide = FALSE, alpha = .5),
 violin.args.pos = list(
   width = 0.6, position = position_nudge(x = 0.16)),
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
   labs(title = "Number of saccades per subject", x = "", y = "n") +
   theme_bw() + 
   theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), 

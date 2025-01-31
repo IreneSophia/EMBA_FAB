@@ -2,7 +2,7 @@
 title: "S1: behavioural analysis with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: html_document
+output: pdf_document
 ---
   
 ```{r settings, include=FALSE}
@@ -101,7 +101,7 @@ This R Markdown script analyses behavioural data from the FAB (face attention bi
 
 The task is modeled after Jakobsen et al. (2021), *Attention, Perception, & Psychophysics* and the authors were kind enough to share their  stimuli. Each trial starts with a black fixation cross on a white background. Then, a cue consisting of a pair of pictures, one object and one face, is shown with one picture on the left and one on the right of the previous location of the fixation cross. In line with Moore et al. (2012), *J Autism Dev Disord*, we set the duration of the cue presentation to 200ms. Afterwards, a target square appears either at the previous location of the face or the object. Subjects task is to determine the location (right or left) of the target as fast and accurate as possible. The target only disappears when the participant gives their answer. 
 
-The size of the cue is 
+The visual angle of the target was `r round(vis_ang(c(90,90))[1],2)` degrees, the visual angle of the cues was `r round(vis_ang(c(326,326))[1],2)` and the distance of the centre of the target and cue from the fixation cross was `r round(vis_ang(c(410,410))[1]/2,2)` degrees.
 
 ## Some general settings
 
@@ -448,7 +448,7 @@ kable(df.nosac)
 rm(df.nosac)
 
 # print the outcome of the shapiro tests
-kable(df.sht) %>% arrange(variable)
+kable(df.sht %>% arrange(variable))
 rm(df.sht)
 
 # print the outcome of the two contingency tables for comparison
@@ -1156,6 +1156,12 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
+ggsave("Fig3_rts.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
+
 # focus on the difference in reaction times
 df.fab %>% 
   group_by(subID, diagnosis, cue) %>%
@@ -1187,6 +1193,12 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
+
+ggsave("Fig4_FAB.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
 
 ```
 
