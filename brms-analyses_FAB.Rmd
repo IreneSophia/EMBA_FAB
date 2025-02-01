@@ -2,7 +2,7 @@
 title: "S1: behavioural analysis with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: word_document
+output: pdf_document
 ---
   
 ```{r settings, include=FALSE}

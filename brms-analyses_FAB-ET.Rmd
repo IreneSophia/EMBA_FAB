@@ -2,7 +2,7 @@
 title: "S2: Analysis of FAB eye tracking data with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: word_document
+output: pdf_document
 ---
 
 ```{r settings, include=FALSE}
@@ -107,7 +107,7 @@ df.fab$diagnosis = factor(df.fab$diagnosis,
                           levels = c("ADHD", "ASD", "BOTH", "COMP"))
 
 # aggregate the behavioural data disregarding stimuli and trials
-df.fab.agg = rbind(df.fab, df.exp) %>%
+df.fab.agg = rbind(df.fab) %>%
   group_by(subID, diagnosis, cue) %>%
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
