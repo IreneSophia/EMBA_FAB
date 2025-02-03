@@ -180,23 +180,9 @@ if (!file.exists("FAB_data.RData")) {
                  readRDS(file = paste0(dt.explo, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
   
-  # load data and aggregate emotion discrimination threshold
-  df.fer = readRDS(file = paste0(dt.path, '/df_FER.RDS')) %>%
-    rbind(., readRDS(file = paste0(dt.explo, '/df_FER.RDS'))) %>%
-    group_by(subID, emo) %>% 
-    summarise(
-      EDT = mean(disc, na.rm = T)
-    ) %>% 
-    group_by(subID) %>%
-    summarise(
-      EDT = mean(EDT)
-    )
-  
   # only keep participants included in the study in the subject data frame
   subIDs = as.character(c(unique(df.fab$subID), unique(df.exp$subID)))
-  df.sub = df.sub %>% filter(subID %in% subIDs) %>%
-    # merge with EDT dataframe
-    merge(., df.fer, all.x = T)
+  df.sub = df.sub %>% filter(subID %in% subIDs)
   
   # load the eye tracking data and only keep participants included in the study,
   # so no people with more than 33% mistakes, no people without any saccades 
@@ -376,7 +362,7 @@ if (!file.exists("FAB_data.RData")) {
          sprintf("%.3f", aov.iq@bayesFactor[["bf"]])
        ),
        c(
-         "RAADS",
+         "RADS-R",
          sprintf("%.2f (±%.2f)", 
                  mean(df.sub[df.sub$diagnosis == "ADHD",]$RAADS_total), 
                  sd(df.sub[df.sub$diagnosis == "ADHD",]$RAADS_total)/
@@ -1165,47 +1151,6 @@ ggsave("Fig3_rts.pdf",
        height = 100,
        dpi    = 300)
 
-# focus on the difference in reaction times
-df.fab %>% 
-  group_by(subID, diagnosis, cue) %>%
-  summarise(
-    rt.cor = mean(rt.cor, na.rm = T)
-    ) %>%
-  group_by(subID, diagnosis) %>%
-  arrange(subID, diagnosis, cue) %>%
-  summarise(FAB = diff(rt.cor[1:2])) %>%
-  mutate(
-    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
-  ) %>% 
-  ggplot(aes(diagnosis, FAB, fill = diagnosis, colour = diagnosis)) + #
-  geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
-violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
-boxplot.args.pos = list(
-  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
-),
-point.args = list(show_guide = FALSE, alpha = .5),
-violin.args.pos = list(
-  width = 0.6, position = position_nudge(x = 0.16)),
-point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  geom_hline(yintercept = 0) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
-  labs(title = "Face attention bias (median RT object - face)", 
-       x = "", 
-       y = "FAB (ms)") +
-  theme_bw() + 
-  theme(legend.position = "none", 
-        plot.title = element_text(hjust = 0.5), 
-        legend.direction = "horizontal", 
-        text = element_text(size = 15))
-
-ggsave("Fig4_FAB.pdf", 
-       units = "mm", 
-       width  = 170,
-       height = 70,
-       dpi    = 300)
-
 ```
 
 ## Bayes factor analysis
@@ -1349,7 +1294,175 @@ The comparison of the models reveals the model containing both main effects on t
 
 Specifically, there is `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis * cue",]$bf.log, log = T)` this model underlying the data observed compared to the model including the interaction (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`), `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "cue",]$bf.log, log = T)` this model compared to the model including only the predictor cue (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "cue",]$bf.log, 3)`), `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis",]$bf.log, log = T)` this model compared to the one only including the predictor diagnosis (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis",]$bf.log, 3)`) as well as `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log, log = T)` this model compared to the model only including the intercept on the population-level (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`). 
 
-# S1.3 Explorative analysis of RTs on trials without saccades
+# S1.3 Explorative analysis of FAB specifically
+
+Since the reaction times differ in general between our groups, we calculate subject-specific Cohen's d.
+
+```{r rt_fab}
+
+df.fabd = df.fab.full %>%
+  group_by(subID, diagnosis, stm, cue) %>%
+  # summarise the median reaction time for each stimulus pair
+  summarise(
+    rt.cor = median(rt.cor, na.rm = T)
+  ) %>%
+  pivot_wider(names_from = cue, values_from = rt.cor) %>%
+  # calculate the fab purely based on reaction times
+  mutate(
+    fab = object - face
+  ) %>% group_by(subID, diagnosis) %>%
+  # calculate the cohen's d
+  summarise(
+    fab.d = lsr::cohensD(x = object, y = face, method = "paired")
+  )
+
+```
+Now, let's assess whether we can predict the subject-specific fab in cohen's d based on diagnostic group.  
+
+```{r rt_fab2}
+
+# set some priors
+priors = c(
+  # general priors assuming small effect of FAB
+  prior(normal(0.2, 0.5),  class = Intercept),
+  prior(normal(0,   0.5),  class = sigma),
+  # no specific expectations for group differences
+  prior(normal(0,   0.10), class = b)
+)
+
+# fit the model
+set.seed(2424)
+m.fabd = brm(fab.d ~ diagnosis, data = df.fabd, prior = priors,
+            iter = iter, warmup = warm,
+            backend = "cmdstanr", threads = threading(8),
+            file = "m_fab_cohd"
+            )
+rstan::check_hmc_diagnostics(m.fabd$fit)
+
+# check that rhats are below 1.01
+sum(brms::rhat(m.fabd) >= 1.01, na.rm = T)
+
+# check the trace plots
+post.draws = as_draws_df(m.fabd)
+mcmc_trace(post.draws, regex_pars = "^b_",
+           facet_args = list(ncol = 3)) +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+
+# perform posterior predictive checks
+post.pred = posterior_predict(m.fabd, ndraws = nsim)
+pp_check(m.fabd, ndraws = nsim) + 
+  theme_bw() + theme(legend.position = "none")
+ppc_stat_grouped(df.fabd$fab.d, post.pred, df.fabd$diagnosis) + 
+  theme_bw() + theme(legend.position = "none")
+
+# print a summary
+summary(m.fabd)
+
+# plot the posterior distributions
+as_draws_df(m.fabd) %>% 
+  select(starts_with("b_")) %>%
+  mutate(
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
+    ) %>% 
+  pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
+  filter(coef != "b_Intercept") %>%
+  mutate(
+    coef = case_match(coef,
+      "b_diagnosis1" ~ "ADHD",
+      "b_diagnosis2" ~ "ASD",
+      "b_diagnosis3" ~ "ADHD+ASD",
+      "b_COMP"       ~ "COMP"
+    ),
+    coef = fct_reorder(coef, desc(estimate))
+  ) %>% 
+  group_by(coef) %>%
+  mutate(
+    cred = case_when(
+      (mean(estimate) < 0 & quantile(estimate, probs = 0.975) < 0) |
+        (mean(estimate) > 0 & quantile(estimate, probs = 0.025) > 0) ~ "credible",
+      T ~ "not credible"
+    )
+  ) %>% ungroup() %>% 
+  ggplot(aes(x = estimate, y = coef, fill = cred)) +
+  geom_vline(xintercept = 0, linetype = 'dashed') +
+  ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
+
+# assess differences between ADHD and COMP
+e1 = hypothesis(m.fabd, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
+e1
+
+# assess differences between ASD and COMP
+e2 = hypothesis(m.fabd, "0 < diagnosis1 + 2*diagnosis2 + diagnosis3", alpha = 0.025)
+e2
+
+# assess differences between ADHD+ASD and COMP
+e3 = hypothesis(m.fabd, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3", alpha = 0.025)
+e3
+
+# extract predicted differences in ms instead of log data
+df.new = df.fabd %>% 
+  ungroup() %>%
+  select(diagnosis) %>% 
+  distinct()
+df.ms = as.data.frame(
+  fitted(m.fabd, summary = F, 
+               newdata = df.new %>% select(diagnosis), 
+               re_formula = NA))
+colnames(df.ms) = levels(df.fabd$diagnosis)
+
+df.ms = df.ms %>%
+  mutate(
+    overall = (ADHD + ASD + BOTH + COMP)/4
+  )
+
+```
+
+Similarly to our full model, this model suggests that subject-specific FAB is only attenuated in the ADHD group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Specifically, the model predicts an average effect size across groups of `r round(mean(df.ms$overall),3)` [`r round(ci(df.ms$overall)$CI_low, 3)`, `r round(ci(df.ms$overall)$CI_high, 3)`], with a predicted effect of `r round(mean(df.ms$ADHD),3)` [`r round(ci(df.ms$ADHD)$CI_low, 3)`, `r round(ci(df.ms$ADHD)$CI_high, 3)`] for the ADHD group, `r round(mean(df.ms$ASD),3)` [`r round(ci(df.ms$ASD)$CI_low, 3)`, `r round(ci(df.ms$ASD)$CI_high, 3)`] for the ASD group, `r round(mean(df.ms$BOTH),3)` [`r round(ci(df.ms$BOTH)$CI_low, 3)`, `r round(ci(df.ms$BOTH)$CI_high, 3)`] for the ADHD+ASD group and `r round(mean(df.ms$COMP),3)` [`r round(ci(df.ms$COMP)$CI_low, 3)`, `r round(ci(df.ms$COMP)$CI_high, 3)`] for the COMP group. All of these effects are considered to be `r effectsize::interpret_cohens_d(fixef(m.fabd)[1,1], rules = "gignac2016")` according to Gignac and Szodorai (2016). 
+
+Last, let's plot these subject-specific effect sizes. 
+
+```{r plot_fab}
+
+# focus on the difference in reaction times
+df.fabd %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>% 
+  ggplot(aes(diagnosis, fab.d, fill = diagnosis, colour = diagnosis)) + #
+  geom_rain(rain.side = 'r',
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
+boxplot.args.pos = list(
+  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
+),
+point.args = list(show_guide = FALSE, alpha = .5),
+violin.args.pos = list(
+  width = 0.6, position = position_nudge(x = 0.16)),
+point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values = custom.col) +
+  scale_color_manual(values = custom.col) +
+  labs(title = "Face attention bias", 
+       x = "", 
+       y = "cohen's d") +
+  theme_bw() + 
+  theme(legend.position = "none", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
+
+ggsave("Fig4_FAB.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 70,
+       dpi    = 300)
+
+```
+
+# S1.4 Explorative analysis of RTs on trials without saccades
 
 Since saccadic behaviour may have influenced reaction times, we rerun the model concerning reaction times with only trials where no saccades were produced. 
 
@@ -1468,7 +1581,7 @@ h1e
 
 This model confirmed the same hypotheses with the exception for the difference in FAB between COMP and ADHD group which is not credible anymore (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). This change could indicate that difference in saccadic behaviour may partly drive these group differences.
 
-# S1.4 Explorative analysis of errors
+# S1.5 Explorative analysis of errors
 
 Last but not least, we are going to explore possible differences with regards to mean accuracies using a Bayesian ANOVA. 
 

@@ -106,17 +106,19 @@ df.fab = rbind(df.fab, df.exp)
 df.fab$diagnosis = factor(df.fab$diagnosis, 
                           levels = c("ADHD", "ASD", "BOTH", "COMP"))
 
-# aggregate the behavioural data disregarding stimuli and trials
-df.fab.agg = rbind(df.fab) %>%
-  group_by(subID, diagnosis, cue) %>%
+# compute subject specific FAB effect size in cohen's d
+df.fab.agg = df.fab %>%
+  group_by(subID, diagnosis, stm, cue) %>%
+  # summarise the median reaction time for each stimulus pair
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
   ) %>%
+  pivot_wider(names_from = cue, values_from = rt.cor) %>% 
   group_by(subID, diagnosis) %>%
-  # calculate subject-specific difference between cues
+  # calculate the cohen's d
   summarise(
-    rt.fab = combn(rt.cor, 2, FUN = function(x) x[1] - x[2])
-  ) 
+    fab = lsr::cohensD(x = object, y = face, method = "paired")
+  )
 
 # remove participants without any data
 df.sac = df.sac %>% filter(!is.na(lat))
@@ -1438,7 +1440,7 @@ p1 = ggplot(df.diff, aes(sample = n.face)) +
   stat_qq(alpha = 0.75, colour = "lightblue") + 
   stat_qq_line() + 
   theme_bw()
-p2 = ggplot(df.diff, aes(sample = rt.fab)) + 
+p2 = ggplot(df.diff, aes(sample = fab)) + 
   stat_qq(alpha = 0.75, colour = "lightblue") + 
   stat_qq_line() + 
   theme_bw()
@@ -1455,7 +1457,7 @@ if (file.exists("CNT_rho.rds")) {
 } else {
   rhoSamples.cnt = 
     spearmanGibbsSampler(xVals = df.diff$n.face,
-                         yVals = df.diff$rt.fab, 
+                         yVals = df.diff$fab, 
                          nSamples = 5e3)
   saveRDS(rhoSamples.cnt, file = "CNT_rho.rds")
 }
@@ -1466,7 +1468,7 @@ cor.bf = computeBayesFactorOneZero(rhoSamples.cnt$rhoSamples,
                           priorParameter = 1)
 
 # visualise it
-ggplot(data = df.diff, aes(x = n.face, y = rt.fab)) +
+ggplot(data = df.diff, aes(x = n.face, y = fab)) +
   geom_point(colour = "lightblue") +
   geom_smooth(method = "lm", 
               formula = y ~ x, 
