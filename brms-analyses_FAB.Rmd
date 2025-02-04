@@ -420,7 +420,7 @@ rm(df.exc)
 
 # print the group of the participants included in behavioural and eye tracking 
 kable(merge(
-  df.sac %>% select(subID, diagnosis) %>% distinct() %>% 
+  df.sac %>% filter(!is.na(trl)) %>% select(subID, diagnosis) %>% distinct() %>% 
     group_by(diagnosis) %>% summarise(`sample size eye tracking` = n()),
   rbind(df.fab, df.exp) %>% select(subID, diagnosis) %>% distinct() %>% 
     group_by(diagnosis) %>% summarise(`sample size behavioural` = n())
