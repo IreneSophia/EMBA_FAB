@@ -173,10 +173,10 @@ if (!file.exists("FAB_data.RData")) {
     group_by(diagnosis) %>% count()
   
   # load the behavioral data and merge with group
-  df.fab = merge(df.sub %>% select(subID, diagnosis), 
+  df.fab = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total), 
                  readRDS(file = paste0(dt.path, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
-  df.exp = merge(df.sub %>% select(subID, diagnosis), 
+  df.exp = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total), 
                  readRDS(file = paste0(dt.explo, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
   
@@ -1301,7 +1301,7 @@ Since the reaction times differ in general between our groups, we calculate subj
 ```{r rt_fab}
 
 df.fabd = df.fab.full %>%
-  group_by(subID, diagnosis, stm, cue) %>%
+  group_by(subID, diagnosis, stm, cue, RAADS_total, ASRS_total) %>%
   # summarise the median reaction time for each stimulus pair
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
@@ -1310,10 +1310,15 @@ df.fabd = df.fab.full %>%
   # calculate the fab purely based on reaction times
   mutate(
     fab = object - face
-  ) %>% group_by(subID, diagnosis) %>%
+  ) %>% group_by(subID, diagnosis, RAADS_total, ASRS_total) %>%
   # calculate the cohen's d
   summarise(
     fab.d = lsr::cohensD(x = object, y = face, method = "paired")
+  ) %>% ungroup() %>%
+  # center questionnaire values and scale between -1 and 1
+  mutate(
+    ASRS = scale(ASRS_total, scale = F)/max(scale(ASRS_total, scale = F)),
+    RADS = scale(RAADS_total, scale = F)/max(scale(RAADS_total, scale = F))
   )
 
 ```
@@ -1327,16 +1332,17 @@ priors = c(
   prior(normal(0.2, 0.5),  class = Intercept),
   prior(normal(0,   0.5),  class = sigma),
   # no specific expectations for group differences
-  prior(normal(0,   0.10), class = b)
+  prior(normal(0,   0.20), class = b)
 )
 
-# fit the model
+# fit the linear model with the questionnaires as covariates
 set.seed(2424)
-m.fabd = brm(fab.d ~ diagnosis, data = df.fabd, prior = priors,
-            iter = iter, warmup = warm,
-            backend = "cmdstanr", threads = threading(8),
-            file = "m_fab_cohd"
-            )
+m.fabd = brm(fab.d ~ diagnosis +  RADS + ASRS, data = df.fabd, 
+             prior = priors,
+             iter = iter, warmup = warm,
+             backend = "cmdstanr", threads = threading(8),
+             file = "m_fab_cohd"
+             )
 rstan::check_hmc_diagnostics(m.fabd$fit)
 
 # check that rhats are below 1.01
@@ -1368,11 +1374,12 @@ as_draws_df(m.fabd) %>%
   pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
   filter(coef != "b_Intercept") %>%
   mutate(
+    coef = substr(coef, 3, nchar(coef)),
     coef = case_match(coef,
-      "b_diagnosis1" ~ "ADHD",
-      "b_diagnosis2" ~ "ASD",
-      "b_diagnosis3" ~ "ADHD+ASD",
-      "b_COMP"       ~ "COMP"
+      "diagnosis1" ~ "ADHD",
+      "diagnosis2" ~ "ASD",
+      "diagnosis3" ~ "ADHD+ASD",
+      .default = coef
     ),
     coef = fct_reorder(coef, desc(estimate))
   ) %>% 
@@ -1402,31 +1409,21 @@ e2
 e3 = hypothesis(m.fabd, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3", alpha = 0.025)
 e3
 
-# extract predicted differences in ms instead of log data
-df.new = df.fabd %>% 
-  ungroup() %>%
-  select(diagnosis) %>% 
-  distinct()
-df.ms = as.data.frame(
-  fitted(m.fabd, summary = F, 
-               newdata = df.new %>% select(diagnosis), 
-               re_formula = NA))
-colnames(df.ms) = levels(df.fabd$diagnosis)
-
-df.ms = df.ms %>%
-  mutate(
-    overall = (ADHD + ASD + BOTH + COMP)/4
-  )
+# assess influences of questionnaires
+e4 = hypothesis(m.fabd, "0 < RADS", alpha = 0.025)
+e4
+e5 = hypothesis(m.fabd, "0 > ASRS", alpha = 0.025)
+e5
 
 ```
 
-Similarly to our full model, this model suggests that subject-specific FAB is only attenuated in the ADHD group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Specifically, the model predicts an average effect size across groups of `r round(mean(df.ms$overall),3)` [`r round(ci(df.ms$overall)$CI_low, 3)`, `r round(ci(df.ms$overall)$CI_high, 3)`], with a predicted effect of `r round(mean(df.ms$ADHD),3)` [`r round(ci(df.ms$ADHD)$CI_low, 3)`, `r round(ci(df.ms$ADHD)$CI_high, 3)`] for the ADHD group, `r round(mean(df.ms$ASD),3)` [`r round(ci(df.ms$ASD)$CI_low, 3)`, `r round(ci(df.ms$ASD)$CI_high, 3)`] for the ASD group, `r round(mean(df.ms$BOTH),3)` [`r round(ci(df.ms$BOTH)$CI_low, 3)`, `r round(ci(df.ms$BOTH)$CI_high, 3)`] for the ADHD+ASD group and `r round(mean(df.ms$COMP),3)` [`r round(ci(df.ms$COMP)$CI_low, 3)`, `r round(ci(df.ms$COMP)$CI_high, 3)`] for the COMP group. All of these effects are considered to be `r effectsize::interpret_cohens_d(fixef(m.fabd)[1,1], rules = "gignac2016")` according to Gignac and Szodorai (2016). 
+Similarly to our full model, this model suggests that subject-specific FAB is only attenuated in the ADHD group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Furthermore, there is no credible association between FAB and questionnaires assessing ASD (RADS: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%) or ADHD (ASRS: *estimate* = `r round(e5$hypothesis$Estimate,2)` [`r round(e5$hypothesis$CI.Lower,2)`, `r round(e5$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e5$hypothesis$Post.Prob*100,2)`%). Overall, the model estimates an average effect size across groups of `r round(fixef(m.fabd)[1,1],3)` [`r round(fixef(m.fabd)[1,3], 3)`, `r round(fixef(m.fabd)[1,4], 3)`], which is considered to be `r effectsize::interpret_cohens_d(fixef(m.fabd)[1,1], rules = "cohen1988")` according to Cohen (1988). 
 
 Last, let's plot these subject-specific effect sizes. 
 
 ```{r plot_fab}
 
-# focus on the difference in reaction times
+# focus on the FAB effect
 df.fabd %>%
   mutate(
     diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
@@ -1461,6 +1458,8 @@ ggsave("Fig4_FAB.pdf",
        dpi    = 300)
 
 ```
+
+We 
 
 # S1.4 Explorative analysis of RTs on trials without saccades
 
