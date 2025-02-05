@@ -19,6 +19,7 @@ ls.packages = c("knitr",# kable
     "rstatix",          # anova
     "logspline",        # needed for the Bayesian Spearman correlation
     "BayesFactor", 
+    "effectsize",       # allows for interpretation and calculation of effectsizes 
     "bayestestR"        # equivalence_test
 )
 
@@ -110,12 +111,15 @@ df.fab.agg = df.fab %>%
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
   ) %>%
-  pivot_wider(names_from = cue, values_from = rt.cor) %>% 
-  group_by(subID, diagnosis) %>%
+  pivot_wider(names_from = cue, values_from = rt.cor) %>%
+  # calculate the fab purely based on reaction times
+  mutate(
+    fab = object - face
+  ) %>% group_by(subID, diagnosis) %>%
   # calculate the cohen's d
   summarise(
-    fab = lsr::cohensD(x = object, y = face, method = "paired")
-  )
+    fab = mean(fab)
+  ) %>% ungroup()
 
 # remove participants without any data
 df.sac = df.sac %>% filter(!is.na(lat)) %>% ungroup() %>%
@@ -1185,7 +1189,7 @@ violin.args.pos = list(
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Latencies of saccades", x = "", y = "ms") +
+  labs(title = "Latencies of target-elicited saccades", x = "", y = "ms") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
@@ -1252,7 +1256,7 @@ ggplot(data = df.diff, aes(x = n.sac, y = fab)) +
 
 ```
 
-Furthermore, we assessed the relationship between FAB and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r effectsize::interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
+Furthermore, we assessed the relationship between FAB and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
 
 # S2.5 Exploration: cue-elicited saccades
 
@@ -1433,6 +1437,39 @@ vtable::st(df.ms %>%
 ```
 
 On average, participants produced cue-elicited saccades on `r round(100*mean(df.cnt.cue.agg$n.sac)/432, 2)`% +- `r round(sd(100*df.cnt.cue.agg$n.sac/432)/sqrt(nrow(df.cnt.cue.agg)), 2)` of the trials. However, the range was very wide, with some participants producing no cue-elicited saccades and others producing them on `r round(100*max(df.cnt.cue.agg$n.sac)/432, 2)`% of the trials. Regardless of group, credibly more saccades were produced towards face than object cues (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%).
+
+## Plots
+
+As a last step, we can plot our data. 
+
+```{r plot_cnt_cue, fig.height=4}
+
+# rain cloud plot
+df.cnt %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>%
+  ggplot(aes(diagnosis, n.sac, fill = direction, colour = direction)) + #
+  geom_rain(rain.side = 'r',
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
+boxplot.args.pos = list(
+  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
+),
+point.args = list(show_guide = FALSE, alpha = .5),
+violin.args.pos = list(
+  width = 0.6, position = position_nudge(x = 0.16)),
+point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
+  labs(title = "Number of cue-elicited saccades", x = "", y = "n") +
+  theme_bw() + 
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
+
+```
 
 # S2.6 Exploration: Latencies of cue-elicited saccades
 
@@ -1626,7 +1663,7 @@ violin.args.pos = list(
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Latencies of saccades", x = "", y = "ms") +
+  labs(title = "Latencies of cue-elicited saccades", x = "", y = "ms") +
   theme_bw() + 
   ylim(0, 325) +
   theme(legend.position = "bottom", 
