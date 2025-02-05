@@ -42,9 +42,6 @@ if(!dir.exists(cache_dir)) {
   dir.create(cache_dir)
 }
 
-# load the function to perform the sensitivity analysis
-source('helpers/fun_bf-sens.R')
-
 # graph settings 
 c_light = "#a9afb2"; c_light_highlight = "#8ea5b2"; c_mid = "#6b98b2" 
 c_mid_highlight = "#3585b2"; c_dark = "#0072b2"; c_dark_highlight = "#0058b2" 
@@ -1153,147 +1150,6 @@ ggsave("Fig3_rts.pdf",
 
 ```
 
-## Bayes factor analysis
-
-To complement our hypothesis testing using brms::hypothesis(), we perform a Bayes Factor (BF) analysis. The BF is the ratio of the marginal likelihoods of the data given two models. We will compare models containing different combinations of population-level effects to the model only containing the intercept on the population-level and all group-level effects. The BF depends on the priors that were used, because it indicates a change in our belief after seeing the data. Therefore, we perform a sensitivity analysis comparing the BF based on our chosen priors with narrower and wider priors. 
-
-```{r bf, fig.height=4}
-
-# set the directory in which to save results
-sense_dir = file.path(getwd(), "_brms_sens_cache")
-main.code = "fab"
-
-# describe priors
-pr.descriptions = c("chosen",
-  "sdx2",    "sdx4",   "sdx8", 
-  "sdx0.5", "sdx0.25", "sdx0.125"
-  )
-
-# check which have been run already
-if (file.exists(file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)))) {
-  pr.done = read_csv(
-    file.path(sense_dir, sprintf("df_%s_bf.csv", main.code)), 
-    show_col_types = F) %>%
-    select(priors) %>% distinct()
-  pr.descriptions = pr.descriptions[!(pr.descriptions %in% pr.done$priors)]
-}
-
-if (length(pr.descriptions) > 0) {
-  # rerun the model with more iterations for bridgesampling
-  set.seed(7788)
-  m.fab.bf = brm(f.fab,
-            df.fab, prior = priors,
-            family = shifted_lognormal,
-            iter = 40000, warmup = 10000,
-            backend = "cmdstanr", threads = threading(8),
-            file = "m_fab_bf", silent = 2,
-            save_pars = save_pars(all = TRUE)
-            )
-}
-
-# loop through them
-for (pr.desc in pr.descriptions) {
-  tryCatch({
-    # use function to compute BF with the described priors
-    bf_sens_2int(m.fab.bf, "diagnosis", "cue", pr.desc, 
-     main.code, # prefix for all models and MLL
-     file.path(sense_dir, "log_FAB.txt"), # log file
-     sense_dir # where to save the models and MLL
-    )
-  },
-  error = function(err) {
-    message(sprintf("Error for %s: %s", pr.desc, err))
-  }
-  )
-}
-
-# read in the results
-df.fab.bf = read_csv(file.path(sense_dir, 
-                               sprintf("df_%s_bf.csv", main.code)), 
-                     show_col_types = F)
-
-# check the sensitivity analysis result per model
-df.fab.bf %>%
-  filter(`population-level` != "1") %>%
-  mutate(
-    sd = as.factor(case_when(
-      priors == "chosen" ~ "1",
-      substr(priors, 1, 3) == "sdx" ~ gsub("sdx", "", priors),
-      T ~ priors)
-    ),
-    order = case_when(
-      priors == "chosen" ~ 1,
-      substr(priors, 1, 3) == "sdx" ~ as.numeric(gsub("sdx", "", priors)),
-      T ~ 999),
-    sd = fct_reorder(sd, order)
-  ) %>%
-  ggplot(aes(y = bf.log, 
-             x = sd, 
-             group = `population-level`, 
-             colour = `population-level`)) +
-  geom_point() +
-  geom_line() +
-  geom_vline(xintercept = "1") +
-  geom_hline(yintercept = 0) +
-  ggtitle("Sensitivity analysis with the intercept-only model as reference") +
-  scale_colour_manual(values = custom.col) +
-  theme_bw() +
-  theme(legend.position = "bottom", 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-```
-
-Quite a few models outperform the intercept model unless very wide priors are used. Therefore, we plot the models containing predictors with the model containing both predictors but no interaction as the reference model to take a closer look.
-
-```{r bf2, fig.height=4}
-
-# compare to main effects model as reference
-df.fab.bf %>%
-  filter(`population-level` != "1") %>%
-  group_by(priors) %>%
-  mutate(bf.log = bf.log - bf.log[`population-level` == "diagnosis + cue"]) %>%
-  ungroup() %>%
-  mutate(
-    sd = as.factor(case_when(
-      priors == "chosen" ~ "1", 
-      substr(priors, 1, 3) == "sdx" ~ gsub("sdx", "", priors),
-      T ~ priors)
-    ),
-    order = case_when(
-      priors == "chosen" ~ 1, 
-      substr(priors, 1, 3) == "sdx" ~ as.numeric(gsub("sdx", "", priors)),
-      T ~ 999),
-    sd = fct_reorder(sd, order)
-  ) %>%
-  ggplot(aes(y = bf.log, 
-             x = sd, 
-             group = `population-level`, 
-             colour = `population-level`)) + 
-  geom_point() +
-  geom_line() + 
-  geom_vline(xintercept = "1") +
-  theme_bw() +
-  ggtitle("Sensitivity analysis with the 'diagnosis + cue' model as reference") +
-  scale_colour_manual(values = custom.col) +
-  theme(legend.position = "bottom", 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-```
-
-Here, we can see that the results are not very consistent. While with narrower priors, the model including both main effects and the interaction outperforms the others, our chosen priors result in the model only including the main effects having the highest Bayes Factor. Then, with wider priors, the model only including the main effect cue performs best for our data. 
-
-```{r bf3}
-
-# create a data frame with the comparisons
-kable(df.fab.bf %>% filter(priors == "chosen") %>% select(-priors) %>%
-  filter(`population-level` != "1") %>% arrange(desc(bf.log)), digits = 3)
-
-```
-
-The comparison of the models reveals the model containing both main effects on the population-level to be the best model as measured by the BF when using our chosen priors. 
-
-Specifically, there is `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis * cue",]$bf.log, log = T)` this model underlying the data observed compared to the model including the interaction (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis * cue",]$bf.log, 3)`), `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "cue",]$bf.log, log = T)` this model compared to the model including only the predictor cue (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "cue",]$bf.log, 3)`), `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis",]$bf.log, log = T)` this model compared to the one only including the predictor diagnosis (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log - df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis",]$bf.log, 3)`) as well as `r effectsize::interpret_bf(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log, log = T)` this model compared to the model only including the intercept on the population-level (log(*BF*) = `r round(df.fab.bf[df.fab.bf$priors == "chosen" & df.fab.bf$"population-level" == "diagnosis + cue",]$bf.log, 3)`). 
-
 # S1.3 Explorative analysis of FAB specifically
 
 Since the reaction times differ in general between our groups, we calculate subject-specific Cohen's d.
@@ -1489,13 +1345,7 @@ df.sac.agg = df.sac %>%
 
 # merge together
 df.sac.fab = merge(df.fab.full, df.sac.agg, all.x = T) %>%
-  # only keep people with at least one saccade
-  group_by(subID) %>%
-  mutate(
-    n.sac.total = sum(n.sac, na.rm = T)
-  ) %>%
-  # only keep trials with saccades %>%
-  filter(n.sac.total > 0) %>%
+  # only keep trials without saccades %>%
   filter(is.na(n.sac)) %>%
   # compute median rt.cor
   group_by(subID, diagnosis, cue, stm) %>%
@@ -1518,13 +1368,13 @@ m.rtsac = brm(f.fab,
             backend = "cmdstanr", threads = threading(8),
             file = "m_fab_sac"
             )
-rstan::check_hmc_diagnostics(m.fab$fit)
+rstan::check_hmc_diagnostics(m.rtsac$fit)
 
 # check that rhats are below 1.01
-sum(brms::rhat(m.fab) >= 1.01, na.rm = T)
+sum(brms::rhat(m.rtsac) >= 1.01, na.rm = T)
 
 # check the trace plots
-post.draws = as_draws_df(m.fab)
+post.draws = as_draws_df(m.rtsac)
 mcmc_trace(post.draws, regex_pars = "^b_",
            facet_args = list(ncol = 3)) +
   scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
@@ -1591,59 +1441,312 @@ h1e
 
 ```
 
-This model confirmed the same hypotheses with the exception for the difference in FAB between COMP and ADHD group which is not credible anymore (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). This change could indicate that difference in saccadic behaviour may partly drive these group differences.
+This model confirmed the same hypotheses with the exception for the difference in FAB between COMP and ADHD group which is narrowly not credible anymore (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). This change could indicate that difference in saccadic behaviour may partly drive these group differences.
 
 # S1.5 Explorative analysis of errors
 
-Last but not least, we are going to explore possible differences with regards to mean accuracies using a Bayesian ANOVA. 
+Last but not least, we are going to explore possible differences with regards to mean accuracies using a bernoulli distribution. 
 
-```{r acc}
+Next, we are going to explore possible differences with regards to accuracy. We use a bernoulli distribution to model the threshold between correct and incorrect trials. We computed the SBC outside of this script in batches to avoid running out of memory. Then, we combined it and load the results in here. 
 
-# aggregate mean accuracy per condition and person
-df.acc = df.fab.full %>% 
-  group_by(subID, diagnosis, cue) %>% 
-  summarise(acc = mean(acc)*100)
+## Simulation-based calibration
 
-# check normal distribution
-df.acc %>% group_by(diagnosis, cue) %>%
-  shapiro_test(acc) %>%
-    mutate(
-      sig = if_else(p < 0.05, "*", "")
-    )
+```{r err_model, fig.height=12}
 
-# rank transform the data
-df.acc = df.acc %>%
-  ungroup() %>%
+# figure out slopes for subject
+kable(head(df.fab.full %>% count(subID, cue)))
+kable(head(df.fab.full %>% count(stm, cue, diagnosis)))
+
+code = "FAB_err"
+
+# increase iterations a bit to improve rhats
+iter = 4000
+warm = 2000
+
+# code accuracy to track errors
+df.fab.full = df.fab.full %>%
   mutate(
-    racc   = rank(acc)
-    )
+    error = if_else(acc,0,1)
+  )
 
-# run the ANOVA
-aov.acc   = anovaBF(racc   ~ diagnosis*cue, data = df.acc)
-extractBF(aov.acc, logbf = T)
+# set the formula
+f.err = brms::bf(error ~ diagnosis * cue + (cue | subID) + (diagnosis * cue | stm) )
 
-# print overall accuracy rates
-df.acc %>% 
-  group_by(diagnosis, cue) %>% 
-  summarise(mean_accuracy = mean(acc, na.rm = T), 
-            se_accuracy = sd(acc, na.rm = T)/sqrt(n()))
-
-df.acc %>% 
-  group_by(diagnosis) %>% 
-  summarise(mean_accuracy = mean(acc, na.rm = T), 
-            se_accuracy = sd(acc, na.rm = T)/sqrt(n()))
+# set weakly informed priors
+priors = c(
+  prior(normal(6.0,   1.00), class = Intercept),
+  prior(normal(1.0,   0.50), class = sd),
+  prior(lkj(2),  class = cor),
+  # no specific expectations for the rest of the effects
+  prior(normal(0,     1.00), class = b)
+)
 
 ```
 
-Accuracies were generally high, with a grand average of `r round(mean(df.acc$acc),2)`% accurate responses across diagnostic groups. None of the models outperformed the intercept-only model, therefore, we conclude that there were no differences between diagnostic groups, cues or their interaction with regards to accuracies. 
+```{r err_checks1, fig.height=12, eval=F}
+
+# check if the SBC already exists
+if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
+  # load in the resultsn of the SBC
+  df.results = readRDS(file.path(cache_dir, sprintf("df_res_%s.rds", code)))
+  df.backend = readRDS(file.path(cache_dir, sprintf("df_div_%s.rds", code)))
+  dat        = readRDS(file.path(cache_dir, sprintf("dat_%s.rds", code)))
+} else {
+  # perform a quick SBC
+  gen = SBC_generator_brms(f.err, data = df.fab.full, prior = priors, 
+   thin = 50, warmup = 10000, refresh = 2000,
+   generate_lp = TRUE, family = bernoulli, init = 0.1)
+  bck = SBC_backend_brms_from_generator(gen, chains = 4, thin = 1,
+    warmup = warm, iter = iter)
+  if (!file.exists(file.path(cache_dir, sprintf("dat_%s.rds", code)))) {
+    dat = generate_datasets(gen, nsim)
+    saveRDS(dat, file.path(cache_dir, sprintf("dat_%s.rds", code)))
+  } else {
+    dat = readRDS(file.path(cache_dir, sprintf("dat_%s.rds", code)))
+  }
+  res = compute_SBC(dat, 
+        bck,
+        cache_mode     = "results", 
+        cache_location = file.path(cache_dir, sprintf("res_%s", code)))
+  df.results = res$stats
+  df.backend = res$backend_diagnostics
+  saveRDS(df.results, file = file.path(cache_dir, paste0("df_res_", code, ".rds")))
+  saveRDS(df.backend, file = file.path(cache_dir, paste0("df_div_", code, ".rds")))
+}
+
+```
+
+Looking at the rhats and divergent transitions shows that `r nrow(df.results %>% group_by(sim_id) %>% summarise(rhat = max(rhat)) %>% filter(rhat >= 1.05))` of `r nsim` simulations had at least one parameter that had an rhat of at least 1.05 and `r nrow(df.backend %>% filter(n_divergent > 0))` had divergent samples. Therefore, we continue with this model and plot the simulated values to perform prior predictive checks. 
+
+```{r err_checks2, fig.height=20, eval=F}
+
+# create a matrix out of generated data
+dvname = gsub(" ", "", gsub("[\\|~].*", "", f.err)[1])
+dvfakemat = matrix(NA, nrow(dat[['generated']][[1]]), length(dat[['generated']])) 
+for (i in 1:length(dat[['generated']])) {
+  dvfakemat[,i] = dat[['generated']][[i]][[dvname]]
+}
+truePars = dat$variables
+
+# compute one histogram per simulated data-set 
+options = c(0, 1)
+histmat = matrix(NA, ncol = nrow(truePars), length(options)) 
+for (i in 1:nrow(truePars)) {
+  for (j in 1:length(options))
+  {
+    histmat[j,i] = sum(dvfakemat[,i] == options[j])
+  }
+}
+# for each bin, compute quantiles across histograms 
+probs = seq(0.1, 0.9, 0.1) 
+quantmat= as.data.frame(matrix(NA, nrow=dim(histmat)[1], ncol = length(probs)))
+names(quantmat) = paste0("p", probs)
+for (i in 1:dim(histmat)[1]) {
+  quantmat[i,] = quantile(histmat[i,], p = probs)
+}
+quantmat$x = c("error", "correct")
+p0 = ggplot(data = quantmat, aes(x = x)) + 
+  geom_bar(aes(y = p0.9), fill = c_light, stat = "identity") + 
+  geom_bar(aes(y = p0.8), fill = c_light_highlight, stat = "identity") + 
+  geom_bar(aes(y = p0.7), fill = c_mid, stat = "identity") + 
+  geom_bar(aes(y = p0.6), fill = c_mid_highlight, stat = "identity") + 
+  geom_bar(aes(y = p0.5), fill = c_dark, stat = "identity") + 
+  labs(title = "Prior predictive distribution", y = "", x = "") +
+  theme_bw()
+
+# get simulation numbers with issues
+check = merge(df.results %>% 
+    group_by(sim_id) %>% summarise(rhat = max(rhat, na.rm = T)) %>% 
+    filter(rhat >= 1.05), 
+  df.backend %>% filter(n_divergent > 0), all = T)
+
+# plot SBC with functions from the SBC package focusing on population-level parameters
+df.results.b = df.results %>% 
+  filter(substr(variable, 1, 2) == "b_") %>% 
+  filter(!(sim_id %in% check$sim_id))
+p1 = plot_ecdf_diff(df.results.b) + theme_bw() + theme(legend.position = "none") +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+p2 = plot_rank_hist(df.results.b, bins = 20) + theme_bw() +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+p3 = plot_sim_estimated(df.results.b, alpha = 0.5) + theme_bw() +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+
+prior_sd = setNames(c(1, 1, 1, # intercept and diagnosis
+                      0.5, 0.5, 0.5, # emotions
+                      1, 1, 1, 1, 1, 1), # interactions 
+                    unique(df.results.b$variable))
+
+p4 = plot_contraction(df.results.b, prior_sd = prior_sd) + theme_bw() +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3))
+
+p = ggarrange(p0, p1, p2, p3, p4, 
+              labels = "AUTO", ncol = 1, nrow = 5, 
+              heights = c(1, 2, 2, 2, 2))
+annotate_figure(p, 
+                top = text_grob("Prior predictive checks and SBC", 
+                face = "bold", size = 14))
+
+```
+
+Everything looks good with the wider priors, so we continue and run the model.
+
+## Posterior predictive checks
+
+As the next step, we fit the model, check whether there are divergence or rhat issues, and then check whether the chains have converged.
+
+```{r err_postpc, fig.height=6, message=T}
+
+# fit the final model
+set.seed(1234)
+m.err = brm(f.err,
+            df.fab.full, prior = priors,
+            iter = iter, warmup = warm,
+            family = "bernoulli",
+            backend = "cmdstanr", threads = threading(8),
+            file = "m_err",
+            save_pars = save_pars(all = TRUE)
+            )
+rstan::check_hmc_diagnostics(m.err$fit)
+
+# check that rhats are below 1.01
+sum(brms::rhat(m.err) >= 1.01, na.rm = T)
+
+# check the trace plots
+post.draws = as_draws_df(m.err)
+mcmc_trace(post.draws, regex_pars = "^b_",
+           facet_args = list(ncol = 4)) +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+
+```
+
+Again, we use the function brms::pp_check() with `r nsim` draws to check whether the predicted data resembles the actual data as well as the ppc_stat_grouped function from the bayesplot package to check posterior fit for each diagnostic group separately. The model seems to be a good fit with the predicted data closely mirroring the real data. 
+
+```{r err_postpc2, fig.height=6}
+
+# get posterior predictions
+post.pred = posterior_predict(m.err, ndraws = nsim)
+
+# check the fit of the predicted data compared to the real data
+p1 = pp_check(m.err, ndraws = nsim, type = "bars") + 
+  theme_bw() + theme(legend.position = "none") + labs(y = "")
+
+# distributions of means compared to the real values per group
+p2 = ppc_stat_grouped(df.fab.full$error, post.pred, df.fab.full$diagnosis) + 
+  theme_bw() + theme(legend.position = "none")
+
+p = ggarrange(p1, p2,
+  nrow = 2, ncol = 1, labels = "AUTO")
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: errors", 
+                face = "bold", size = 14))
+
+```
+
+Our model fits the data very well.
+
+## Inferences
+
+Now that we are convinced that we can trust our model, we have a look at its estimate and use the hypothesis function to perform explorative tests.
+
+```{r err_final, fig.height=12}
+
+# print a summary
+summary(m.err)
+
+# plot the posterior distributions
+as_draws_df(m.err) %>% 
+  select(starts_with("b_")) %>%
+  mutate(
+    b_COMP     = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
+  ) %>%
+  pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
+  subset(!startsWith(coef, "b_Int")) %>%
+  mutate(
+    coef = substr(coef, 3, nchar(coef)),
+    coef = str_replace_all(coef, ":", " x "),
+    coef = str_replace_all(coef, "diagnosis1", "ADHD"),
+    coef = str_replace_all(coef, "diagnosis2", "ASD"),
+    coef = str_replace_all(coef, "diagnosis3", "ADHD+ASD"),
+    coef = str_replace_all(coef, "cue1", "Face"),
+    coef = fct_reorder(coef, desc(estimate))
+  ) %>% 
+  group_by(coef) %>%
+  mutate(
+    cred = case_when(
+      (mean(estimate) < 0 & quantile(estimate, probs = 0.975) < 0) |
+        (mean(estimate) > 0 & quantile(estimate, probs = 0.025) > 0) ~ "credible",
+      T ~ "not credible"
+    )
+  ) %>% ungroup() %>%
+  ggplot(aes(x = estimate, y = coef, fill = cred)) +
+  geom_vline(xintercept = 0, linetype = 'dashed') +
+  ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
+  scale_fill_manual(values = c(c_dark, c_light)) + theme(legend.position = "none")
+
+# COMP < ADHD
+e1 = hypothesis(m.err, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
+e1
+
+# COMP < ASD
+e2 = hypothesis(m.err, "0 < 2*diagnosis2 + diagnosis1 + diagnosis3", alpha = 0.025)
+e2
+
+# COMP < BOTH
+e3 = hypothesis(m.err, "0 > 2*diagnosis3 + diagnosis1 + diagnosis2", alpha = 0.025)
+e3
+
+# explore differences between cues
+e4 = hypothesis(m.err, "0 > 2*cue1", alpha = 0.025)
+e4
+
+# FAB effect in ADHD
+e5 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis1:cue1", alpha = 0.025)
+e5
+
+# FAB effect in ASD
+e6 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis2:cue1", alpha = 0.025)
+e6
+
+# FAB effect in ADHD+ASD
+e7 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis3:cue1", alpha = 0.025)
+e7
+
+# FAB effect in COMP
+e8 = hypothesis(m.err, 
+                 "0 < 2*(diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
+e8
+
+
+# print grand average of accuracies
+kable(df.fab.full %>% 
+        group_by(subID, diagnosis, cue) %>% 
+        summarise(error = mean(error, na.rm = T)) %>% 
+        group_by(diagnosis, cue) %>% 
+        summarise(error_rates = mean(error, na.rm = T), se = sd(error, na.rm = T)/sqrt(n())))
+
+df.err = df.fab.full %>% 
+        group_by(subID, diagnosis, cue) %>% 
+        summarise(error = mean(error, na.rm = T)) %>% 
+        ungroup() %>% 
+        summarise(error_rate = 100*mean(error, na.rm = T))
+
+```
+
+Accuracies were generally high, with a grand average of `r round(df.err$error_rate,2)`% inaccurate responses across diagnostic groups. The explorative analysis of the error rates revealed no credible differences between any of the diagnostic groups and no credible difference between cues (see supplementary materials). 
 
 ## Plots
 
-```{r plot_acc, fig.height=12}
+```{r plot_err, fig.height=4}
 
 # overall accuracies
-df.acc %>%
-  ggplot(aes(diagnosis, acc, fill = cue, colour = cue)) + #
+df.fab.full %>% 
+        group_by(subID, diagnosis, cue) %>% 
+        summarise(error = 100*mean(error, na.rm = T)) %>% 
+  ggplot(aes(diagnosis, error, fill = cue, colour = cue)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
 violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
@@ -1654,10 +1757,10 @@ point.args = list(show_guide = FALSE, alpha = .5),
 violin.args.pos = list(
   width = 0.6, position = position_nudge(x = 0.16)),
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  ylim(0, 100) +
+  ylim(0, 25) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Mean accuracies", x = "", y = "percent") +
+  labs(title = "Mean error rates", x = "", y = "percent") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
