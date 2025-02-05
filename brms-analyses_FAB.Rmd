@@ -1703,24 +1703,6 @@ e3
 e4 = hypothesis(m.err, "0 > 2*cue1", alpha = 0.025)
 e4
 
-# FAB effect in ADHD
-e5 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis1:cue1", alpha = 0.025)
-e5
-
-# FAB effect in ASD
-e6 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis2:cue1", alpha = 0.025)
-e6
-
-# FAB effect in ADHD+ASD
-e7 = hypothesis(m.err, "0 < -2*cue1 - 2*diagnosis3:cue1", alpha = 0.025)
-e7
-
-# FAB effect in COMP
-e8 = hypothesis(m.err, 
-                 "0 < 2*(diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1 - cue1)")
-e8
-
-
 # print grand average of accuracies
 kable(df.fab.full %>% 
         group_by(subID, diagnosis, cue) %>% 
