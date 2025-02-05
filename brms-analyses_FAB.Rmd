@@ -1098,13 +1098,18 @@ df.ms = df.ms %>%
     BOTH_COMP = BOTH - COMP
   )
 
+vtable::st(df.ms %>% 
+  mutate(
+    face   = rowMeans(select(., matches(".*_face")), na.rm = T),
+    object = rowMeans(select(., matches(".*_object")), na.rm = T)
+  ) %>% select(face, object, FAB),
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
 
 ```
 
 As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob*100,2)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob*100,2)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b),3)`ms [`r round(ci(df.ms$h1b)$CI_low, 3)`, `r round(ci(df.ms$h1b)$CI_high, 3)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c),3)`ms [`r round(ci(df.ms$h1c)$CI_low, 3)`, `r round(ci(df.ms$h1c)$CI_high, 3)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP),3)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 3)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 3)`] faster than adults in the ADHD+ASD group. 
 
 Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob*100,2)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob*100,2)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP),3)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 3)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 3)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD),3)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 3)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD),3)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 3)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH),3)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 3)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 3)`] in the ADHD+ASD group. These estimates are reflected in our exploration of the FAB in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%). 
-
 
 ## Plots
 
@@ -1285,9 +1290,31 @@ e9
 e10 = hypothesis(m.fabd, "0 < Intercept - diagnosis1 - diagnosis2 - diagnosis3", alpha = 0.025)
 e10
 
+# extract predicted differences
+df.new = df.fabd %>% 
+  select(diagnosis) %>% 
+  distinct() %>%
+  mutate(
+    ASRS = 0,
+    RADS = 0
+  )
+df.ms = as.data.frame(
+  fitted(m.fabd, summary = F, 
+               newdata = df.new, 
+               re_formula = NA))
+colnames(df.ms) = df.new$diagnosis
+
+df.ms = df.ms %>%
+  mutate(
+    FAB = (ADHD + ASD + BOTH + COMP)/4
+  )
+
+vtable::st(df.ms,
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
+
 ```
 
-Similarly to our full model, this model suggests that subject-specific FAB is only attenuated in the ADHD group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Furthermore, there is no credible association between FAB and questionnaires assessing ASD (RADS: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%) or ADHD (ASRS: *estimate* = `r round(e5$hypothesis$Estimate,2)` [`r round(e5$hypothesis$CI.Lower,2)`, `r round(e5$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e5$hypothesis$Post.Prob*100,2)`%). Overall, the model estimates an average effect size across groups of `r round(fixef(m.fabd)[1,1],3)` [`r round(fixef(m.fabd)[1,3], 3)`, `r round(fixef(m.fabd)[1,4], 3)`] (*posterior probability* = `r round(e6$hypothesis$Post.Prob*100,2)`%), which is considered to be `r effectsize::interpret_cohens_d(fixef(m.fabd)[1,1], rules = "cohen1988")` according to Cohen (1988). Furthermore, this model estimates a credible FAB effect in all four groups (ADHD: *estimate* = `r round(e7$hypothesis$Estimate,2)` [`r round(e7$hypothesis$CI.Lower,2)`, `r round(e7$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e7$hypothesis$Post.Prob*100,2)`%; ASD: *estimate* = `r round(e8$hypothesis$Estimate,2)` [`r round(e8$hypothesis$CI.Lower,2)`, `r round(e8$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e8$hypothesis$Post.Prob*100,2)`%; ADHD+ASD: *estimate* = `r round(e9$hypothesis$Estimate,2)` [`r round(e9$hypothesis$CI.Lower,2)`, `r round(e9$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e9$hypothesis$Post.Prob*100,2)`%; COMP: *estimate* = `r round(e10$hypothesis$Estimate,2)` [`r round(e10$hypothesis$CI.Lower,2)`, `r round(e10$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e10$hypothesis$Post.Prob*100,2)`%)
+Similarly to our full model, this model suggests that subject-specific FAB is only attenuated in the ADHD group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Furthermore, there is no credible association between FAB and questionnaires assessing ASD (RADS: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%) or ADHD (ASRS: *estimate* = `r round(e5$hypothesis$Estimate,2)` [`r round(e5$hypothesis$CI.Lower,2)`, `r round(e5$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e5$hypothesis$Post.Prob*100,2)`%). Overall, the model estimates a FAB of `r round(fixef(m.fabd)[1,1],3)` [`r round(fixef(m.fabd)[1,3], 3)`, `r round(fixef(m.fabd)[1,4], 3)`], which is considered to be `r effectsize::interpret_cohens_d(fixef(m.fabd)[1,1], rules = "cohen1988")` according to Cohen (1988). 
 
 Last, let's plot these subject-specific effect sizes. 
 
@@ -1652,7 +1679,7 @@ Our model fits the data very well.
 
 Now that we are convinced that we can trust our model, we have a look at its estimate and use the hypothesis function to perform explorative tests.
 
-```{r err_final, fig.height=12}
+```{r err_final, fig.height=9}
 
 # print a summary
 summary(m.err)
@@ -1685,7 +1712,7 @@ as_draws_df(m.err) %>%
   ggplot(aes(x = estimate, y = coef, fill = cred)) +
   geom_vline(xintercept = 0, linetype = 'dashed') +
   ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(c_dark, c_light)) + theme(legend.position = "none")
+  scale_fill_manual(values = c(c_light, c_dark)) + theme(legend.position = "none")
 
 # COMP < ADHD
 e1 = hypothesis(m.err, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
@@ -1703,22 +1730,37 @@ e3
 e4 = hypothesis(m.err, "0 > 2*cue1", alpha = 0.025)
 e4
 
+# extract predicted differences
+df.new = df.fab.full %>% 
+  select(diagnosis, cue) %>% 
+  mutate(
+    condition = paste0(diagnosis, '_', cue)
+  ) %>%
+  distinct()
+df.ms = as.data.frame(
+  fitted(m.err, summary = F, 
+               newdata = df.new, 
+               re_formula = NA))
+colnames(df.ms) = df.new$condition
+
+vtable::st(df.ms %>% 
+  mutate(
+    face   = rowMeans(select(., matches(".*_face")), na.rm = T),
+    object = rowMeans(select(., matches(".*_object")), na.rm = T),
+    FAB    = object - face
+  ) %>% select(face, object, FAB),
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
+
 # print grand average of accuracies
 kable(df.fab.full %>% 
         group_by(subID, diagnosis, cue) %>% 
-        summarise(error = mean(error, na.rm = T)) %>% 
+        summarise(error = 100*mean(error, na.rm = T)) %>% 
         group_by(diagnosis, cue) %>% 
         summarise(error_rates = mean(error, na.rm = T), se = sd(error, na.rm = T)/sqrt(n())))
 
-df.err = df.fab.full %>% 
-        group_by(subID, diagnosis, cue) %>% 
-        summarise(error = mean(error, na.rm = T)) %>% 
-        ungroup() %>% 
-        summarise(error_rate = 100*mean(error, na.rm = T))
-
 ```
 
-Accuracies were generally high, with a grand average of `r round(df.err$error_rate,2)`% inaccurate responses across diagnostic groups. The explorative analysis of the error rates revealed no credible differences between any of the diagnostic groups and no credible difference between cues (see supplementary materials). 
+Accuracies were generally high, with a total of `r round(100*mean(df.fab.full$error),2)`% inaccurate responses across diagnostic groups. The explorative analysis of the error rates revealed no credible differences between any of the diagnostic groups and no credible difference between cues (see supplementary materials). 
 
 ## Plots
 
