@@ -1156,14 +1156,14 @@ ggsave("Fig3_rts.pdf",
 
 ```
 
-# S1.3 Explorative analysis of FAB specifically
 
-Since the reaction times differ in general between our groups, we calculate subject-specific Cohen's d.
+# S1.3 Explorative analysis of subject-specific FAB with RADS and ASRS
 
-```{r rt_fab}
+```{r que_fab, fig.height=3}
 
-df.fabd = df.fab.full %>%
-  group_by(subID, diagnosis, stm, cue, RAADS_total, ASRS_total) %>%
+# merge with the questionnaire values
+df.que = df.fab.full %>%
+  group_by(subID, diagnosis, stm, cue, ASRS_total, RAADS_total) %>%
   # summarise the median reaction time for each stimulus pair
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
@@ -1172,151 +1172,80 @@ df.fabd = df.fab.full %>%
   # calculate the fab purely based on reaction times
   mutate(
     fab = object - face
-  ) %>% group_by(subID, diagnosis, RAADS_total, ASRS_total) %>%
-  # calculate the cohen's d
+  ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total) %>%
+  # calculate the mean FAB per person
   summarise(
-    fab.d = cohens_d(x = object, y = face, method = "paired")$Cohens_d
+    fab = mean(fab)
   ) %>% ungroup() %>%
-  # center questionnaire values and scale between -1 and 1
-  mutate(
-    ASRS = scale(ASRS_total, scale = F)/max(scale(ASRS_total, scale = F)),
-    RADS = scale(RAADS_total, scale = F)/max(scale(RAADS_total, scale = F))
-  )
+  select(subID, diagnosis, fab, ASRS_total, RAADS_total)
 
-```
-Now, let's assess whether we can predict the subject-specific fab in cohen's d based on diagnostic group.  
-
-```{r rt_fab2}
-
-# set some priors
-priors = c(
-  # general priors assuming small effect of FAB
-  prior(normal(0.2, 0.5),  class = Intercept),
-  prior(normal(0,   0.5),  class = sigma),
-  # no specific expectations for group differences
-  prior(normal(0,   0.20), class = b)
-)
-
-# fit the linear model with the questionnaires as covariates
-set.seed(2424)
-m.fabd = brm(fab.d ~ diagnosis +  RADS + ASRS, data = df.fabd, 
-             prior = priors,
-             iter = iter, warmup = warm,
-             backend = "cmdstanr", threads = threading(8),
-             file = "m_fab_cohd"
-             )
-rstan::check_hmc_diagnostics(m.fabd$fit)
-
-# check that rhats are below 1.01
-sum(brms::rhat(m.fabd) >= 1.01, na.rm = T)
-
-# check the trace plots
-post.draws = as_draws_df(m.fabd)
-mcmc_trace(post.draws, regex_pars = "^b_",
-           facet_args = list(ncol = 3)) +
-  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
-
-# perform posterior predictive checks
-post.pred = posterior_predict(m.fabd, ndraws = nsim)
-pp_check(m.fabd, ndraws = nsim) + 
-  theme_bw() + theme(legend.position = "none")
-ppc_stat_grouped(df.fabd$fab.d, post.pred, df.fabd$diagnosis) + 
-  theme_bw() + theme(legend.position = "none")
-
-# print a summary
-summary(m.fabd)
-
-# plot the posterior distributions
-as_draws_df(m.fabd) %>% 
-  select(starts_with("b_")) %>%
-  mutate(
-    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
-    ) %>% 
-  pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
-  filter(coef != "b_Intercept") %>%
-  mutate(
-    coef = substr(coef, 3, nchar(coef)),
-    coef = case_match(coef,
-      "diagnosis1" ~ "ADHD",
-      "diagnosis2" ~ "ASD",
-      "diagnosis3" ~ "ADHD+ASD",
-      .default = coef
-    ),
-    coef = fct_reorder(coef, desc(estimate))
-  ) %>% 
-  group_by(coef) %>%
-  mutate(
-    cred = case_when(
-      (mean(estimate) < 0 & quantile(estimate, probs = 0.975) < 0) |
-        (mean(estimate) > 0 & quantile(estimate, probs = 0.025) > 0) ~ "credible",
-      T ~ "not credible"
-    )
-  ) %>% ungroup() %>% 
-  ggplot(aes(x = estimate, y = coef, fill = cred)) +
-  geom_vline(xintercept = 0, linetype = 'dashed') +
-  ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
-  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
-  theme(legend.position = "none")
-
-# assess differences between ADHD and COMP
-e1 = hypothesis(m.fabd, "0 < 2*diagnosis1 + diagnosis2 + diagnosis3", alpha = 0.025)
-e1
-
-# assess differences between ASD and COMP
-e2 = hypothesis(m.fabd, "0 < diagnosis1 + 2*diagnosis2 + diagnosis3", alpha = 0.025)
-e2
-
-# assess differences between ADHD+ASD and COMP
-e3 = hypothesis(m.fabd, "0 < diagnosis1 + diagnosis2 + 2*diagnosis3", alpha = 0.025)
-e3
-
-# assess influences of questionnaires
-e4 = hypothesis(m.fabd, "0 < RADS", alpha = 0.025)
-e4
-e5 = hypothesis(m.fabd, "0 > ASRS", alpha = 0.025)
-e5
-
-# assess FAB in general
-e6 = hypothesis(m.fabd, "0 < Intercept", alpha = 0.025)
-e6
-
-# extract predicted differences
-df.new = df.fabd %>% 
-  select(diagnosis) %>% 
-  distinct() %>%
-  mutate(
-    ASRS = 0,
-    RADS = 0
-  )
-df.ms = as.data.frame(
-  fitted(m.fabd, summary = F, 
-               newdata = df.new, 
-               re_formula = NA))
-colnames(df.ms) = df.new$diagnosis
-
-df.ms = df.ms %>%
-  mutate(
-    FAB = (ADHD + ASD + BOTH + COMP)/4
-  )
-
-vtable::st(df.ms,
-  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
+# check normal distributions
+p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+p2 = ggplot(df.que, aes(sample = RAADS_total)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+p3 = ggplot(df.que, aes(sample = fab)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+ggarrange(p1, p2, p3, 
+          nrow = 1, ncol = 3, labels = "AUTO")
 
 ```
 
-This model suggests that participant-specific FAB does not differ between any of the clincial and the comparison group (ADHD versus COMP: *estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%; ASD versus COMP: *estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%; ADHD+ASD versus COMP: *estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%). Overall, the model estimates a FAB of `r round(fixef(m.fabd)[1,1],3)` [`r round(fixef(m.fabd)[1,3], 3)`, `r round(fixef(m.fabd)[1,4], 3)`], which is considered to be `r interpret_cohens_d(fixef(m.fabd)[1,1], rules = "cohen1988")` according to Cohen (1988). Furthermore, there is no credible association between FAB and questionnaires assessing ASD (RADS: *estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%) or ADHD (ASRS: *estimate* = `r round(e5$hypothesis$Estimate,2)` [`r round(e5$hypothesis$CI.Lower,2)`, `r round(e5$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e5$hypothesis$Post.Prob*100,2)`%). 
+```{r que_fab_cor}
 
-Last, let's plot these subject-specific effect sizes. 
+# do a Bayesian Spearman correlation: https://osf.io/j5wud
+source("./helpers/rankBasedCommonFunctions.R")
+source("./helpers/spearmanSampler.R")
 
-```{r plot_fab}
+# Default beta prior width is set to a = b = 1 for the sampler 
+if (file.exists("ASRS_rho.rds")) {
+  rhoSamples.asrs = readRDS("ASRS_rho.rds")
+} else {
+  set.seed(5468)
+  rhoSamples.asrs = 
+    spearmanGibbsSampler(xVals = df.que$ASRS_total,
+                         yVals = df.que$fab, 
+                         nSamples = 5e3)
+  saveRDS(rhoSamples.asrs, file = "ASRS_rho.rds")
+}
+if (file.exists("RADS_rho.rds")) {
+  rhoSamples.rads = readRDS("RADS_rho.rds")
+} else {
+  set.seed(5468)
+  rhoSamples.rads = 
+    spearmanGibbsSampler(xVals = df.que$RAADS_total,
+                         yVals = df.que$fab, 
+                         nSamples = 5e3)
+  saveRDS(rhoSamples.rads, file = "RADS_rho.rds")
+}
+
+# give the posterior samples for rho to the function below to compute BF01
+asrs.bf = computeBayesFactorOneZero(rhoSamples.asrs$rhoSamples, 
+                          whichTest = "Spearman",
+                          priorParameter = 1)
+rads.bf = computeBayesFactorOneZero(rhoSamples.rads$rhoSamples, 
+                          whichTest = "Spearman",
+                          priorParameter = 1)
+
+```
+
+Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` against associations between FAB and questionnaires assessing ASD (RADS: log(*BF*) = `r round(log(rads.bf),2)`) or ADHD (ASRS: log(*BF*) = `r round(log(asrs.bf),2)`). 
+
+
+```{r que_fab_plot}
 
 # focus on the FAB effect
-df.fabd %>%
+df.que %>%
   mutate(
     diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
   ) %>% 
-  ggplot(aes(diagnosis, fab.d, fill = diagnosis, colour = diagnosis)) + #
+  ggplot(aes(diagnosis, fab, fill = diagnosis, colour = diagnosis)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
 violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
@@ -1332,7 +1261,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   scale_color_manual(values = custom.col) +
   labs(title = "Face attention bias", 
        x = "", 
-       y = "cohen's d") +
+       y = "difference (ms)") +
   theme_bw() + 
   theme(legend.position = "none", 
         plot.title = element_text(hjust = 0.5), 
@@ -1345,30 +1274,35 @@ ggsave("Fig4_FAB.pdf",
        height = 70,
        dpi    = 300)
 
+# plot the associations
+df.que %>% 
+  pivot_longer(cols = c(ASRS_total, RAADS_total), names_to = "questionnaire") %>%
+  ggplot(., aes(y = fab, x = value)) +
+  geom_point(colour = c_mid_highlight, alpha = 0.75) +
+  geom_smooth(method = "lm", 
+              formula = y ~ x, 
+              colour = c_dark_highlight) +
+  facet_grid(. ~ questionnaire, scale = "free_x") +
+  theme_bw() 
+
 ```
 
 
-# S1.4 Explorative analysis of RTs on trials without saccades
+# S1.4 Explorative analysis of RTs considering number of saccades
 
-Since saccadic behaviour may have influenced reaction times, we rerun the model concerning reaction times with only trials where no saccades were produced. 
+Since saccadic behaviour may have influenced reaction times, we rerun the model concerning reaction times with a separate predictor coding the number of saccades of this stimulus pair. 
 
-```{r rt_sac}
+```{r rt_sac, message=T, fig.height=6}
 
-# aggregate saccades
-df.sac.agg = df.sac %>% 
-  group_by(subID, diagnosis, trl) %>%
-  summarise(
-    n.sac = n()
-  )
-
-# merge together
-df.sac.fab = merge(df.fab.full, df.sac.agg, all.x = T) %>%
-  # only keep trials without saccades %>%
-  filter(is.na(n.sac)) %>%
+# merge behaviour and saccades together
+df.sac.fab = merge(df.fab.full, 
+                   df.sac %>% group_by(subID, diagnosis, trl) %>% summarise(n.sac = n()), 
+                   all.x = T) %>%
   # compute median rt.cor
   group_by(subID, diagnosis, cue, stm) %>%
   summarise(
-    rt.cor = median(rt.cor, na.rm = T)
+    rt.cor = median(rt.cor, na.rm = T),
+    n.sac  = sum(n.sac, na.rm = T)
   )
 
 # set the contrasts
@@ -1377,14 +1311,13 @@ contrasts(df.sac.fab$cue)
 contrasts(df.sac.fab$diagnosis) = contr.sum(4)
 contrasts(df.sac.fab$diagnosis)
 
-# run the model
+# run the model > more iterations due to some suboptimal rhats in the first try
 set.seed(1357)
-m.rtsac = brm(f.fab,
+m.rtsac = brm(rt.cor ~ diagnosis * cue + n.sac + (cue | subID) + (cue * diagnosis | stm),
             df.sac.fab, prior = priors,
             family = shifted_lognormal,
-            iter = iter, warmup = warm,
-            backend = "cmdstanr", threads = threading(8),
-            file = "m_fab_sac"
+            iter = iter*2, warmup = warm*2,
+            backend = "cmdstanr", threads = threading(8), file = "m_fab_sac"
             )
 rstan::check_hmc_diagnostics(m.rtsac$fit)
 
@@ -1420,7 +1353,7 @@ p2 = ppc_stat_grouped(df.sac.fab$rt.cor, post.pred, df.sac.fab$diagnosis) +
 p = ggarrange(p1, p2, 
           nrow = 2, ncol = 1, labels = "AUTO")
 annotate_figure(p, 
-                top = text_grob("Posterior predictive checks: RTs of trials w/o saccades", 
+                top = text_grob("Posterior predictive checks: RTs of trials with saccade covariate", 
                 face = "bold", size = 14))
 
 ```
@@ -1429,7 +1362,6 @@ annotate_figure(p,
 
 # print a summary
 summary(m.rtsac)
-
 
 # H1a: FAB effect in COMP
 h1a = hypothesis(m.rtsac, 
@@ -1459,7 +1391,7 @@ h1e
 
 ```
 
-This model confirmed the same hypotheses with the exception for the difference in FAB between COMP and ADHD group which is narrowly not credible anymore (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). This change could indicate that difference in saccadic behaviour may partly drive these group differences. However, how many saccades participants produced varied a lot, which may reduce the interpretability of this model. 
+This model confirmed the same hypotheses. 
 
 # S1.5 Explorative analysis of errors
 
@@ -1510,7 +1442,7 @@ if (file.exists(file.path(cache_dir, sprintf("df_res_%s.rds", code)))) {
   df.backend = readRDS(file.path(cache_dir, sprintf("df_div_%s.rds", code)))
   dat        = readRDS(file.path(cache_dir, sprintf("dat_%s.rds", code)))
 } else {
-  # perform a quick SBC
+  # perform SBC
   gen = SBC_generator_brms(f.err, data = df.fab.full, prior = priors, 
    thin = 50, warmup = 10000, refresh = 2000,
    generate_lp = TRUE, family = bernoulli, init = 0.1)
@@ -1615,7 +1547,7 @@ Everything looks good with the wider priors, so we continue and run the model.
 
 As the next step, we fit the model, check whether there are divergence or rhat issues, and then check whether the chains have converged.
 
-```{r err_postpc, fig.height=6, message=T}
+```{r err_postpc, fig.height=4, message=T}
 
 # fit the final model
 set.seed(1234)
