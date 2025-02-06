@@ -1108,9 +1108,9 @@ vtable::st(df.ms %>%
 
 ```
 
-As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob*100,2)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob*100,2)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b),3)`ms [`r round(ci(df.ms$h1b)$CI_low, 3)`, `r round(ci(df.ms$h1b)$CI_high, 3)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c),3)`ms [`r round(ci(df.ms$h1c)$CI_low, 3)`, `r round(ci(df.ms$h1c)$CI_high, 3)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP),3)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 3)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 3)`] faster than adults in the ADHD+ASD group. 
+As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob*100,2)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob*100,2)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b), 2)`ms [`r round(ci(df.ms$h1b)$CI_low, 2)`, `r round(ci(df.ms$h1b)$CI_high, 2)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c), 2)`ms [`r round(ci(df.ms$h1c)$CI_low, 2)`, `r round(ci(df.ms$h1c)$CI_high, 2)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP), 2)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 2)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 2)`] faster than adults in the ADHD+ASD group. 
 
-Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob*100,2)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob*100,2)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP),3)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 3)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 3)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD),3)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 3)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD),3)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 3)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 3)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH),3)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 3)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 3)`] in the ADHD+ASD group. These estimates are reflected in our exploration of the FAB in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%). 
+Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob*100,2)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob*100,2)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP), 2)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 2)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 2)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD), 2)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 2)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 2)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD), 2)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 2)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 2)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH), 2)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 2)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 2)`] in the ADHD+ASD group. These estimates are reflected in our exploration of FAB over all groups (*estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%) as well as in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%). Furthermore, FAB in the ASD and the ADHD+ASD group was equivalent ().
 
 ## Plots
 
@@ -1156,139 +1156,7 @@ ggsave("Fig3_rts.pdf",
 
 ```
 
-
-# S1.3 Explorative analysis of subject-specific FAB with RADS and ASRS
-
-```{r que_fab, fig.height=3}
-
-# merge with the questionnaire values
-df.que = df.fab.full %>%
-  group_by(subID, diagnosis, stm, cue, ASRS_total, RAADS_total) %>%
-  # summarise the median reaction time for each stimulus pair
-  summarise(
-    rt.cor = median(rt.cor, na.rm = T)
-  ) %>%
-  pivot_wider(names_from = cue, values_from = rt.cor) %>%
-  # calculate the fab purely based on reaction times
-  mutate(
-    fab = object - face
-  ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total) %>%
-  # calculate the mean FAB per person
-  summarise(
-    fab = mean(fab)
-  ) %>% ungroup() %>%
-  select(subID, diagnosis, fab, ASRS_total, RAADS_total)
-
-# check normal distributions
-p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
-  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
-  stat_qq_line() + 
-  theme_bw()
-p2 = ggplot(df.que, aes(sample = RAADS_total)) + 
-  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
-  stat_qq_line() + 
-  theme_bw()
-p3 = ggplot(df.que, aes(sample = fab)) + 
-  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
-  stat_qq_line() + 
-  theme_bw()
-ggarrange(p1, p2, p3, 
-          nrow = 1, ncol = 3, labels = "AUTO")
-
-```
-
-```{r que_fab_cor}
-
-# do a Bayesian Spearman correlation: https://osf.io/j5wud
-source("./helpers/rankBasedCommonFunctions.R")
-source("./helpers/spearmanSampler.R")
-
-# Default beta prior width is set to a = b = 1 for the sampler 
-if (file.exists("ASRS_rho.rds")) {
-  rhoSamples.asrs = readRDS("ASRS_rho.rds")
-} else {
-  set.seed(5468)
-  rhoSamples.asrs = 
-    spearmanGibbsSampler(xVals = df.que$ASRS_total,
-                         yVals = df.que$fab, 
-                         nSamples = 5e3)
-  saveRDS(rhoSamples.asrs, file = "ASRS_rho.rds")
-}
-if (file.exists("RADS_rho.rds")) {
-  rhoSamples.rads = readRDS("RADS_rho.rds")
-} else {
-  set.seed(5468)
-  rhoSamples.rads = 
-    spearmanGibbsSampler(xVals = df.que$RAADS_total,
-                         yVals = df.que$fab, 
-                         nSamples = 5e3)
-  saveRDS(rhoSamples.rads, file = "RADS_rho.rds")
-}
-
-# give the posterior samples for rho to the function below to compute BF01
-asrs.bf = computeBayesFactorOneZero(rhoSamples.asrs$rhoSamples, 
-                          whichTest = "Spearman",
-                          priorParameter = 1)
-rads.bf = computeBayesFactorOneZero(rhoSamples.rads$rhoSamples, 
-                          whichTest = "Spearman",
-                          priorParameter = 1)
-
-```
-
-Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` against associations between FAB and questionnaires assessing ASD (RADS: log(*BF*) = `r round(log(rads.bf),2)`) or ADHD (ASRS: log(*BF*) = `r round(log(asrs.bf),2)`). 
-
-
-```{r que_fab_plot}
-
-# focus on the FAB effect
-df.que %>%
-  mutate(
-    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
-  ) %>% 
-  ggplot(aes(diagnosis, fab, fill = diagnosis, colour = diagnosis)) + #
-  geom_rain(rain.side = 'r',
-boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
-violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
-boxplot.args.pos = list(
-  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
-),
-point.args = list(show_guide = FALSE, alpha = .5),
-violin.args.pos = list(
-  width = 0.6, position = position_nudge(x = 0.16)),
-point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
-  geom_hline(yintercept = 0) +
-  scale_fill_manual(values = custom.col) +
-  scale_color_manual(values = custom.col) +
-  labs(title = "Face attention bias", 
-       x = "", 
-       y = "difference (ms)") +
-  theme_bw() + 
-  theme(legend.position = "none", 
-        plot.title = element_text(hjust = 0.5), 
-        legend.direction = "horizontal", 
-        text = element_text(size = 15))
-
-ggsave("Fig4_FAB.pdf", 
-       units = "mm", 
-       width  = 170,
-       height = 70,
-       dpi    = 300)
-
-# plot the associations
-df.que %>% 
-  pivot_longer(cols = c(ASRS_total, RAADS_total), names_to = "questionnaire") %>%
-  ggplot(., aes(y = fab, x = value)) +
-  geom_point(colour = c_mid_highlight, alpha = 0.75) +
-  geom_smooth(method = "lm", 
-              formula = y ~ x, 
-              colour = c_dark_highlight) +
-  facet_grid(. ~ questionnaire, scale = "free_x") +
-  theme_bw() 
-
-```
-
-
-# S1.4 Explorative analysis of RTs considering number of saccades
+# S1.3 Explorative analysis of RTs considering number of saccades
 
 Since saccadic behaviour may have influenced reaction times, we rerun the model concerning reaction times with a separate predictor coding the number of saccades of this stimulus pair. 
 
@@ -1392,6 +1260,137 @@ h1e
 ```
 
 This model confirmed the same hypotheses. 
+
+# S1.4 Explorative analysis of subject-specific FAB with RADS and ASRS
+
+```{r que_fab, fig.height=3}
+
+# merge with the questionnaire values
+df.que = df.fab.full %>%
+  group_by(subID, diagnosis, stm, cue, ASRS_total, RAADS_total) %>%
+  # summarise the median reaction time for each stimulus pair
+  summarise(
+    rt.cor = median(rt.cor, na.rm = T)
+  ) %>%
+  pivot_wider(names_from = cue, values_from = rt.cor) %>%
+  # calculate the fab purely based on reaction times
+  mutate(
+    fab = object - face
+  ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total) %>%
+  # calculate the mean FAB per person
+  summarise(
+    fab = mean(fab)
+  ) %>% ungroup() %>%
+  select(subID, diagnosis, fab, ASRS_total, RAADS_total)
+
+# check normal distributions
+p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+p2 = ggplot(df.que, aes(sample = RAADS_total)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+p3 = ggplot(df.que, aes(sample = fab)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+ggarrange(p1, p2, p3, 
+          nrow = 1, ncol = 3, labels = "AUTO")
+
+```
+
+```{r que_fab_cor}
+
+# do a Bayesian Spearman correlation: https://osf.io/j5wud
+source("./helpers/rankBasedCommonFunctions.R")
+source("./helpers/spearmanSampler.R")
+
+# Default beta prior width is set to a = b = 1 for the sampler 
+if (file.exists("ASRS_rho.rds")) {
+  rhoSamples.asrs = readRDS("ASRS_rho.rds")
+} else {
+  set.seed(5468)
+  rhoSamples.asrs = 
+    spearmanGibbsSampler(xVals = df.que$ASRS_total,
+                         yVals = df.que$fab, 
+                         nSamples = 5e3)
+  saveRDS(rhoSamples.asrs, file = "ASRS_rho.rds")
+}
+if (file.exists("RADS_rho.rds")) {
+  rhoSamples.rads = readRDS("RADS_rho.rds")
+} else {
+  set.seed(5468)
+  rhoSamples.rads = 
+    spearmanGibbsSampler(xVals = df.que$RAADS_total,
+                         yVals = df.que$fab, 
+                         nSamples = 5e3)
+  saveRDS(rhoSamples.rads, file = "RADS_rho.rds")
+}
+
+# give the posterior samples for rho to the function below to compute BF01
+asrs.bf = computeBayesFactorOneZero(rhoSamples.asrs$rhoSamples, 
+                          whichTest = "Spearman",
+                          priorParameter = 1)
+rads.bf = computeBayesFactorOneZero(rhoSamples.rads$rhoSamples, 
+                          whichTest = "Spearman",
+                          priorParameter = 1)
+
+```
+
+Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` associations between FAB and questionnaires assessing ASD (RADS: log(*BF*) = `r round(log(rads.bf),2)`) or ADHD (ASRS: log(*BF*) = `r round(log(asrs.bf),2)`). 
+
+
+```{r que_fab_plot}
+
+# focus on the FAB effect
+df.que %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>% 
+  ggplot(aes(diagnosis, fab, fill = diagnosis, colour = diagnosis)) + #
+  geom_rain(rain.side = 'r',
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
+boxplot.args.pos = list(
+  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
+),
+point.args = list(show_guide = FALSE, alpha = .5),
+violin.args.pos = list(
+  width = 0.6, position = position_nudge(x = 0.16)),
+point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values = custom.col) +
+  scale_color_manual(values = custom.col) +
+  labs(title = "Face attention bias", 
+       x = "", 
+       y = "difference (ms)") +
+  theme_bw() + 
+  theme(legend.position = "none", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
+
+ggsave("Fig4_FAB.pdf", 
+       units = "mm", 
+       width  = 170,
+       height = 70,
+       dpi    = 300)
+
+# plot the associations
+df.que %>% 
+  pivot_longer(cols = c(ASRS_total, RAADS_total), names_to = "questionnaire") %>%
+  ggplot(., aes(y = fab, x = value)) +
+  geom_point(colour = c_mid_highlight, alpha = 0.75) +
+  geom_smooth(method = "lm", 
+              formula = y ~ x, 
+              colour = c_dark_highlight) +
+  facet_grid(. ~ questionnaire, scale = "free_x") +
+  theme_bw() 
+
+```
+
 
 # S1.5 Explorative analysis of errors
 

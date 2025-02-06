@@ -560,7 +560,7 @@ vtable::st(df.ms %>%
 
 ```
 
-Our hypothesis was not confirmed: there was no difference between the number of saccades in the direction of the face compared to the direction of the object in our COMP group (*estimate* = `r round(h2a$hypothesis$Estimate,2)` [`r round(h2a$hypothesis$CI.Lower,2)`, `r round(h2a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2a$hypothesis$Post.Prob*100,2)`%). Exploration of FAB effect regardless of the group similarly indicates no FAB in the form of a larger number of saccades produced towards the faces over the whole trial (*estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%). 
+Our hypothesis regarding the number of saccades towards face or object cues was not confirmed: there was no credible difference in our COMP group (*estimate* = `r round(h2a$hypothesis$Estimate,2)` [`r round(h2a$hypothesis$CI.Lower,2)`, `r round(h2a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2a$hypothesis$Post.Prob*100,2)`%). Exploration of FAB effect regardless of the group similarly indicates no FAB in the form of a larger number of saccades produced towards the faces over the whole trial (*estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%). 
 
 ## Plots
 
@@ -1157,15 +1157,16 @@ df.ms = df.ms %>%
 
 vtable::st(df.ms %>% 
   mutate(
-    face   = rowMeans(select(., matches(".*_face")), na.rm = T),
-    object = rowMeans(select(., matches(".*_object")), na.rm = T),
-    FAB    = e
+    # get the face and object latencies -200, so they start with target onset
+    face   = rowMeans(select(., matches(".*_face")), na.rm = T) - 200,
+    object = rowMeans(select(., matches(".*_object")), na.rm = T) - 200,
+    FAB    = object - face
   ) %>% select(face, object, FAB),
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
 
 ```
 
-Our hypothesis that target-elicited saccades towards the faces have a longer latency in ASD than COMP adults was not confirmed by the data (*estimate* = `r round(h2b$hypothesis$Estimate,2)` [`r round(h2b$hypothesis$CI.Lower,2)`, `r round(h2b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2b$hypothesis$Post.Prob*100,2)`%). Our exploration revealed that latencies of saccades during a trial where the target appeared at the side of the face were faster regardless of the diagnostic group (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%). Specifically, the model predicted that if a saccade was produced towards a target appearing on the side of the face the latency was `r round(mean(df.ms$e),3)`ms [`r round(ci(df.ms$e)$CI_low, 3)`, `r round(ci(df.ms$e)$CI_high, 3)`] shorter than if a saccade was produced towards a target appearing at the side of the object cue. 
+Our hypothesis that target-elicited saccades towards the faces have a longer latency in ASD than COMP adults was not confirmed by the data (*estimate* = `r round(h2b$hypothesis$Estimate,2)` [`r round(h2b$hypothesis$CI.Lower,2)`, `r round(h2b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h2b$hypothesis$Post.Prob*100,2)`%). Our exploration revealed that that latencies of target-elicited saccades where faster in response to face-cued compared to object-cued targets regardless of the diagnostic group (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%). Specifically, the model predicted a `r round(mean(df.ms$e), 2)`ms [`r round(ci(df.ms$e)$CI_low, 2)`, `r round(ci(df.ms$e)$CI_high, 2)`] shorter latency of for saccades produced towards a face-cued compared to an object-cued target. 
 
 ### Plots
 
@@ -1256,7 +1257,7 @@ ggplot(data = df.diff, aes(x = n.sac, y = fab)) +
 
 ```
 
-Furthermore, we assessed the relationship between FAB and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf),3)`).
+Furthermore, we assessed the relationship between FAB and number of saccades produced towards the face on the participant level (see supplementary materials S2.4). We used a Bayesian Spearman correlation due to both values not being normally distributed. This model revealed no association between number of saccades and face attention bias, in fact there was `r interpret_bf(cor.bf)` an association between the number of saccades and face attention bias (log(*BF*) = `r round(log(cor.bf), 2)`).
 
 # S2.5 Exploration: cue-elicited saccades
 
@@ -1436,7 +1437,7 @@ vtable::st(df.ms %>%
 
 ```
 
-On average, participants produced cue-elicited saccades on `r round(100*mean(df.cnt.cue.agg$n.sac)/432, 2)`% +- `r round(sd(100*df.cnt.cue.agg$n.sac/432)/sqrt(nrow(df.cnt.cue.agg)), 2)` of the trials. However, the range was very wide, with some participants producing no cue-elicited saccades and others producing them on `r round(100*max(df.cnt.cue.agg$n.sac)/432, 2)`% of the trials. Regardless of group, credibly more saccades were produced towards face than object cues (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%).
+On average, participants produced cue-elicited saccades on `r round(100*mean(df.cnt.cue.agg$n.sac)/432, 2)`% +- `r round(sd(100*df.cnt.cue.agg$n.sac/432)/sqrt(nrow(df.cnt.cue.agg)), 2)` of the trials. However, the range was very wide, with some participants producing none and others producing them on `r round(100*max(df.cnt.cue.agg$n.sac)/432, 2)`% of the trials. Regardless of group, credibly more cue-elicited saccades were produced towards face compared to object cues (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%).
 
 ## Plots
 
@@ -1639,7 +1640,7 @@ vtable::st(df.ms %>%
 
 ```
 
-Cue-elicited saccades were produces faster towards the face than the object cues (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%). Specifically, the model predicted that if a saccade was produced towards the face cue the latency was `r round(mean(df.ms$e),3)`ms [`r round(ci(df.ms$e)$CI_low, 3)`, `r round(ci(df.ms$e)$CI_high, 3)`] shorter than if a saccade was produced towards the object cue.  
+A similar effect was found when exploring the latencies of cue-induced saccade, with participants producing saccades towards face cues faster than saccades towards object cues, independent of group (*estimate* = `r round(e$hypothesis$Estimate,2)` [`r round(e$hypothesis$CI.Lower,2)`, `r round(e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e$hypothesis$Post.Prob*100,2)`%). This model predicted that if a cue-induced saccade was produced towards the face, the latency was `r round(mean(df.ms$e), 2)`ms [`r round(ci(df.ms$e)$CI_low, 2)`, `r round(ci(df.ms$e)$CI_high, 2)`] shorter than if a saccade was produced towards the object cue.  
 
 ## Plots
 
