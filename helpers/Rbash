@@ -1,0 +1,13 @@
+#!/bin/bash
+
+while ! [ -f "/home/emba/Documents/EMBA/EMBA_FAB_scripts/_brms_SBC_cache/res_FAB_err_10.rds" ];
+do 
+
+	Rscript brms-analyses_FAB_err-i.R
+	
+done
+
+sleep 300
+
+/sbin/shutdown -h now
+
