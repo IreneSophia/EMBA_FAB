@@ -104,7 +104,7 @@ df.fab = rbind(df.fab, df.exp)
 df.fab$diagnosis = factor(df.fab$diagnosis, 
                           levels = c("ADHD", "ASD", "BOTH", "COMP"))
 
-# compute subject specific FAB effect size in cohen's d
+# compute subject specific FAB 
 df.fab.agg = df.fab %>%
   group_by(subID, diagnosis, stm, cue) %>%
   # summarise the median reaction time for each stimulus pair
@@ -116,7 +116,7 @@ df.fab.agg = df.fab %>%
   mutate(
     fab = object - face
   ) %>% group_by(subID, diagnosis) %>%
-  # calculate the cohen's d
+  # calculate the mean FAB per person
   summarise(
     fab = mean(fab)
   ) %>% ungroup()
@@ -1215,11 +1215,11 @@ df.diff = df.cnt %>% filter(direction == "face")
 
 # check the distribution plot > not normally distributed
 p1 = ggplot(df.diff, aes(sample = n.sac)) + 
-  stat_qq(alpha = 0.75, colour = "lightblue") + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
   stat_qq_line() + 
   theme_bw()
 p2 = ggplot(df.diff, aes(sample = fab)) + 
-  stat_qq(alpha = 0.75, colour = "lightblue") + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
   stat_qq_line() + 
   theme_bw()
 ggarrange(p1, p2, 
@@ -1248,10 +1248,10 @@ cor.bf = computeBayesFactorOneZero(rhoSamples.cnt$rhoSamples,
 
 # visualise it
 ggplot(data = df.diff, aes(x = n.sac, y = fab)) +
-  geom_point(colour = "lightblue") +
+  geom_point(colour = c_mid_highlight) +
   geom_smooth(method = "lm", 
               formula = y ~ x, 
-              geom = "smooth", colour = c_mid_highlight) +
+              geom = "smooth", colour = c_dark_highlight) +
   theme_bw() 
 
 ```
