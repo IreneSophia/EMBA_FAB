@@ -10,6 +10,8 @@ options(mc.cores = parallel::detectCores())
 
 setwd('..')
 
+log_dir = '/home/emba/Insync/10planki@gmail.com/Google Drive/NEVIA/logfiles'
+
 # settings for the SBC package
 use_cmdstanr = getOption("SBC.vignettes_cmdstanr", TRUE) # Set to false to use rst
 options(brms.backend = "cmdstanr")
@@ -83,7 +85,7 @@ if (!file.exists(file.path(cache_dir, sprintf("dat_%s.rds", code)))) {
   dat = readRDS(file.path(cache_dir, sprintf("dat_%s.rds", code)))
 }
 
-write(sprintf('%s: %s %d', now(), code, i), sprintf("%slog_FAB-full.txt", "./logfiles/"), append = TRUE)
+write(sprintf('%s: %s %d', now(), code, i), file.path(log_dir, "log_FAB-full.txt"), append = TRUE)
 
 bck = SBC_backend_brms_from_generator(gen, chains = 4, thin = 1,
                                       warmup = warm, iter = iter)
@@ -95,4 +97,4 @@ res = compute_SBC(SBC_datasets(dat$variables[((i-1)*m + 1):(i*m),],
                   cache_mode     = "results", 
                   cache_location = file.path(cache_dir, sprintf("res_%s_%02d", code, i)))
                   
-write(sprintf('%s: DONE %d', now(), i), sprintf("%slog_FAB-err.txt", "./logfiles/"), append = TRUE)
+write(sprintf('%s: DONE %d', now(), i), file.path(log_dir, "log_FAB-err.txt"), append = TRUE)
