@@ -1334,15 +1334,15 @@ if (file.exists("rho_RADS.rds")) {
                          nSamples = 5e3)
   saveRDS(rhoSamples.rads, file = "rho_RADS.rds")
 }
-if (file.exists("RT_rho.rds")) {
-  rhoSamples.rt = readRDS("RT_rho.rds")
+if (file.exists("rho_RT.rds")) {
+  rhoSamples.rt = readRDS("rho_RT.rds")
 } else {
   set.seed(5478)
   rhoSamples.rt = 
     spearmanGibbsSampler(xVals = df.que$overall,
                          yVals = df.que$fab, 
                          nSamples = 5e3)
-  saveRDS(rhoSamples.rt, file = "RT_rho.rds")
+  saveRDS(rhoSamples.rt, file = "rho_RT.rds")
 }
 
 # give the posterior samples for rho to the function below to compute BF01

@@ -49,6 +49,8 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * use : TRUE if answer was correct, reaction time not an outlier for this participant (IQR method) and cue presentation duration was within one refresh rate of the monitor
 * cue : whether the target appeared at the previous location of the face or object
 * target : whether the target appeared on the left or right side
+* ASRS_total : outcome of the ASRS questionnaire
+* RAADS_total : outcome of the RADS-R questionnaire
 
 `df.sac`
 
@@ -81,23 +83,31 @@ as well as `df.exc` (group and number of excluded participants for behavioural a
 
 All results are saved in RDS files which can be read into R. The following files are shared: 
 
-`CNT_rho.rds`: rho samples of the Bayesian spearman correlation between the number of saccades towards the side of the face cue and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
+`m_cnt-cue.rds`: brms model assessing the number of cue-elicited saccades the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
 
-`m_cnt-cue.rds`: brms model assessing the number of saccades towards the cue with the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
+`m_cnt-face.rds`: brms model assessing the total number of saccades with the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
 
-`m_cnt-face.rds`: brms model assessing the number of saccades with the predictors diagnostic status and whether the saccade was towards a face cue or not as well as their interaction.
-
-`m_cnt-tar.rds`: brms model assessing the number of saccades towards targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+`m_err.rds`: brms model assessing the error rates to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
 `m_fab_final.rds`: brms model assessing aggregated reaction times to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
 `m_fab_full.rds`: brms model assessing reaction times to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
-`m_fab_sac.rds`: brms model assessing aggregated reaction times to targets with the predictors diagnostic status and cue side (face or object), ignoring trials on which a saccade was produced as well as their interaction.
+`m_fab_sac.rds`: brms model assessing aggregated reaction times to targets with the predictors number of saccades, diagnostic status and cue side (face or object) as well as the interaction between diagnostic status and cue.
 
 `m_lat.rds`: brms model assessing the saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
-`m_lat_agg.rds`: brms model assessing the aggregated saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+`m_lat_agg.rds`: brms model assessing the aggregated target-elicited saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
+
+`m_lat-cue_agg.rds`: brms model assessing the aggregated cue-elicited saccade latencies with the predictors diagnostic status and direction (face or object) as well as their interaction.
+
+`rho_ASRS.rds`: rho samples of the Bayesian spearman correlation between the ASRS questionnaire and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
+
+`rho_CNT.rds`: rho samples of the Bayesian spearman correlation between the number of saccades towards the side of the face cue and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
+
+`rho_RADS.rds`: rho samples of the Bayesian spearman correlation between the RADS-R questionnaire and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
+
+`rho_RT.rds`: rho samples of the Bayesian spearman correlation between the overall reaction times and the face attention bias being the difference in reaction time to targets appearing on the side of the object minus reaction times to targets appearing on the side of the face. 
 
 ## Project members
 
