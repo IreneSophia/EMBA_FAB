@@ -51,8 +51,8 @@ sz = 1
 a = 0.5
 
 # custom colour palette
-custom.col = c(c_dark_highlight, "#CC79A7", "#009E73", "#D55E00")
-custom.col2 = c("#E1BE6A", "#B04D40")
+custom.col  = as.character(palette.colors()[2:8])
+custom.col2 = c("#E1BE6A", "#40B0A6")
 
 # calculate visual angle: px.x should be a vector of c(width, height) in pixel
 vis_ang = function(px.x) {
@@ -1366,9 +1366,14 @@ Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` a
 # focus on the FAB effect
 df.que %>%
   mutate(
-    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD"),
+    diagnosis = factor(diagnosis, levels = c("ADHD", "ADHD+ASD", "ASD", "COMP")),
+    diagnosis_med = as.factor(case_when(
+      as.numeric(subID) %% 2 == 1 & (diagnosis == "ADHD" | diagnosis == "ADHD+ASD") ~ paste(diagnosis, "medicated"),
+      T ~ diagnosis
+    ))
   ) %>% 
-  ggplot(aes(diagnosis, fab, fill = diagnosis, colour = diagnosis)) + #
+  ggplot(aes(diagnosis, fab, fill = diagnosis_med, colour = diagnosis_med)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
 violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
@@ -1386,15 +1391,16 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
        x = "", 
        y = "difference (ms)") +
   theme_bw() + 
-  theme(legend.position = "none", 
+  theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(size = 15),
+        legend.title=element_blank())
 
 ggsave("Fig4_FAB.pdf", 
        units = "mm", 
        width  = 170,
-       height = 70,
+       height = 100,
        dpi    = 300)
 
 # plot the associations
