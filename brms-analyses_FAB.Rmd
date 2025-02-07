@@ -156,7 +156,9 @@ if (!file.exists("FAB_data.RData")) {
   df.sub = read_csv(file.path("/home/emba/Documents/EMBA/CentraXX", "EMBA_centraXX.csv"), 
                     show_col_types = F) %>%
     mutate(
-      diagnosis = recode(diagnosis, "CTR" = "COMP")
+      diagnosis = recode(diagnosis, "CTR" = "COMP"),
+      adhd.meds.desc = adhd.meds,
+      adhd.meds = if_else(is.na(adhd.meds), FALSE, TRUE)
     )
   
   # set the data path
@@ -171,16 +173,23 @@ if (!file.exists("FAB_data.RData")) {
     group_by(diagnosis) %>% count()
   
   # load the behavioral data and merge with group
-  df.fab = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total), 
+  df.fab = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total, adhd.meds), 
                  readRDS(file = paste0(dt.path, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
-  df.exp = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total), 
+  df.exp = merge(df.sub %>% select(subID, diagnosis, RAADS_total, ASRS_total, adhd.meds), 
                  readRDS(file = paste0(dt.explo, '/df_FAB.RDS')), all.y = T) %>%
     mutate_if(is.character, as.factor)
   
   # only keep participants included in the study in the subject data frame
   subIDs = as.character(c(unique(df.fab$subID), unique(df.exp$subID)))
   df.sub = df.sub %>% filter(subID %in% subIDs)
+  
+  df.med = df.sub %>% group_by(diagnosis) %>%
+    summarise(
+      adhd.meds = mean(adhd.meds)
+    )
+  
+  adhd.meds.desc = unique(df.sub[!is.na(df.sub$adhd.meds.desc),]$adhd.meds.desc)
   
   # load the eye tracking data and only keep participants included in the study,
   # so no people with more than 33% mistakes, no people without any saccades 
@@ -320,6 +329,26 @@ if (!file.exists("FAB_data.RData")) {
          sprintf("%.3f", aov.BDI@bayesFactor[["bf"]])
        ),
        c(
+         "BDI",
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total), 
+                 sd(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total)/
+                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.sub[df.sub$diagnosis == "ASD",]$BDI_total), 
+                 sd(df.sub[df.sub$diagnosis == "ASD",]$BDI_total)/
+                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total), 
+                 sd(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total)/
+                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
+         sprintf("%.2f (±%.2f)", 
+                 mean(df.sub[df.sub$diagnosis == "COMP",]$BDI_total), 
+                 sd(df.sub[df.sub$diagnosis == "COMP",]$BDI_total)/
+                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
+         sprintf("%.3f", aov.BDI@bayesFactor[["bf"]])
+       ),
+       c(
          "Gender (diverse/agender/non-binary - female - male)",
          sprintf("%d - %d - %d", 
                  nrow(df.sub[df.sub$diagnosis == "ADHD" & df.sub$gender == "dan",]), 
@@ -403,7 +432,7 @@ if (!file.exists("FAB_data.RData")) {
   
   # save it all
   save(df.fab, df.sac, df.exp, df.sht, ct.full, ct.mf, df.exc, 
-       df.nosac, gen.desc, tb.gen, df.table,
+       df.nosac, gen.desc, tb.gen, df.table, adhd.meds.desc, df.med,
        file = "FAB_data.RData")
   
 } else {
@@ -1267,7 +1296,7 @@ This model confirmed the same hypotheses.
 
 # merge with the questionnaire values
 df.que = df.fab.full %>%
-  group_by(subID, diagnosis, stm, cue, ASRS_total, RAADS_total) %>%
+  group_by(subID, diagnosis, stm, cue, ASRS_total, RAADS_total, adhd.meds) %>%
   # summarise the median reaction time for each stimulus pair
   summarise(
     rt.cor = median(rt.cor, na.rm = T)
@@ -1277,13 +1306,13 @@ df.que = df.fab.full %>%
   mutate(
     fab     = object - face,
     overall = (object + face) / 2 
-  ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total) %>%
+  ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total, adhd.meds) %>%
   # calculate the mean FAB per person
   summarise(
     fab     = mean(fab),
     overall = mean(overall)
   ) %>% ungroup() %>%
-  select(subID, diagnosis, overall, fab, ASRS_total, RAADS_total)
+  select(subID, diagnosis, overall, fab, ASRS_total, RAADS_total, adhd.meds)
 
 # check normal distributions
 p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
@@ -1369,7 +1398,10 @@ df.que %>%
     diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD"),
     diagnosis = factor(diagnosis, levels = c("ADHD", "ADHD+ASD", "ASD", "COMP")),
     diagnosis_med = as.factor(case_when(
-      as.numeric(subID) %% 2 == 1 & (diagnosis == "ADHD" | diagnosis == "ADHD+ASD") ~ paste(diagnosis, "medicated"),
+      adhd.meds & diagnosis == "ADHD" ~ "ADHD medicated",
+      adhd.meds & diagnosis == "ADHD+ASD" ~ "ADHD medicated+ASD",
+      diagnosis == "ADHD" ~ "ADHD unmedicated",
+      diagnosis == "ADHD+ASD" ~ "ADHD unmedicated+ASD",
       T ~ diagnosis
     ))
   ) %>% 
