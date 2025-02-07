@@ -1261,9 +1261,9 @@ h1e
 
 This model confirmed the same hypotheses. 
 
-# S1.4 Explorative analysis of subject-specific FAB with RADS and ASRS
+# S1.4 Explorative analysis of subject-specific FAB with overall RT, RADS and ASRS
 
-```{r que_fab, fig.height=3}
+```{r que_fab, fig.height=4}
 
 # merge with the questionnaire values
 df.que = df.fab.full %>%
@@ -1275,13 +1275,15 @@ df.que = df.fab.full %>%
   pivot_wider(names_from = cue, values_from = rt.cor) %>%
   # calculate the fab purely based on reaction times
   mutate(
-    fab = object - face
+    fab     = object - face,
+    overall = (object + face) / 2 
   ) %>% group_by(subID, diagnosis, ASRS_total, RAADS_total) %>%
   # calculate the mean FAB per person
   summarise(
-    fab = mean(fab)
+    fab     = mean(fab),
+    overall = mean(overall)
   ) %>% ungroup() %>%
-  select(subID, diagnosis, fab, ASRS_total, RAADS_total)
+  select(subID, diagnosis, overall, fab, ASRS_total, RAADS_total)
 
 # check normal distributions
 p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
@@ -1296,8 +1298,12 @@ p3 = ggplot(df.que, aes(sample = fab)) +
   stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
   stat_qq_line() + 
   theme_bw()
-ggarrange(p1, p2, p3, 
-          nrow = 1, ncol = 3, labels = "AUTO")
+p4 = ggplot(df.que, aes(sample = overall)) + 
+  stat_qq(alpha = 0.75, colour = c_mid_highlight) + 
+  stat_qq_line() + 
+  theme_bw()
+ggarrange(p1, p2, p3, p4,
+          nrow = 2, ncol = 2, labels = "AUTO")
 
 ```
 
@@ -1308,25 +1314,35 @@ source("./helpers/rankBasedCommonFunctions.R")
 source("./helpers/spearmanSampler.R")
 
 # Default beta prior width is set to a = b = 1 for the sampler 
-if (file.exists("ASRS_rho.rds")) {
-  rhoSamples.asrs = readRDS("ASRS_rho.rds")
+if (file.exists("rho_ASRS.rds")) {
+  rhoSamples.asrs = readRDS("rho_ASRS.rds")
 } else {
   set.seed(5468)
   rhoSamples.asrs = 
     spearmanGibbsSampler(xVals = df.que$ASRS_total,
                          yVals = df.que$fab, 
                          nSamples = 5e3)
-  saveRDS(rhoSamples.asrs, file = "ASRS_rho.rds")
+  saveRDS(rhoSamples.asrs, file = "rho_ASRS.rds")
 }
-if (file.exists("RADS_rho.rds")) {
-  rhoSamples.rads = readRDS("RADS_rho.rds")
+if (file.exists("rho_RADS.rds")) {
+  rhoSamples.rads = readRDS("rho_RADS.rds")
 } else {
   set.seed(5468)
   rhoSamples.rads = 
     spearmanGibbsSampler(xVals = df.que$RAADS_total,
                          yVals = df.que$fab, 
                          nSamples = 5e3)
-  saveRDS(rhoSamples.rads, file = "RADS_rho.rds")
+  saveRDS(rhoSamples.rads, file = "rho_RADS.rds")
+}
+if (file.exists("RT_rho.rds")) {
+  rhoSamples.rt = readRDS("RT_rho.rds")
+} else {
+  set.seed(5478)
+  rhoSamples.rt = 
+    spearmanGibbsSampler(xVals = df.que$overall,
+                         yVals = df.que$fab, 
+                         nSamples = 5e3)
+  saveRDS(rhoSamples.rt, file = "RT_rho.rds")
 }
 
 # give the posterior samples for rho to the function below to compute BF01
@@ -1336,10 +1352,13 @@ asrs.bf = computeBayesFactorOneZero(rhoSamples.asrs$rhoSamples,
 rads.bf = computeBayesFactorOneZero(rhoSamples.rads$rhoSamples, 
                           whichTest = "Spearman",
                           priorParameter = 1)
+RT.bf = computeBayesFactorOneZero(rhoSamples.rt$rhoSamples, 
+                          whichTest = "Spearman",
+                          priorParameter = 1)
 
 ```
 
-Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` associations between FAB and questionnaires assessing ASD (RADS: log(*BF*) = `r round(log(rads.bf),2)`) or ADHD (ASRS: log(*BF*) = `r round(log(asrs.bf),2)`). 
+Furthermore, Bayesian Spearman correlations revealed `r interpret_bf(asrs.bf)` associations between FAB and questionnaires assessing ASD (RADS: log(*BF*) = `r round(log(rads.bf),2)`) or ADHD (ASRS: log(*BF*) = `r round(log(asrs.bf),2)`). Last, we explored whether FAB was associated with overall reaction times to assess whether attenuated FAB leads to better or worse task performance. A Bayesian Spearman correlation revealed `r interpret_bf(RT.bf)` an association (log(*BF*) = `r round(log(RT.bf),2)`). 
 
 
 ```{r que_fab_plot}

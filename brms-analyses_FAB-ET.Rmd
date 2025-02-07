@@ -1231,15 +1231,15 @@ source("./helpers/rankBasedCommonFunctions.R")
 source("./helpers/spearmanSampler.R")
 
 # Default beta prior width is set to a = b = 1 for the sampler 
-if (file.exists("CNT_rho.rds")) {
-  rhoSamples.cnt = readRDS("CNT_rho.rds")
+if (file.exists("rho_CNT.rds")) {
+  rhoSamples.cnt = readRDS("rho_CNT.rds")
 } else {
   set.seed(1597)
   rhoSamples.cnt = 
     spearmanGibbsSampler(xVals = df.diff$n.sac,
                          yVals = df.diff$fab, 
                          nSamples = 5e3)
-  saveRDS(rhoSamples.cnt, file = "CNT_rho.rds")
+  saveRDS(rhoSamples.cnt, file = "rho_CNT.rds")
 }
 
 # give the posterior samples for rho to the function below to compute BF01
