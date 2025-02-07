@@ -49,8 +49,8 @@ c_green = "#009E73"
 sz = 1
 
 # custom colour palette
-custom.col = c(c_dark_highlight, "#CC79A7", "#009E73", "#D55E00")
-custom.col2 = c("#E1BE6A", "#B04D40")
+custom.col  = as.character(palette.colors()[2:8])
+custom.col2 = c("#E1BE6A", "#40B0A6")
 
 ```
 
@@ -156,10 +156,15 @@ idx = which.min(lat.points)
 ggplot(dd, aes(x = x, y = y)) + 
   geom_line() +
   geom_vline(xintercept = points$minima[idx], linetype=3) +
-  geom_ribbon(data = subset(dd, x <= points$minima[idx]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[2], colour = NA, alpha = .8) +
-  geom_ribbon(data = subset(dd, x >= points$minima[idx]), aes(ymax = y), ymin = 0, 
-              fill = custom.col[3], colour = NA, alpha = .8) + 
+  geom_ribbon(data = subset(dd, x <= points$minima[idx]), 
+              aes(ymax = y, fill = "cue-elicited"), ymin = 0, 
+              colour = "black", alpha = .8) +
+  geom_ribbon(data = subset(dd, x >= points$minima[idx]), 
+              aes(ymax = y, fill = "target-elicited"), ymin = 0, 
+              colour = "black", alpha = .8) +
+scale_fill_manual(name = "test",
+values = c("cue-elicited" = custom.col[7], "target-elicited" = custom.col[3]),
+labels = c("cue-elicited", "target-elicited")) + 
   geom_vline(xintercept = 200) + 
   labs(title = "Classification of saccades", x = "latency", y = "density") +
   xlim(0, 800) +
@@ -167,12 +172,13 @@ ggplot(dd, aes(x = x, y = y)) +
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(size = 15),
+        legend.title=element_blank())
 
 ggsave("Fig2_densLatency.pdf", 
        units = "mm", 
        width  = 170,
-       height = 70,
+       height = 100,
        dpi    = 300)
 
 ```
