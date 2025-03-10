@@ -85,7 +85,7 @@ if (!file.exists(file.path(cache_dir, sprintf("dat_%s.rds", code)))) {
   dat = readRDS(file.path(cache_dir, sprintf("dat_%s.rds", code)))
 }
 
-write(sprintf('%s: %s %d', now(), code, i), file.path(log_dir, "log_FAB-full.txt"), append = TRUE)
+write(sprintf('%s: %s %d', now(), code, i), file.path(log_dir, "log_FAB-err.txt"), append = TRUE)
 
 bck = SBC_backend_brms_from_generator(gen, chains = 4, thin = 1,
                                       warmup = warm, iter = iter)
