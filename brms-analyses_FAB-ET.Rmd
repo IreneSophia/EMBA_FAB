@@ -164,9 +164,9 @@ ggplot(dd, aes(x = x, y = y)) +
               colour = "black", alpha = .8) +
 scale_fill_manual(name = "test",
 values = c("cue-elicited" = custom.col[7], "target-elicited" = custom.col[3]),
-labels = c("cue-elicited", "target-elicited")) + 
+labels = c("Cue-elicited", "Target-elicited")) + 
   geom_vline(xintercept = 200) + 
-  labs(title = "Classification of saccades", x = "latency", y = "density") +
+  labs(title = "Classification of saccades", x = "Latency", y = "Density") +
   xlim(0, 800) +
   theme_bw() + 
   theme(legend.position = "bottom", 
