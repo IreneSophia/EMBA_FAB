@@ -175,7 +175,7 @@ labels = c("cue-elicited", "target-elicited")) +
         text = element_text(size = 15),
         legend.title=element_blank())
 
-ggsave("Fig2_densLatency.pdf", 
+ggsave("Fig2_densLatency.svg", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -577,9 +577,10 @@ As a next step, we can now finally plot our data.
 # rain cloud plot
 df.cnt %>%
   mutate(
-    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD"),
+    Direction = recode(direction, "face" = "Face", "object" = "Object")
   ) %>%
-  ggplot(aes(diagnosis, n.sac, fill = direction, colour = direction)) + #
+  ggplot(aes(diagnosis, n.sac, fill = Direction, colour = Direction)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
 violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
@@ -592,14 +593,14 @@ violin.args.pos = list(
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Number of saccades", x = "", y = "n") +
+  labs(title = "Number of saccades", x = "", y = "Count") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
-ggsave("Fig5_nrSac.pdf", 
+ggsave("Fig5_nrSac.svg", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -1181,9 +1182,10 @@ Our hypothesis that target-elicited saccades towards the faces have a longer lat
 # rain cloud plot for the 
 df.lat.agg %>%
   mutate(
-    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD"),
+    Target    = recode(cue, "face" = "Face-cued", "object" = "Object-cued")
   ) %>% 
-  ggplot(aes(diagnosis, lat, fill = cue, colour = cue)) + #
+  ggplot(aes(diagnosis, lat, fill = Target, colour = Target)) + #
   geom_rain(rain.side = 'r',
 boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
 violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
@@ -1196,14 +1198,14 @@ violin.args.pos = list(
 point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
   scale_fill_manual(values = custom.col2) +
   scale_color_manual(values = custom.col2) +
-  labs(title = "Latencies of target-elicited saccades", x = "", y = "ms") +
+  labs(title = "Latencies of target-elicited saccades", x = "", y = "Latency (ms)") +
   theme_bw() + 
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
-ggsave("Fig6_latSac.pdf", 
+ggsave("Fig6_latSac.svg", 
        units = "mm", 
        width  = 170,
        height = 100,
