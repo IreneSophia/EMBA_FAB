@@ -6,7 +6,7 @@ Mutual social interactions require people to be aware of the affective state of 
 
 In this repository, we will focus on the paradigm measuring face attention bias (FAB) with the dot probe paradigm. In this paradigm, participants are asked to indicate the location of a black square as fast as possible. Before the target square appears, two cues are presented for a short duration (200ms), one on the left and one on the right of the fixation cross. One cue is always a face while the other is an object. We will compare reaction times to target squares and saccades between the three groups (ADHD vs. ASD vs. no neurodevelopmental disorder, NND) as well as between two conditions (target appears on the side of the face vs. target appears on the side of the object). 
 
-Participants also perform three additional paradigms: a facial emotion recognition task (FER), a probabilistic associative learning task (PAL) and a visual mismatch task (VMM). The preregistrations for this project are on [OSF](https://osf.io/znrht) and currently embargoed as the data collection is still ongoing. The preregistrations will be made public when manuscripts are submitted. 
+Participants also perform three additional paradigms: a facial emotion recognition task (FER), a probabilistic associative learning task (PAL) and a visual mismatch task (VMM). The preregistration for this project are on OSF, specifically for this task you can read it [here](https://osf.io/bze4g). All preregistrations will be made public when manuscripts are submitted. 
 
 This repository is a work in progress. The script are continuously augmented.
 
