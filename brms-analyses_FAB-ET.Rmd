@@ -164,9 +164,9 @@ ggplot(dd, aes(x = x, y = y)) +
               colour = "black", alpha = .8) +
 scale_fill_manual(name = "test",
 values = c("cue-elicited" = custom.col[7], "target-elicited" = custom.col[3]),
-labels = c("cue-elicited", "target-elicited")) + 
+labels = c("Cue-elicited", "Target-elicited")) + 
   geom_vline(xintercept = 200) + 
-  labs(title = "Classification of saccades", x = "latency", y = "density") +
+  labs(title = "Classification of saccades", x = "Latency", y = "Density") +
   xlim(0, 800) +
   theme_bw() + 
   theme(legend.position = "bottom", 
@@ -1269,7 +1269,7 @@ Furthermore, we assessed the relationship between FAB and number of saccades pro
 
 # S2.5 Exploration: cue-elicited saccades
 
-Additionally to our hypotheses, we also explored any effects of diagnostic status, cue type and their interaction on whether a saccade was produced during the presentation of the cues to assess the findings of increased saccade frequency towards faces by Pereira et al. ([!ADD])in our data. Since these are again count data, we will use a Poisson and then compare the overall descriptives and effects to Pereira and colleague's results. Pereira found about 6% of trials contained cue-elicited saccades which translates to an intercept of 3. Therefore, we can use the same priors and SBC as in our Poisson investigating numbers of saccades in general. 
+Additionally to our hypotheses, we also explored any effects of diagnostic status, cue type and their interaction on whether a saccade was produced during the presentation of the cues to assess the findings of increased saccade frequency towards faces by Pereira et al. (2020)in our data. Since these are again count data, we will use a Poisson and then compare the overall descriptives and effects to Pereira and colleague's results. Pereira found about 6% of trials contained cue-elicited saccades which translates to an intercept of 3. Therefore, we can use the same priors and SBC as in our Poisson investigating numbers of saccades in general. 
 
 ```{r model_cnt_cue, fig.height=12}
 
