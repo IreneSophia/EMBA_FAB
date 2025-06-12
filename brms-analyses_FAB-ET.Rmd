@@ -153,6 +153,10 @@ dd = with(density(df.sac$lat), data.frame(x,y))
 lat.points = dd$y[points$minima]
 idx = which.min(lat.points)
 
+# print the latency
+points$minima[idx]
+
+# plot it all
 ggplot(dd, aes(x = x, y = y)) + 
   geom_line() +
   geom_vline(xintercept = points$minima[idx], linetype=3) +
@@ -555,6 +559,10 @@ df.ms = as.data.frame(
                newdata = df.new %>% select(diagnosis, direction), 
                re_formula = NA))
 colnames(df.ms) = df.new$condition
+
+vtable::st(df.ms,
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+           'pctile(x)[97.5]','max(x)'))
 
 vtable::st(df.ms %>% 
   mutate(
@@ -1155,6 +1163,10 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
+vtable::st(df.ms,
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+           'pctile(x)[97.5]','max(x)'))
+
 # calculate our difference columns
 df.ms = df.ms %>%
   mutate(
@@ -1435,6 +1447,10 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
+vtable::st(df.ms,
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+           'pctile(x)[97.5]','max(x)'))
+
 vtable::st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
@@ -1631,6 +1647,10 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
+vtable::st(df.ms,
+  summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+           'pctile(x)[97.5]','max(x)'))
+
 # calculate our difference columns
 df.ms = df.ms %>%
   mutate(
@@ -1675,6 +1695,177 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   labs(title = "Latencies of cue-elicited saccades", x = "", y = "ms") +
   theme_bw() + 
   ylim(0, 325) +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15))
+
+```
+
+# S2.7 Exploration: Dwell times starting within cue-elicited saccade window
+
+## Model
+
+We assume that the SBC from the reaction time lognormal model holds here, although we slightly widen the Intercept because we have less prior knowledge.
+
+```{r model_fix}
+
+# read in the preprocessed data
+df.fix = readRDS("FAB_ET_fix.rds")
+
+# set the formula
+f.fix = brms::bf(duration ~ diagnosis * ROI * onTar + 
+                   (ROI * onTar | subID) + (ROI * onTar | subID))
+
+# set weakly informative priors
+priors = c(
+  # general priors based on SBV
+  prior(normal(6, 0.6),  class = Intercept),
+  prior(normal(0, 0.5),  class = sigma),
+  prior(normal(0, 0.1),  class = sd),
+  prior(lkj(2),          class = cor),
+  prior(normal(0,     0.04), class = b),
+  # shift
+  prior(normal(200,   100), class = ndt)
+)
+
+# set number of iterations and warmup for models
+iter = 3000
+warm = 1000
+
+# set the contrasts
+contrasts(df.fix$ROI) = contr.sum(2)
+contrasts(df.fix$ROI)
+contrasts(df.fix$onTar) = contr.sum(2)
+contrasts(df.fix$onTar)
+contrasts(df.fix$diagnosis) = contr.sum(4)
+contrasts(df.fix$diagnosis)
+
+```
+
+```{r postpc_fix, fig.height=9, message=T}
+
+# fit the maximal model
+set.seed(5599)
+m.fix = brm(f.fix,
+            df.fix, prior = priors,
+            iter = iter, warmup = warm,
+            backend = "cmdstanr", threads = threading(8),
+            family = "shifted_lognormal",
+            file = "m_fix",
+            save_pars = save_pars(all = TRUE)
+            )
+rstan::check_hmc_diagnostics(m.fix$fit)
+
+# check that rhats are below 1.01
+sum(brms::rhat(m.fix) >= 1.01, na.rm = T)
+
+# check the trace plots
+post.draws = as_draws_df(m.fix)
+mcmc_trace(post.draws, regex_pars = "^b_", 
+           facet_args = list(ncol = 3)) +
+  scale_x_continuous(breaks=scales::pretty_breaks(n = 3)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(n = 3))
+
+```
+
+The final model does not exhibit any divergence issues or suboptimal rhats. 
+
+```{r postpc_fix2, fig.height=6}
+
+# get the posterior predictions
+post.pred = posterior_predict(m.fix, ndraws = nsim)
+
+# check the fit of the predicted data compared to the real data
+p1 = pp_check(m.fix, ndraws = nsim) + 
+  theme_bw() + theme(legend.position = "none")
+
+# distributions of means and sds compared to the real values per group
+p2 = ppc_stat_grouped(df.fix$duration, post.pred, df.fix$diagnosis) + 
+  theme_bw() + theme(legend.position = "none")
+
+p = ggarrange(p1, p2, 
+          nrow = 2, ncol = 1, labels = "AUTO")
+annotate_figure(p, 
+                top = text_grob("Posterior predictive checks: dwell times", 
+                face = "bold", size = 14))
+
+```
+
+This looks good.
+
+## Inferences
+
+Now that we are convinced that we can trust our model, we have a look at the model and its estimates.
+
+```{r final_fix, fig.height=6}
+
+# print a summary
+summary(m.fix)
+
+# plot the posterior distributions
+as_draws_df(m.fix) %>% 
+  select(starts_with("b_")) %>%
+  mutate(
+    b_COMP    = - b_diagnosis1 - b_diagnosis2 - b_diagnosis3
+    ) %>%
+  pivot_longer(cols = starts_with("b_"), names_to = "coef", values_to = "estimate") %>%
+  filter(coef != "b_Intercept") %>%
+  mutate(
+    coef = substr(coef, 3, nchar(coef)),
+    coef = str_replace_all(coef, ":", " x "),
+    coef = str_replace_all(coef, "ROI1", "FaceROI"),
+    coef = str_replace_all(coef, "onTar1", "notTarget"),
+    coef = str_replace_all(coef, "diagnosis1", "ADHD"),
+    coef = str_replace_all(coef, "diagnosis2", "ASD"),
+    coef = str_replace_all(coef, "diagnosis3", "ADHD+ASD"),
+    coef = fct_reorder(coef, desc(estimate))
+  ) %>% 
+  group_by(coef) %>%
+  mutate(
+    cred = case_when(
+      (mean(estimate) < 0 & quantile(estimate, probs = 0.975) < 0) |
+        (mean(estimate) > 0 & quantile(estimate, probs = 0.025) > 0) ~ "credible",
+      T ~ "not credible"
+    )
+  ) %>% ungroup() %>%
+  ggplot(aes(x = estimate, y = coef, fill = cred)) +
+  geom_vline(xintercept = 0, linetype = 'dashed') +
+  ggdist::stat_halfeye(alpha = 0.7) + ylab(NULL) + theme_bw() +
+  scale_fill_manual(values = c(credible = c_dark, c_light)) + 
+  theme(legend.position = "none")
+
+```
+
+## Plots
+
+```{r plot_fix, fig.height=4}
+
+# rain cloud plot for the 
+df.fix %>%
+  group_by(subID, diagnosis, ROI, onTar) %>%
+  summarise(
+    duration = median(duration, na.rm = T)
+  ) %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD")
+  ) %>% 
+  ggplot(aes(diagnosis, duration, fill = ROI, colour = ROI)) + #
+  geom_rain(rain.side = 'r',
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
+boxplot.args.pos = list(
+  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
+),
+point.args = list(show_guide = FALSE, alpha = .5),
+violin.args.pos = list(
+  width = 0.6, position = position_nudge(x = 0.16)),
+point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
+  scale_fill_manual(values = custom.col2) +
+  scale_color_manual(values = custom.col2) +
+  labs(title = "Dwell times starting during cue-elicited saccades", x = "", y = "") +
+  theme_bw() + 
+  facet_wrap(. ~ onTar) +
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
