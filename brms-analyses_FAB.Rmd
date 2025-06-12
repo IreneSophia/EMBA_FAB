@@ -19,6 +19,8 @@ ls.packages = c("knitr",# kable
     "bayesplot",        # plots for posterior predictive checks
     "SBC",              # plots for checking computational faithfulness
     "rstatix",          # anova
+    "flextable",        # regulartable
+    "officer",          # read_docx
     "BayesFactor", 
     "effectsize",       # allows for interpretation and calculation of effectsizes 
     "bayestestR"        # equivalence_test
@@ -235,204 +237,163 @@ if (!file.exists("FAB_data.RData")) {
   ct.mf = contingencyTableBF(tb.gen[2:3,], 
                              sampleType = "indepMulti", 
                              fixedMargin = "cols")
+  # we add this information to our demographics tablerbind(df.demo, 
+  df.demo = data.frame(
+                    measurement = "Gender",
+                    ADHD         = sprintf("%.0f - %.0f - %.0f", 
+                                          tb.gen["fem","ADHD"], 
+                                          tb.gen["mal","ADHD"],
+                                          tb.gen["dan","ADHD"]
+                    ),
+                    `ADHD+ASD`         = sprintf("%.0f - %.0f - %.0f", 
+                                          tb.gen["fem","BOTH"], 
+                                          tb.gen["mal","BOTH"],
+                                          tb.gen["dan","BOTH"]
+                    ),
+                    ASD         = sprintf("%.0f - %.0f - %.0f", 
+                                          tb.gen["fem","ASD"], 
+                                          tb.gen["mal","ASD"],
+                                          tb.gen["dan","ASD"]
+                    ),
+                    COMP         = sprintf("%.0f - %.0f - %.0f", 
+                                          tb.gen["fem","COMP"], 
+                                          tb.gen["mal","COMP"],
+                                          tb.gen["dan","COMP"]
+                    ),
+                    bf.log      = ct.full@bayesFactor[["bf"]]
+                  )
+  
+  # then, we save some more gender information in a table in case we need it
   tb.gen = xtabs(~ gender + diagnosis + cis, data = df.sub)
   
   # get the gender descriptions of the not-male and not-female participants
   gen.desc = unique(tolower(df.sub[df.sub$gender == "dan",]$gender_desc))
   
-  # check which outcomes of interest are normally distributed
-  df.sht = df.sub %>% 
-    group_by(diagnosis) %>%
-    shapiro_test(age, iq, BDI_total, ASRS_total, RAADS_total, TAS_total) %>%
-    mutate(
-      sig = if_else(p < 0.05, "*", "")
-    )
+  # convert the measures to long which we include in the participant table
+  df.sublng = df.sub %>%
+    # rename some of the variables
+    rename(
+      "TAS-20" = "TAS_total",
+      "BDI"    = "BDI_total",
+      "RADS-R" = "RAADS_total",
+      "ASRS-v1.1" = "ASRS_total",
+      "Age"    = "age",
+      "IQ estimate" = "iq"
+    ) %>%
+    select(diagnosis, Age, `IQ estimate`, `ASRS-v1.1`, `RADS-R`, `TAS-20`, BDI) %>%
+    pivot_longer(cols = where(is.numeric)) %>%
+    mutate_if(is.character, as.factor)
   
-  # most of the measures are not normally distributed;
-  # therefore, we compute ranks for these outcomes
-  df.sub = df.sub %>% 
-    mutate(
-      rage   = rank(age),
-      rBDI   = rank(BDI_total),
-      rRAADS = rank(RAADS_total),
-      rTAS   = rank(TAS_total),
-      diagnosis = as.factor(diagnosis)
-    )
+  # initialise the data frame for posthoc tests
+  df.post = data.frame()
   
-  # now we can compute our ANOVAs
-  aov.age   = anovaBF(rage   ~ diagnosis, data = df.sub)
-  aov.iq    = anovaBF(iq     ~ diagnosis, data = df.sub)
-  aov.BDI   = anovaBF(rBDI   ~ diagnosis, data = df.sub)
-  aov.ASRS  = anovaBF(ASRS_total  ~ diagnosis, data = df.sub)
-  aov.RAADS = anovaBF(rRAADS ~ diagnosis, data = df.sub)
-  aov.TAS   = anovaBF(rTAS   ~ diagnosis, data = df.sub)
+  # now we loop through our measurements to create our demographics table
+  for (m in unique(df.sublng$name)) {
+    # select the relevant part of df.sub
+    df.rel = df.sublng %>% filter(name == m)
+    # check which of the group's data is not normally distributed
+    df.sht = df.rel %>% 
+      group_by(diagnosis) %>%
+      shapiro_test(value) %>%
+      filter(p < 0.05)
+    # if more than zero is not normally distributed...
+    if (nrow(df.sht) > 0) {
+      # rank transform the data
+      df.rel = df.rel %>% ungroup() %>% mutate(value = rank(value))
+    }
+    # compute the ANOVA
+    aov = anovaBF(value ~ diagnosis, data = df.rel)
+    # get back the original, untransformed values 
+    df.rel = df.sublng %>% filter(name == m)
+    # put all the information into the demographics table
+    df.demo = rbind(df.demo, 
+                    data.frame(
+                      measurement = m,
+                      ADHD        = sprintf("%.2f ±%.2f (%.0f to %.0f)", 
+                                            mean(df.rel[df.rel$diagnosis == "ADHD",]$value), 
+                                            sd(df.rel[df.rel$diagnosis == "ADHD",]$value)/
+                                              sum(df.rel$diagnosis == "ADHD"), 
+                                            min(df.rel[df.rel$diagnosis == "ADHD",]$value), 
+                                            max(df.rel[df.rel$diagnosis == "ADHD",]$value)
+                      ),
+                      `ADHD+ASD`  = sprintf("%.2f ±%.2f (%.0f to %.0f)", 
+                                            mean(df.rel[df.rel$diagnosis == "BOTH",]$value), 
+                                            sd(df.rel[df.rel$diagnosis == "BOTH",]$value)/
+                                              sum(df.rel$diagnosis == "BOTH"),  
+                                            min(df.rel[df.rel$diagnosis == "BOTH",]$value), 
+                                            max(df.rel[df.rel$diagnosis == "BOTH",]$value)
+                      ),
+                      ASD         = sprintf("%.2f ±%.2f (%.0f to %.0f)", 
+                                            mean(df.rel[df.rel$diagnosis == "ASD",]$value), 
+                                            sd(df.rel[df.rel$diagnosis == "ASD",]$value)/
+                                              sum(df.rel$diagnosis == "ASD"), 
+                                            min(df.rel[df.rel$diagnosis == "ASD",]$value), 
+                                            max(df.rel[df.rel$diagnosis == "ASD",]$value)
+                      ),
+                      COMP        = sprintf("%.2f ±%.2f (%.0f to %.0f)", 
+                                            mean(df.rel[df.rel$diagnosis == "COMP",]$value), 
+                                            sd(df.rel[df.rel$diagnosis == "COMP",]$value)/
+                                              sum(df.rel$diagnosis == "COMP"), 
+                                            min(df.rel[df.rel$diagnosis == "COMP",]$value), 
+                                            max(df.rel[df.rel$diagnosis == "COMP",]$value)
+                      ),
+                      bf.log      = aov@bayesFactor[["bf"]]
+                    ))
+    
+    # next, we want to check whether there are group differences
+    if (abs(exp(aov@bayesFactor$bf)) > 3) {
+      # do the group comparisons 
+      aov.ADHDvASD  = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("ADHD", "ASD")))
+      aov.ADHDvBOTH = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("ADHD", "BOTH")))
+      aov.ADHDvCOMP = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("ADHD", "COMP")))
+      aov.ASDvBOTH  = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("ASD",  "BOTH")))
+      aov.ASDvCOMP  = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("ASD",  "COMP")))
+      aov.BOTHvCOMP = anovaBF(value ~ diagnosis, 
+                              data = df.rel %>% filter(diagnosis %in% c("BOTH", "COMP")))
+      # put into the posthoc data frame
+      df.post = rbind(df.post, 
+                    data.frame(
+                      measurement = m,
+                      ADHDvASD    = aov.ADHDvASD@bayesFactor[["bf"]],
+                      ADHDvBOTH   = aov.ADHDvBOTH@bayesFactor[["bf"]],
+                      ADHDvCOMP   = aov.ADHDvCOMP@bayesFactor[["bf"]],
+                      ASDvBOTH    = aov.ASDvBOTH@bayesFactor[["bf"]],
+                      ASDvCOMP    = aov.ASDvCOMP@bayesFactor[["bf"]],
+                      BOTHvCOMP   = aov.BOTHvCOMP@bayesFactor[["bf"]]
+                    ))
+    }
+  }
   
-  # ...and put everything in a new dataframe for printing
-  measurement  = "Age"
-  ADHD     = sprintf("%.2f (±%.2f)", 
-                     mean(df.sub[df.sub$diagnosis == "ADHD",]$age), 
-                     sd(df.sub[df.sub$diagnosis == "ADHD",]$age)/
-                       sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",])))
-  ASD      = sprintf("%.2f (±%.2f)", 
-                     mean(df.sub[df.sub$diagnosis == "ASD",]$age), 
-                     sd(df.sub[df.sub$diagnosis == "ASD",]$age)/
-                       sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",])))
-  `ADHD+ASD`     = sprintf("%.2f (±%.2f)", 
-                     mean(df.sub[df.sub$diagnosis == "BOTH",]$age), 
-                     sd(df.sub[df.sub$diagnosis == "BOTH",]$age)/
-                       sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",])))
-  COMP     = sprintf("%.2f (±%.2f)", 
-                     mean(df.sub[df.sub$diagnosis == "COMP",]$age), 
-                     sd(df.sub[df.sub$diagnosis == "COMP",]$age)/
-                       sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",])))
-  logBF10 = sprintf("%.3f", aov.age@bayesFactor[["bf"]])
-  df.table = data.frame(measurement, ADHD, ASD, `ADHD+ASD`, COMP, logBF10)
-  df.table = rbind(df.table,
-       c(
-         "ASRS",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$ASRS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$ASRS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$ASRS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$ASRS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$ASRS_total), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$ASRS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$ASRS_total), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$ASRS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.ASRS@bayesFactor[["bf"]])
-       ),
-       c(
-         "BDI",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.BDI@bayesFactor[["bf"]])
-       ),
-       c(
-         "BDI",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$BDI_total), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$BDI_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.BDI@bayesFactor[["bf"]])
-       ),
-       c(
-         "Gender (diverse/agender/non-binary - female - male)",
-         sprintf("%d - %d - %d", 
-                 nrow(df.sub[df.sub$diagnosis == "ADHD" & df.sub$gender == "dan",]), 
-                 nrow(df.sub[df.sub$diagnosis == "ADHD" & df.sub$gender == "fem",]), 
-                 nrow(df.sub[df.sub$diagnosis == "ADHD" & df.sub$gender == "mal",])),
-         sprintf("%d - %d - %d", 
-                 nrow(df.sub[df.sub$diagnosis == "ASD" & df.sub$gender == "dan",]), 
-                 nrow(df.sub[df.sub$diagnosis == "ASD" & df.sub$gender == "fem",]), 
-                 nrow(df.sub[df.sub$diagnosis == "ASD" & df.sub$gender == "mal",])),
-         sprintf("%d - %d - %d", 
-                 nrow(df.sub[df.sub$diagnosis == "BOTH" & df.sub$gender == "dan",]), 
-                 nrow(df.sub[df.sub$diagnosis == "BOTH" & df.sub$gender == "fem",]), 
-                 nrow(df.sub[df.sub$diagnosis == "BOTH" & df.sub$gender == "mal",])),
-         sprintf("%d - %d - %d", 
-                 nrow(df.sub[df.sub$diagnosis == "COMP" & df.sub$gender == "dan",]), 
-                 nrow(df.sub[df.sub$diagnosis == "COMP" & df.sub$gender == "fem",]), 
-                 nrow(df.sub[df.sub$diagnosis == "COMP" & df.sub$gender == "mal",])),
-         sprintf("%.3f", ct.full@bayesFactor[["bf"]])
-       ),
-       c(
-         "IQ",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$iq), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$iq)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$iq), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$iq)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$iq), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$iq)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$iq), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$iq)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.iq@bayesFactor[["bf"]])
-       ),
-       c(
-         "RADS-R",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$RAADS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$RAADS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$RAADS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$RAADS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$RAADS_total), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$RAADS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$RAADS_total), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$RAADS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.RAADS@bayesFactor[["bf"]])
-       ),
-       c(
-         "TAS",
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ADHD",]$TAS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ADHD",]$TAS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ADHD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "ASD",]$TAS_total), 
-                 sd(df.sub[df.sub$diagnosis == "ASD",]$TAS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "ASD",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "BOTH",]$TAS_total), 
-                 sd(df.sub[df.sub$diagnosis == "BOTH",]$TAS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "BOTH",]))),
-         sprintf("%.2f (±%.2f)", 
-                 mean(df.sub[df.sub$diagnosis == "COMP",]$TAS_total), 
-                 sd(df.sub[df.sub$diagnosis == "COMP",]$TAS_total)/
-                   sqrt(nrow(df.sub[df.sub$diagnosis == "COMP",]))),
-         sprintf("%.3f", aov.TAS@bayesFactor[["bf"]])
-       )
-  ) %>% arrange(measurement)
+  # save the demographics and the posthoc table as word documents
+  read_docx() %>%
+    body_add_table(df.demo %>% arrange(measurement) %>% 
+                         mutate(bf.log = round(bf.log, digits = 3))) %>%
+    print(target = "FAB_demo.docx")
+  read_docx() %>%
+    body_add_table(df.post %>% arrange(measurement)) %>%
+    print(target = "FAB_post.docx")
+  
+  # check how many of each group are above threshold for asrs and rads
+  tb.screen = xtabs(~ diagnosis + screening, 
+                   data = df.sub %>%
+                     select(diagnosis, ASRS_total, RAADS_total) %>%
+                     mutate(
+                       screening = case_when(
+                         ASRS_total >= 24 & RAADS_total >  81 ~ "screenBOTH",
+                         ASRS_total >= 24 & RAADS_total <= 81 ~ "screenADHD",
+                         ASRS_total <  24 & RAADS_total <= 81 ~ "screenNone",
+                         ASRS_total <  24 & RAADS_total >  81 ~ "screenASD"
+                       )
+                     ))
   
   # save it all
-  save(df.fab, df.sac, df.exp, df.sht, ct.full, ct.mf, df.exc, 
-       df.nosac, gen.desc, tb.gen, df.table, adhd.meds.desc, df.med,
+  save(df.fab, df.sac, df.exp, ct.full, ct.mf, df.exc, tb.screen,
+       df.nosac, gen.desc, tb.gen, adhd.meds.desc, df.med,
        file = "FAB_data.RData")
   
 } else {
@@ -460,10 +421,6 @@ kable(merge(
 kable(df.nosac)
 rm(df.nosac)
 
-# print the outcome of the shapiro tests
-kable(df.sht %>% arrange(variable))
-rm(df.sht)
-
 # print the outcome of the two contingency tables for comparison
 # based on full sample with agender, diverse and non-binary in one category
 ct.full@bayesFactor
@@ -482,9 +439,6 @@ contrasts(df.fab$cue) = contr.sum(2)
 contrasts(df.fab$cue)
 contrasts(df.fab$diagnosis) = contr.sum(4)
 contrasts(df.fab$diagnosis)
-
-# print final group comparisons for the paper
-kable(df.table)
 
 ```
 
@@ -1095,6 +1049,29 @@ e8 = hypothesis(m.fab,
                 alpha = 0.025)
 e8
 
+# E9: face in COMP versus face in ADHD
+e9  = hypothesis(m.fab, 
+                "0 < 2*diagnosis1 + diagnosis2 + diagnosis3 +
+                     2*diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1", 
+                alpha = 0.025)
+e9
+
+# E10: object in COMP versus object in ADHD
+e10 = hypothesis(m.fab, 
+                "0 < 2*diagnosis1 + diagnosis2 + diagnosis3 -
+                     (2*diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1)", 
+                alpha = 0.025)
+e10
+
+# E11: E10 > E9
+e11 = hypothesis(m.fab, 
+                "2*diagnosis1 + diagnosis2 + diagnosis3 -
+                 (2*diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1) >
+                2*diagnosis1 + diagnosis2 + diagnosis3 +
+                 (2*diagnosis1:cue1 + diagnosis2:cue1 + diagnosis3:cue1)", 
+                alpha = 0.025)
+e11
+
 # extract predicted differences in ms instead of log data
 df.new = df.fab %>% 
   select(diagnosis, cue) %>% 
@@ -1107,6 +1084,10 @@ df.ms = as.data.frame(
                newdata = df.new %>% select(diagnosis, cue), 
                re_formula = NA))
 colnames(df.ms) = df.new$condition
+
+vtable::st(df.ms, 
+           summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+                    'pctile(x)[97.5]','max(x)'))
 
 # calculate our difference columns
 df.ms = df.ms %>%
@@ -1131,8 +1112,11 @@ df.ms = df.ms %>%
 vtable::st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
-    object = rowMeans(select(., matches(".*_object")), na.rm = T)
-  ) %>% select(face, object, FAB),
+    object = rowMeans(select(., matches(".*_object")), na.rm = T),
+    ADHDvCOMP_face   = ADHD_face   - COMP_face,
+    ADHDvCOMP_object = ADHD_object - COMP_object,
+    diff_ADHDvCOMP   = ADHDvCOMP_object - ADHDvCOMP_face
+  ) %>% select(face, object, FAB, ADHDvCOMP_face, ADHDvCOMP_object, diff_ADHDvCOMP),
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
 
 ```
@@ -1140,6 +1124,13 @@ vtable::st(df.ms %>%
 As hypothesised, both autistic adults and adults with ADHD exhibited increased overall reaction times compared with the COMP group (COMP - ADHD: *estimate* = `r round(h1b$hypothesis$Estimate,2)` [`r round(h1b$hypothesis$CI.Lower,2)`, `r round(h1b$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1b$hypothesis$Post.Prob*100,2)`%; COMP - ASD: *estimate* = `r round(h1c$hypothesis$Estimate,2)` [`r round(h1c$hypothesis$CI.Lower,2)`, `r round(h1c$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1c$hypothesis$Post.Prob*100,2)`%). The model predicts that participants in the comparison group react `r round(mean(df.ms$h1b), 2)`ms [`r round(ci(df.ms$h1b)$CI_low, 2)`, `r round(ci(df.ms$h1b)$CI_high, 2)`] faster than the participants in the ADHD group and `r round(mean(df.ms$h1c), 2)`ms [`r round(ci(df.ms$h1c)$CI_low, 2)`, `r round(ci(df.ms$h1c)$CI_high, 2)`] faster than autistic participants. Additionally, the model predicts that the participants in the comparison group react `r round(mean(df.ms$BOTH_COMP), 2)`ms [`r round(ci(df.ms$BOTH_COMP)$CI_low, 2)`, `r round(ci(df.ms$BOTH_COMP)$CI_high, 2)`] faster than adults in the ADHD+ASD group. 
 
 Our Bayesian linear mixed model with the median of correct reaction times as the outcome and diagnostic status, cue (face or object) and their interaction confirmed a face attention bias in our comparison group: COMP participants reacted faster in response to targets appearing on the side of the face compared to targets appearing on the side of the object (*estimate* = `r round(h1a$hypothesis$Estimate,2)` [`r round(h1a$hypothesis$CI.Lower,2)`, `r round(h1a$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1a$hypothesis$Post.Prob*100,2)`%). FAB was not credibly decreased in ASD participants compared to COMP participants (*estimate* = `r round(h1d$hypothesis$Estimate,2)` [`r round(h1d$hypothesis$CI.Lower,2)`, `r round(h1d$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1d$hypothesis$Post.Prob*100,2)`%). However, FAB was credibly higher in the ADHD than the COMP group (*estimate* = `r round(h1e$hypothesis$Estimate,2)` [`r round(h1e$hypothesis$CI.Lower,2)`, `r round(h1e$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(h1e$hypothesis$Post.Prob*100,2)`%). Specifically, predicted reaction times based on the model estimate a FAB of `r round(mean(df.ms$FAB_COMP), 2)`ms [`r round(ci(df.ms$FAB_COMP)$CI_low, 2)`, `r round(ci(df.ms$FAB_COMP)$CI_high, 2)`] in the COMP group, `r round(mean(df.ms$FAB_ADHD), 2)`ms [`r round(ci(df.ms$FAB_ADHD)$CI_low, 2)`, `r round(ci(df.ms$FAB_ADHD)$CI_high, 2)`] in the ADHD group, `r round(mean(df.ms$FAB_ASD), 2)`ms [`r round(ci(df.ms$FAB_ASD)$CI_low, 2)`, `r round(ci(df.ms$FAB_ASD)$CI_high, 2)`] in the ASD group as well as `r round(mean(df.ms$FAB_BOTH), 2)`ms [`r round(ci(df.ms$FAB_BOTH)$CI_low, 2)`, `r round(ci(df.ms$FAB_BOTH)$CI_high, 2)`] in the ADHD+ASD group. These estimates are reflected in our exploration of FAB over all groups (*estimate* = `r round(e1$hypothesis$Estimate,2)` [`r round(e1$hypothesis$CI.Lower,2)`, `r round(e1$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e1$hypothesis$Post.Prob*100,2)`%) as well as in the separate clinical groups with our model revealing a credible FAB effect in the ADHD (*estimate* = `r round(e2$hypothesis$Estimate,2)` [`r round(e2$hypothesis$CI.Lower,2)`, `r round(e2$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e2$hypothesis$Post.Prob*100,2)`%) but not the ASD (*estimate* = `r round(e3$hypothesis$Estimate,2)` [`r round(e3$hypothesis$CI.Lower,2)`, `r round(e3$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e3$hypothesis$Post.Prob*100,2)`%) and the ADHD+ASD group (*estimate* = `r round(e4$hypothesis$Estimate,2)` [`r round(e4$hypothesis$CI.Lower,2)`, `r round(e4$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e4$hypothesis$Post.Prob*100,2)`%). 
+
+
+Exploration regarding comparison between ADHD and COMP on face and object separately: 
+
+* Face: *estimate* = `r round(e9$hypothesis$Estimate,2)` [`r round(e9$hypothesis$CI.Lower,2)`, `r round(e9$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e9$hypothesis$Post.Prob*100,2)`%
+* Object: *estimate* = `r round(e10$hypothesis$Estimate,2)` [`r round(e10$hypothesis$CI.Lower,2)`, `r round(e10$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e10$hypothesis$Post.Prob*100,2)`%
+* Object(ADHD-COMP) > Face(ADHD-COMP): *estimate* = `r round(e11$hypothesis$Estimate,2)` [`r round(e11$hypothesis$CI.Lower,2)`, `r round(e11$hypothesis$CI.Upper,2)`], *posterior probability* = `r round(e11$hypothesis$Post.Prob*100,2)`%
 
 ## Plots
 
@@ -1721,6 +1712,10 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
+vtable::st(df.ms, 
+           summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+                    'pctile(x)[97.5]','max(x)'))
+
 vtable::st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
@@ -1728,13 +1723,6 @@ vtable::st(df.ms %>%
     FAB    = object - face
   ) %>% select(face, object, FAB),
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]','pctile(x)[97.5]','max(x)'))
-
-# print grand average of accuracies
-kable(df.fab.full %>% 
-        group_by(subID, diagnosis, cue) %>% 
-        summarise(error = 100*mean(error, na.rm = T)) %>% 
-        group_by(diagnosis, cue) %>% 
-        summarise(error_rates = mean(error, na.rm = T), se = sd(error, na.rm = T)/sqrt(n())))
 
 ```
 
@@ -1768,5 +1756,38 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
         text = element_text(size = 15))
+
+```
+
+# S1.5 Summary table
+
+```{r sum}
+
+# get grand average of accuracies and reaction times
+df.agg = rbind(
+  df.fab.full %>%
+    group_by(subID, diagnosis, cue) %>% 
+    summarise(error = 100*mean(error, na.rm = T)) %>% 
+    group_by(diagnosis, cue) %>% 
+    summarise(mean = mean(error, na.rm = T), se = sd(error, na.rm = T)/sqrt(n())) %>%
+    mutate(measure = "accuracy"),
+  df.fab.full %>%
+    group_by(subID, diagnosis, cue) %>% 
+    summarise(rt.cor = mean(rt.cor, na.rm = T)) %>% 
+    group_by(diagnosis, cue) %>% 
+    summarise(mean = mean(rt.cor, na.rm = T), se = sd(rt.cor, na.rm = T)/sqrt(n())) %>% 
+    mutate(measure = "rt.cor") ) %>%
+  mutate(
+    value = sprintf("%.2f ±%.2f", mean, se)
+  ) %>% select(measure, diagnosis, cue, value) %>%
+  pivot_wider(names_from = diagnosis, values_from = value) %>%
+  mutate(
+    cue = paste0(cue, "-cued")
+  ) %>%
+  rename("ADHD+ASD" = "BOTH", "Target" = "cue")
+
+read_docx() %>%
+    body_add_table(df.agg) %>%
+    print(target = "FAB_tbl2.docx")
 
 ```
