@@ -421,6 +421,9 @@ kable(merge(
 kable(df.nosac)
 rm(df.nosac)
 
+# print the how many people are above threshold for clinical self assessment
+kable(tb.screen)
+
 # print the outcome of the two contingency tables for comparison
 # based on full sample with agender, diverse and non-binary in one category
 ct.full@bayesFactor
@@ -1770,21 +1773,21 @@ df.agg = rbind(
     summarise(error = 100*mean(error, na.rm = T)) %>% 
     group_by(diagnosis, cue) %>% 
     summarise(mean = mean(error, na.rm = T), se = sd(error, na.rm = T)/sqrt(n())) %>%
-    mutate(measure = "accuracy"),
+    mutate(measure = "accuracy") %>%
+    mutate(
+        value = sprintf("%.2f ±%.2f", mean, se)
+    )  %>% select(measure, diagnosis, cue, value) %>%
+    pivot_wider(names_from = c(diagnosis, cue), values_from = value),
   df.fab.full %>%
     group_by(subID, diagnosis, cue) %>% 
     summarise(rt.cor = mean(rt.cor, na.rm = T)) %>% 
     group_by(diagnosis, cue) %>% 
     summarise(mean = mean(rt.cor, na.rm = T), se = sd(rt.cor, na.rm = T)/sqrt(n())) %>% 
-    mutate(measure = "rt.cor") ) %>%
-  mutate(
-    value = sprintf("%.2f ±%.2f", mean, se)
-  ) %>% select(measure, diagnosis, cue, value) %>%
-  pivot_wider(names_from = diagnosis, values_from = value) %>%
-  mutate(
-    cue = paste0(cue, "-cued")
-  ) %>%
-  rename("ADHD+ASD" = "BOTH", "Target" = "cue")
+    mutate(measure = "rt.cor")  %>%
+    mutate(
+        value = sprintf("%.0f ±%.0f", mean, se)
+    )  %>% select(measure, diagnosis, cue, value) %>%
+    pivot_wider(names_from = c(diagnosis, cue), values_from = value))
 
 read_docx() %>%
     body_add_table(df.agg) %>%
