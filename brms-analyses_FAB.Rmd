@@ -15,6 +15,7 @@ ls.packages = c("knitr",# kable
     "bridgesampling",   # bridge_sampler
     "tidyverse",        # tibble stuff
     "ggpubr",           # ggarrange
+    "vtable",           # summary table st
     "ggrain",           # geom_rain
     "bayesplot",        # plots for posterior predictive checks
     "SBC",              # plots for checking computational faithfulness
@@ -1094,9 +1095,9 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms, 
-           summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
-                    'pctile(x)[97.5]','max(x)'))
+st(df.ms, 
+   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
+            'pctile(x)[97.5]','max(x)'))
 
 # calculate our difference columns
 df.ms = df.ms %>%
@@ -1118,7 +1119,7 @@ df.ms = df.ms %>%
     BOTH_COMP = BOTH - COMP
   )
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
     object = rowMeans(select(., matches(".*_object")), na.rm = T),
@@ -1757,11 +1758,11 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms, 
+st(df.ms, 
            summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
                     'pctile(x)[97.5]','max(x)'))
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
     object = rowMeans(select(., matches(".*_object")), na.rm = T),

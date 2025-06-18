@@ -13,6 +13,7 @@ ls.packages = c("knitr",# kable
     "brms",             # Bayesian lmms
     "tidyverse",        # tibble stuff
     "ggpubr",           # ggarrange
+    "vtable",           # summary tables st
     "ggrain",           # geom_rain
     "bayesplot",        # plots for posterior predictive checks
     "SBC",              # plots for checking computational faithfulness
@@ -560,11 +561,11 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms,
+st(df.ms,
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
            'pctile(x)[97.5]','max(x)'))
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
     object = rowMeans(select(., matches(".*_object")), na.rm = T),
@@ -1163,7 +1164,7 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms,
+st(df.ms,
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
            'pctile(x)[97.5]','max(x)'))
 
@@ -1174,7 +1175,7 @@ df.ms = df.ms %>%
       rowMeans(select(., matches(".*_face")), na.rm = T)
   )
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     # get the face and object latencies -200, so they start with target onset
     face   = rowMeans(select(., matches(".*_face")), na.rm = T) - 200,
@@ -1447,11 +1448,11 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms,
+st(df.ms,
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
            'pctile(x)[97.5]','max(x)'))
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
     object = rowMeans(select(., matches(".*_object")), na.rm = T),
@@ -1647,7 +1648,7 @@ df.ms = as.data.frame(
                re_formula = NA))
 colnames(df.ms) = df.new$condition
 
-vtable::st(df.ms,
+st(df.ms,
   summ = c('mean(x)','sd(x)','min(x)','pctile(x)[2.5]',
            'pctile(x)[97.5]','max(x)'))
 
@@ -1658,7 +1659,7 @@ df.ms = df.ms %>%
       rowMeans(select(., matches(".*_face")), na.rm = T)
   )
 
-vtable::st(df.ms %>% 
+st(df.ms %>% 
   mutate(
     face   = rowMeans(select(., matches(".*_face")), na.rm = T),
     object = rowMeans(select(., matches(".*_object")), na.rm = T),
