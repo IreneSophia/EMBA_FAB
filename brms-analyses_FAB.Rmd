@@ -273,14 +273,12 @@ if (!file.exists("FAB_data.RData")) {
   df.sublng = df.sub %>%
     # rename some of the variables
     rename(
-      "TAS-20" = "TAS_total",
-      "BDI"    = "BDI_total",
       "RADS-R" = "RAADS_total",
       "ASRS-v1.1" = "ASRS_total",
       "Age"    = "age",
       "IQ estimate" = "iq"
     ) %>%
-    select(diagnosis, Age, `IQ estimate`, `ASRS-v1.1`, `RADS-R`, `TAS-20`, BDI) %>%
+    select(diagnosis, Age, `IQ estimate`, `ASRS-v1.1`, `RADS-R`) %>%
     pivot_longer(cols = where(is.numeric)) %>%
     mutate_if(is.character, as.factor)
   
@@ -372,10 +370,16 @@ if (!file.exists("FAB_data.RData")) {
   # save the demographics and the posthoc table as word documents
   read_docx() %>%
     body_add_table(df.demo %>% arrange(measurement) %>% 
-                         mutate(bf.log = round(bf.log, digits = 3))) %>%
+                         mutate(bf.log = 
+                                  if_else(
+                                    bf.log > 3, 
+                                    sprintf("%.3f*", bf.log),
+                                    sprintf("%.3f", bf.log)))) %>%
     print(target = "FAB_demo.docx")
   read_docx() %>%
-    body_add_table(df.post %>% arrange(measurement)) %>%
+    body_add_table(df.post  %>% 
+                     mutate_if(is.numeric, 
+                               ~ifelse(.>3,sprintf("%.3f*", .),sprintf("%.3f", .)))) %>%
     print(target = "FAB_post.docx")
   
   # check how many of each group are above threshold for asrs and rads
@@ -1425,6 +1429,42 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.title=element_blank())
 
 ggsave("Fig4_FAB.svg", 
+       units = "mm", 
+       width  = 170,
+       height = 100,
+       dpi    = 300)
+
+# focus on the FAB effect
+df.que %>%
+  mutate(
+    diagnosis = recode(diagnosis, "BOTH" = "ADHD+ASD"),
+    diagnosis = factor(diagnosis, levels = c("ADHD", "ADHD+ASD", "ASD", "COMP"))
+  ) %>% 
+  ggplot(aes(diagnosis, fab, fill = diagnosis, colour = diagnosis)) + #
+  geom_rain(rain.side = 'r',
+boxplot.args = list(color = "black", outlier.shape = NA, show_guide = FALSE, alpha = .8),
+violin.args = list(color = "black", outlier.shape = NA, alpha = .8),
+boxplot.args.pos = list(
+  position = ggpp::position_dodgenudge(x = 0, width = 0.3), width = 0.3
+),
+point.args = list(show_guide = FALSE, alpha = .5),
+violin.args.pos = list(
+  width = 0.6, position = position_nudge(x = 0.16)),
+point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.1))) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values = custom.col[c(3, 4, 5, 6)]) +
+  scale_color_manual(values = custom.col[c(3, 4, 5, 6)]) +
+  labs(title = "Face attention bias", 
+       x = "", 
+       y = "Difference (ms)") +
+  theme_bw() + 
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5), 
+        legend.direction = "horizontal", 
+        text = element_text(size = 15),
+        legend.title=element_blank())
+
+ggsave("Fig4_FAB_new.svg", 
        units = "mm", 
        width  = 170,
        height = 100,
