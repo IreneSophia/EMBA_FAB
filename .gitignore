@@ -2,3 +2,5 @@
 /_brms_SBC_cache/*_large.rds
 /_brms_sens_cache/*.rds
 /*_bf.rds
+*.log
+.DS_Store
