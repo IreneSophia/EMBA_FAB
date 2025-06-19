@@ -388,13 +388,13 @@ if (!file.exists("FAB_data.RData")) {
   # check how many of each group are above threshold for asrs and rads
   tb.screen = xtabs(~ diagnosis + screening, 
                    data = df.sub %>%
-                     select(diagnosis, ASRS_total, RAADS_total) %>%
+                     select(diagnosis, ASRS_screen, RAADS_total) %>%
                      mutate(
                        screening = case_when(
-                         ASRS_total >= 24 & RAADS_total >  81 ~ "screenBOTH",
-                         ASRS_total >= 24 & RAADS_total <= 81 ~ "screenADHD",
-                         ASRS_total <  24 & RAADS_total <= 81 ~ "screenNone",
-                         ASRS_total <  24 & RAADS_total >  81 ~ "screenASD"
+                         ASRS_screen >= 4 & RAADS_total >  81 ~ "screenBOTH",
+                         ASRS_screen >= 4 & RAADS_total <= 81 ~ "screenADHD",
+                         ASRS_screen <  4 & RAADS_total <= 81 ~ "screenNone",
+                         ASRS_screen <  4 & RAADS_total >  81 ~ "screenASD"
                        )
                      ))
   

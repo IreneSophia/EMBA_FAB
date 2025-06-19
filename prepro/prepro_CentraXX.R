@@ -29,8 +29,23 @@ df.date = df %>%
 
 ## preprocess each questionnaire separately:
 
-# ASRS (0 bis 16: sehr unwahrscheinlich, 17 bis 23: es besteht die Möglichkeit, 24 oder größer: sehr wahrscheinlich)
-df.asrs = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
+# ASRS: sum scores
+df.asrs1 = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
+  mutate(
+    numericValue = recode(value, 
+                          `Nie` = 0,
+                          `Selten` = 1,
+                          `Manchmal` = 2,
+                          `Oft` = 3,
+                          `Sehr oft` = 4)
+  ) %>% select(questionnaire, PID, numericValue) %>%
+  group_by(PID) %>% 
+  summarise(
+    ASRS_total = sum(numericValue, na.rm = T)
+  )
+
+# ASRS: screening according to Kessler et al. (2005)
+df.asrs2 = df %>% filter(questionnaire == "PSY_NEVIA_ASRS" & section == "Teil A") %>%
   mutate(
     numericValue = recode(value, 
                           `Nie` = 0,
@@ -38,18 +53,24 @@ df.asrs = df %>% filter(questionnaire == "PSY_NEVIA_ASRS") %>%
                           `Manchmal` = 2,
                           `Oft` = 3,
                           `Sehr oft` = 4),
-    section = recode(section, 
-                     `Teil A` = "A",
-                     `Teil B` = "B", 
-                     `Teil C` = "B")
-  ) %>% select(questionnaire, PID, section, numericValue) %>%
-  group_by(PID, section) %>% 
-  summarise(
-    ASRS_total = sum(numericValue, na.rm = T),
-    ASRS_extreme = sum(numericValue >= 3)
-  ) %>% pivot_wider(names_from = section, values_from = c(ASRS_total, ASRS_extreme)) %>%
+    coding = case_match(item,
+                        "PSY_NEVIA_ASRS_1" ~ 1,
+                        "PSY_NEVIA_ASRS_2" ~ 1,
+                        "PSY_NEVIA_ASRS_3" ~ 1,
+                        "PSY_NEVIA_ASRS_4" ~ 0,
+                        "PSY_NEVIA_ASRS_5" ~ 0,
+                        "PSY_NEVIA_ASRS_6" ~ 0)
+  ) %>% select(questionnaire, PID, item, coding, numericValue) %>%
   mutate(
-    ASRS_total = sum(c(ASRS_total_A, ASRS_total_B))
+    value = case_when(
+      coding == 1 & numericValue >= 2 ~ 1,
+      coding == 0 & numericValue >= 3 ~ 1,
+      T ~ 0
+    )
+  ) %>%
+  group_by(PID) %>%
+  summarise(
+    ASRS_screen = sum(value)
   )
 
 # PSY_NEVIA_BDI 
@@ -203,7 +224,7 @@ df.tas = df.tas %>% group_by(PID) %>%
   )
 
 # merge all together
-ls.df = list(df.date, df.demo, df.cft, df.mwt, df.bdi, df.asrs, df.raads, df.tas)
+ls.df = list(df.date, df.demo, df.cft, df.mwt, df.bdi, df.asrs1, df.asrs2, df.raads, df.tas)
 df.sub = ls.df %>% reduce(full_join, by = "PID") %>% 
   mutate(
     age = as.numeric(age)
