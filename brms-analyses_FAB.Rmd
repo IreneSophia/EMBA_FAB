@@ -2,7 +2,7 @@
 title: "S1: behavioural analysis with brms"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: word_document
 ---
   
 ```{r settings, include=FALSE}
@@ -1292,9 +1292,14 @@ h1e
 
 This model confirmed the same hypotheses. 
 
-# S1.4 Explorative analysis of subject-specific FAB with overall RT, RADS and ASRS
+# S1.4 Explorative analysis of subject-specific FAB 
+
+## S1.4.1 Overall RT, RADS and ASRS
 
 ```{r que_fab, fig.height=4}
+
+# load in gender
+df.gen = readRDS("df_gender.rds")
 
 # merge with the questionnaire values
 df.que = df.fab.full %>%
@@ -1314,7 +1319,8 @@ df.que = df.fab.full %>%
     fab     = mean(fab),
     overall = mean(overall)
   ) %>% ungroup() %>%
-  select(subID, diagnosis, overall, fab, ASRS_total, RAADS_total, adhd.meds)
+  select(subID, diagnosis, overall, fab, ASRS_total, RAADS_total, adhd.meds) %>%
+  merge(., df.gen)
 
 # check normal distributions
 p1 = ggplot(df.que, aes(sample = ASRS_total)) + 
@@ -1486,6 +1492,18 @@ df.que %>%
 
 ```
 
+## S1.4.2 Gender
+
+```{r fab_gen}
+
+df.que %>% 
+  mutate(fab = fab > 0) %>%
+  group_by(diagnosis, gender, fab) %>% count()
+
+aov.gen = anovaBF(fab ~ gender * diagnosis, data = df.que %>% filter(gender != "dan"))
+aov.gen@bayesFactor
+
+```
 
 # S1.5 Explorative analysis of errors
 
