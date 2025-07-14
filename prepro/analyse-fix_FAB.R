@@ -56,10 +56,16 @@ df.fix = df.fix %>%
 # are there any people without any relevant fixations? Yes, 2
 length(setdiff(levels(df.fix$subID), unique(df.fix$subID)))
 
+# load excluded participants (low accuracy, change)
+exc = c(scan(file.path(dt.path, 'FAB_exc.txt'), what="character", sep=NULL),
+        scan(file.path(dt.explo, 'FAB_exc.txt'), what="character", sep=NULL))
+
 # merge with the diagnosis information
 df.fix = merge(read_csv(file.path("/home/emba/Documents/EMBA/CentraXX", "EMBA_centraXX.csv"), 
                   show_col_types = F) %>% 
                  mutate(diagnosis = recode(diagnosis, "CTR" = "COMP")) %>%
+                 # exclude one person due to change in diagnosis
+                 filter(!(subID %in% exc)) %>%
                  select(subID, diagnosis), 
                df.fix) %>%
   mutate_if(is.character, as.factor) %>%
