@@ -13,7 +13,7 @@ geometry: margin=0.5in
   
 ```{r settings, include=FALSE}
 
-knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.align = 'center', fig.width = 9)
+knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.align = 'center', fig.width = 7.4)
 ls.packages = c("knitr",# kable
     "ggplot2",          # plots
     "brms",             # Bayesian lmms
@@ -385,14 +385,14 @@ if (!file.exists("FAB_data.RData")) {
     body_add_table(df.demo %>% arrange(measurement) %>% 
                          mutate(bf.log = 
                                   if_else(
-                                    bf.log > 3, 
+                                    bf.log > log(3), 
                                     sprintf("%.3f*", bf.log),
                                     sprintf("%.3f", bf.log)))) %>%
     print(target = "FAB_demo.docx")
   read_docx() %>%
     body_add_table(df.post  %>% 
                      mutate_if(is.numeric, 
-                               ~ifelse(.>3,sprintf("%.3f*", .),sprintf("%.3f", .)))) %>%
+                               ~ifelse(.>log(3),sprintf("%.3f*", .),sprintf("%.3f", .)))) %>%
     print(target = "FAB_post.docx")
   
   # check how many of each group are above threshold for asrs and rads
@@ -1509,6 +1509,54 @@ df.que %>%
 
 aov.gen = anovaBF(fab ~ gender * diagnosis, data = df.que %>% filter(gender != "dan"))
 aov.gen@bayesFactor
+
+```
+
+## FAB as percentage of total reaction time
+
+Since ADHD participants took longer on both cues, we want to make sure that the effect of FAB is actually increased and not just larger because they take longer to response. 
+
+```{r fab_perc}
+
+df.fab.wide = df.fab %>% 
+  pivot_wider(names_from = cue, values_from = rt.cor) %>%
+  mutate(fab.perc = (object - face)*100/(object + face))
+
+# set weakly informed priors
+priors = c(
+  prior(normal(0,   0.50), class = Intercept),
+  prior(normal(1.0, 1.00), class = sd),
+  prior(lkj(2),            class = cor),
+  prior(normal(0,   1.00), class = b),
+  prior(normal(0,  10.00), class = sigma)
+)
+
+m.fab.perc = brm(fab.perc ~ diagnosis + (1 | subID) + (diagnosis | stm) ,
+                df.fab.wide, prior = priors,
+                iter = iter, warmup = warm,
+                backend = "cmdstanr", threads = threading(8),
+                file = "m_fab_perc", 
+                seed = 222
+                )
+rstan::check_hmc_diagnostics(m.fab.perc$fit)
+
+# check that rhats are below 1.01
+sum(brms::rhat(m.fab.perc) >= 1.01, na.rm = T)
+
+# print the summary
+summary(m.fab.perc)
+
+# FAB in ADHD > FAB in COMP
+hypothesis(m.fab.perc, "diagnosis1 > - diagnosis1 - diagnosis2 - diagnosis3")
+
+# print an overview
+kable(df.fab.wide %>% group_by(diagnosis, subID) %>% 
+        summarise(fab.perc = mean(fab.perc)) %>%
+        group_by(diagnosis) %>% 
+        summarise(
+          fab.perc.avg = mean(fab.perc),
+          fab.perc.se  = sd(fab.perc)/sqrt(n())
+        ) %>% arrange(desc(fab.perc.avg)))
 
 ```
 
