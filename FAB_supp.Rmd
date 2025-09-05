@@ -1,10 +1,10 @@
 ---
 title: "Supplementary materials"
-subtitle: "Comparison of face attention bias in adults with ASD, ADHD or double diagnosis ADHD+ASD"
+subtitle: "Comparison of face attention bias in adults with ASD, ADHD or comorbid ADHD+ASD"
 author: "I. S. Plank"
 date: "`r Sys.Date()`"
 output: 
-  pdf_document:
+  word_document:
     toc: true
     number_sections: true
 fontsize: 10pt
@@ -13,7 +13,8 @@ geometry: margin=0.5in
   
 ```{r settings, include=FALSE}
 
-knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.align = 'center', fig.width = 7.4)
+knitr::opts_chunk$set(echo = T, warning = F, message = F, 
+                      fig.align = 'center', fig.width = 7.4)
 ls.packages = c("knitr",# kable
     "ggplot2",          # plots
     "brms",             # Bayesian lmms
@@ -1190,7 +1191,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
-ggsave("Fig3_rts.svg", 
+ggsave("Fig3_rts.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -1444,7 +1445,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         text = element_text(size = 15),
         legend.title=element_blank())
 
-ggsave("Fig4_FAB.svg", 
+ggsave("Fig4_FAB.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -1480,7 +1481,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         text = element_text(size = 15),
         legend.title=element_blank())
 
-ggsave("Fig4_FAB_new.svg", 
+ggsave("Fig4_FAB_new.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -2006,7 +2007,7 @@ labels = c("Cue-elicited", "Target-elicited")) +
         text = element_text(size = 15),
         legend.title=element_blank())
 
-ggsave("Fig2_densLatency.svg", 
+ggsave("Fig2_densLatency.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -2435,7 +2436,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
-ggsave("Fig5_nrSac.svg", 
+ggsave("Fig5_nrSac.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
@@ -3044,7 +3045,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
         legend.direction = "horizontal", 
         text = element_text(size = 15))
 
-ggsave("Fig6_latSac.svg", 
+ggsave("Fig6_latSac.tif", 
        units = "mm", 
        width  = 170,
        height = 100,
