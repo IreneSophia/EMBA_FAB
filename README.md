@@ -12,10 +12,9 @@ This repository is a work in progress. The script are continuously augmented.
 
 ## How to run this analysis
 
-This repository includes scripts for the presentation of the paradigm, preprocessing of the data and analysis. Due to privacy issues, we only share preprocessed and anonymised data. Therefore, only the following analysis RMarkdown scripts can actually be run based on this repository: 
+This repository includes scripts for the presentation of the paradigm, preprocessing of the data and analysis. Due to privacy issues, we only share preprocessed and anonymised data. Therefore, only the following analysis RMarkdown script can actually be run based on this repository: 
 
-* `brms-analyses_FAB.Rmd` : behavioural analysis > run this first
-* `brms-analyses_FAB-ET.Rmd` : eye tracking analysis
+* `FAB_supp.Rmd` : contains both the behavioural and the eye-tracking analysis
 
 These scripts also use scripts from the `helpers` folder. There are some absolute paths in these scripts within if statements. Downloading everything in this repository should ensure that these are not executed. 
 
@@ -68,16 +67,7 @@ Data is shared in one RData `FAB_data.RData` file which can be read into R. This
 * lat : latency, starting with the presentation of the cue
 * diagnosis: diagnostic status of this participant, either ADHD, ASD, ADHD+ASD or COMP (comparison group, no psychiatric diagnoses)
 
-`df.table`
-
-* measurement : questionnaire or socio-demographic variable
-* ADHD : mean and standard errors or counts for the gender identities for the ADHD group
-* ASD : mean and standard errors or counts for the gender identities for the ASD group
-* COMP : mean and standard errors or counts for the gender identities for the COMP group
-* BOTH : mean and standard errors or counts for the gender identities for the ADHD+ASD group
-* logBF10 : logarithmic Bayes Factor comparing the model including diagnosis to the null model
-
-as well as `df.exc` (group and number of excluded participants for behavioural analysis), `df.nosac` (group and number of participants without any relevant saccades despite useable eye tracking data), `df.sht` (outcome of shapiro test for the demographic and questionnaire values) and the results of the contingency tables (`ct.full` containing the full dataset and `ct.mf` only containing male and female participants).
+as well as `df.exc` (group and number of excluded participants for behavioural analysis), `df.nosac` (group and number of participants without any relevant saccades despite useable eye tracking data), `df.med` (counts of participants taking ADHD medication per group), `adhd.med.desc` (types of ADHD medication), `gen.desc` (gender self-descriptions in the DAN group), `tb.gen` (count table for gender distributions), `tb.screen` (count of people exceeding screening thresholds for ADHD and/or ASD) and the results of the contingency tables (`ct.full` containing the full dataset and `ct.mf` only containing male and female participants).
 
 ## Result files
 
@@ -94,6 +84,10 @@ All results are saved in RDS files which can be read into R. The following files
 `m_fab_full.rds`: brms model assessing reaction times to targets with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
 `m_fab_sac.rds`: brms model assessing aggregated reaction times to targets with the predictors number of saccades, diagnostic status and cue side (face or object) as well as the interaction between diagnostic status and cue.
+
+`m_fab_perc.rds`: brms model assessing face attention bias in percentage.
+
+`m_fix.rds`: brms model assessing the dwell times starting within cue-elicited saccade window.
 
 `m_lat.rds`: brms model assessing the saccade latencies with the predictors diagnostic status and cue side (face or object) as well as their interaction.
 
