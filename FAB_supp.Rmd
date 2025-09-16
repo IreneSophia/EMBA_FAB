@@ -29,7 +29,8 @@ ls.packages = c("knitr",# kable
     "rstatix",          # anova
     "flextable",        # regulartable
     "officer",          # read_docx
-    "BayesFactor", 
+    "BayesFactor",
+    "showtext", 
     "effectsize",       # allows for interpretation and calculation of effectsizes 
     "bayestestR"        # equivalence_test
 )
@@ -63,6 +64,10 @@ a = 0.5
 # custom colour palette
 custom.col  = as.character(palette.colors()[2:8])
 custom.col2 = c("#E1BE6A", "#40B0A6")
+font_add_google("Merriweather", db_cache = FALSE)
+
+# turn on showtext
+showtext_auto()
 
 # calculate visual angle: px.x should be a vector of c(width, height) in pixel
 vis_ang = function(px.x) {
@@ -1189,7 +1194,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ggsave("Fig3_rts.tif", 
        units = "mm", 
@@ -1442,7 +1447,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15),
+        text = element_text(family = "Merriweather", size = 15),
         legend.title=element_blank())
 
 ggsave("Fig4_FAB.tif", 
@@ -1478,7 +1483,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15),
+        text = element_text(family = "Merriweather", size = 15),
         legend.title=element_blank())
 
 ggsave("Fig4_FAB_new.tif", 
@@ -1875,7 +1880,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ```
 
@@ -2004,7 +2009,7 @@ labels = c("Cue-elicited", "Target-elicited")) +
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15),
+        text = element_text(family = "Merriweather", size = 15),
         legend.title=element_blank())
 
 ggsave("Fig2_densLatency.tif", 
@@ -2434,7 +2439,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ggsave("Fig5_nrSac.tif", 
        units = "mm", 
@@ -3043,7 +3048,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ggsave("Fig6_latSac.tif", 
        units = "mm", 
@@ -3320,7 +3325,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ```
 
@@ -3526,7 +3531,7 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ```
 
@@ -3697,6 +3702,6 @@ point.args.pos = list(position = ggpp::position_dodgenudge(x = -0.25, width = 0.
   theme(legend.position = "bottom", 
         plot.title = element_text(hjust = 0.5), 
         legend.direction = "horizontal", 
-        text = element_text(size = 15))
+        text = element_text(family = "Merriweather", size = 15))
 
 ```
